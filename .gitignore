@@ -17,6 +17,8 @@ _command.prg
 *.zip
 *.rar
 
+node_modules
+
 JUNK
 junk*
 temp*
