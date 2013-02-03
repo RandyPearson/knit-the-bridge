@@ -1,0 +1,11 @@
+{
+  "name": "knit-the-bridge",
+  "version": "0.0.1",
+  "private": false,
+  "dependencies": {
+      "L7-framework": "git+https://github.com/RandyPearson/L7-framework.git#v0.1.0"
+  },
+  "engine": {
+    "node": ">=0.8"  
+  }
+}
