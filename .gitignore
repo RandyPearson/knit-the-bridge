@@ -18,6 +18,7 @@ _command.prg
 *.rar
 
 node_modules
+classes
 
 JUNK
 junk*
