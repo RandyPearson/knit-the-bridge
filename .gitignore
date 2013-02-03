@@ -29,6 +29,10 @@ L7App.*
 *FOXUSER.*
 *foxuser.*
 
+AISPages.CDX
+AISPages.FPT
+AISPages.DBF
+
 ktbl7_ref.*
 wwRequestLog.*
 
