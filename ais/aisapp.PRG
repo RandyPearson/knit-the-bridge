@@ -263,7 +263,7 @@ function CreateArtistTable
       Art_Notes M, ;
       Art_Orig_Art_FK C(32), ;
       Art_Orig_Time T, ;
-      Art_Rev_Art_FK I, ;
+      Art_Rev_Art_FK C(32), ;
       Art_Rev_Time T, ;
       Art_Revision I NOT NULL DEFAULT 0 ;
     )
@@ -313,7 +313,7 @@ function CreatePieceTable
       Pce_Notes M, ;
       Pce_Orig_Art_FK C(32), ;
       Pce_Orig_Time T, ;
-      Pce_Rev_Art_FK I, ;
+      Pce_Rev_Art_FK C(32), ;
       Pce_Rev_Time T, ;
       Pce_Revision I NOT NULL DEFAULT 0 ;
     )
@@ -356,7 +356,7 @@ function CreatePanelTable
       Pnl_Notes M, ;
       Pnl_Orig_Art_FK C(32), ;
       Pnl_Orig_Time T, ;
-      Pnl_Rev_Art_FK I, ;
+      Pnl_Rev_Art_FK C(32), ;
       Pnl_Rev_Time T, ;
       Pnl_Revision I NOT NULL DEFAULT 0 ;
     )
@@ -444,41 +444,43 @@ FUNCTION InsertSeedRecords
   ** DEFAULT USERS:
   * "System Administrator"
   insert into Artist ( ;
-      Art_PK, Art_Inactive, Art_Type, ;
-      Art_Name, Art_NickName, ;
+      Art_PK, Art_Inactive, Art_Admin, Art_Artist, Art_Anonymous, ;
+      Art_Full_Name, Art_First_Name, Art_Last_Name, ;
       Art_Orig_Art_FK, Art_Orig_Time, Art_Rev_Art_FK, Art_Rev_Time ;
     ) VALUES ( ;
-      THISAPP_PARTY_ADMIN, .T., "Ind", ;
-      "ADMINISTRATOR", "INITIAL", ;
-      THISAPP_PARTY_ADMIN, m.poEnv.tTime, THISAPP_PARTY_ADMIN, m.poEnv.tTime )
+      THISAPP_ADMIN_PK, .T., .t., .f., .f., ;
+      "SYSTEM ADMINISTRATOR", "SYSTEM", "ADMINISTRATOR", ;
+      THISAPP_ADMIN_PK, m.poEnv.tTime, THISAPP_ADMIN_PK, m.poEnv.tTime )
+
   * "Developer"
-  INSERT INTO Party ( ;
-      Art_PK, Art_Inactive, Art_Type, ;
-      Art_Name, Art_NickName, Art_User_ID, Art_Administrator, Art_Network_Account, ;
-      Art_Network_ID, Art_Content_Rights, ;
+  insert into Artist ( ;
+      Art_PK, Art_Inactive, Art_Admin, Art_Artist, Art_Anonymous, ;
+      Art_Full_Name, Art_First_Name, Art_Last_Name, ;
+      Art_User_ID, ;
       Art_Orig_Art_FK, Art_Orig_Time, Art_Rev_Art_FK, Art_Rev_Time ;
     ) VALUES ( ;
-      THISAPP_PARTY_DEV, .F., "Ind", ;
-      "DEVELOPER", "SYSTEM", THISAPP_USER_DEV, .T., .T., ;
-      THISAPP_USER_DEV, 8, ;
-      THISAPP_PARTY_ADMIN, m.poEnv.tTime, THISAPP_PARTY_ADMIN, m.poEnv.tTime )
+      THISAPP_DEV_PK, .f., .t., .f., .f., ;
+      "SYSTEM DEVELOPER", "SYSTEM", "DEVELOPER", ;
+      THISAPP_USER_DEV, ;
+      THISAPP_ADMIN_PK, m.poEnv.tTime, THISAPP_ADMIN_PK, m.poEnv.tTime )
+
   * "Anonymous User"
-  INSERT INTO Party ( ;
-      Art_PK, Art_Inactive, Art_Type, Art_Visible, ;
-      Art_Name, Art_NickName, ;
+  insert into Artist ( ;
+      Art_PK, Art_Inactive, Art_Admin, Art_Artist, Art_Anonymous, ;
+      Art_Full_Name, Art_First_Name, Art_Last_Name, ;
       Art_Orig_Art_FK, Art_Orig_Time, Art_Rev_Art_FK, Art_Rev_Time ;
     ) VALUES ( ;
-      THISAPP_PARTY_ANON, .F., "Ind", .F., ;
-      "USER", "ANONYMOUS", ;
-      THISAPP_PARTY_ADMIN, m.poEnv.tTime, THISAPP_PARTY_ADMIN, m.poEnv.tTime )
+      THISAPP_ANON_PK, .T., .f., .f., .t., ;
+      "ANONYMOUS USER", "ANONYMOUS", "USER", ;
+      THISAPP_ADMIN_PK, m.poEnv.tTime, THISAPP_ADMIN_PK, m.poEnv.tTime )
 
   * System:
   INSERT INTO System ( ;
       Sys_PK, Sys_Inactive, Sys_Revision, ;
       Sys_Orig_Art_FK, Sys_Orig_Time, Sys_Rev_Art_FK, Sys_Rev_Time ;
     ) VALUES ( ;
-      GetGuid32(), .F., THISAPP_DATABASE_REVISION, ;
-      THISAPP_PARTY_ADMIN, m.poEnv.tTime, THISAPP_PARTY_ADMIN, m.poEnv.tTime )
+      replicate("1", 32), .F., THISAPP_DATABASE_REVISION, ;
+      THISAPP_ADMIN_PK, m.poEnv.tTime, THISAPP_ADMIN_PK, m.poEnv.tTime )
 
   return 
 endfunc  && InsertSeedRecords
