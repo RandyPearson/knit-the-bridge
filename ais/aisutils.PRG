@@ -30,16 +30,16 @@ function AisImportFormGoogleSignUp(tcFile, tcSheet)
     messagebox("sqlstringconnect() did not yield a handle. You may or may not have just been told why. ")
     return
   endif
-  lcSqlCmd = [Select * FROM "] + evl(m.tcSheet, "SHEET1") + [$"]
+  lcSqlCmd = [select * from "] + evl(m.tcSheet, "SHEET1") + [$"]
   try
-    lnSuccess = SQLEXEC(m.lnSQLHandle, m.lcSQLCmd, m.lcAlias)
+    lnSuccess = sqlexec(m.lnSQLHandle, m.lcSQLCmd, m.lcAlias)
   finally
     sqldisconnect(m.lnSQLHandle)
   endtry 
   if m.lnSuccess < 1
     messagebox("sqlexec() failed. You may or may not have just been told why. ")
   else
-    select (m.lcALias)
+    select (m.lcAlias)
     browse nowait 
   endif
   return 
