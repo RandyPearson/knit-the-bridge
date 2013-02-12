@@ -234,23 +234,38 @@ function CreateArtistTable
       Art_PK C(32) primary key default GetGuid32(), ;
       Art_Inactive L default .F., ;
       Art_ID C(8), ;
+      Art_Approved L default .T., ;
       Art_Admin L default .f., ;
       Art_Core L default .f., ;
       Art_Artist L default .t., ;
       Art_Anonymous L, ;
       Art_Unknown L, ;
-      Art_Full_Name C(50), ;
+      Art_Full_Name C(60), ;
       Art_Last_Name C(20), ;
       Art_First_Name C(24), ;
+      Art_Name_Orig M, ; 
       Art_Email C(80), ;
       Art_Phone C(24), ;
-      Art_Contact_Info M, ; 
+      Art_Contact_Orig M, ; 
       Art_Address M, ;
-      Art_Neighborhood C(40), ;
+      Art_Neighborhood C(50), ;
       Art_Age_Range C(THISAPP_LENGTH_AGE_RANGE) default "n/a", ;
       Art_Participation M, ;
+      Art_Bit L, ;
+      Art_Bit_Info M, ;
+      Art_Panel_Info M, ;
+      Art_Panel_Count I, ;
+      Art_Received L, ;
+      Art_Storage_Location M, ;
+      Art_Towers L, ; 
+      Art_Help_Install L, ;
+      Art_Help_Materials L, ;
+      Art_Help_Meet_Up L, ;
+      Art_Help_Outreach L, ;
+      Art_Help_Other M, ;
       Art_Comments M, ;
       Art_Register_Time T, ;
+      Art_KTB_Response M, ;
       Art_Access_Token C(32), ;
       Art_User_ID C(20), ;
       Art_Password_Hash C(16), ;      
@@ -278,6 +293,7 @@ function CreateArtistTable
   index on Art_Inactive tag Inactive
   * Foreign Keys:
   * Other Keys:
+  index on Art_Approved tag Approved
   index on upper(Art_User_ID) tag User_ID
   index on Art_ID tag Art_ID
   index on Art_Access_Token tag token 
