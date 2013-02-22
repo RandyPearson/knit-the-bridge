@@ -46,10 +46,14 @@ define class AisImport as Custom
       * replace Art_ID with AisGetID("Art_ID", ) ...
       
           
-    endscan    
+    endscan
+    select artist
+    browse last nowait     
   endfunc 
 
   function _transform(toImp, toXfer)    
+    local lcTemp
+    
     addproperty(toXfer, "Art_Register_Time", nvl(toImp.timestamp, datetime(2013, 01, 01, 0, 0, 0)))
     addproperty(toXfer, "Art_Name_Orig", nvl(toImp.name, ""))
     if empty(toXfer.Art_Name_Orig)
@@ -61,11 +65,42 @@ define class AisImport as Custom
     addproperty(toXfer, "Art_Bit_Info", nvl(toImp.bit_info, ""))
     * ...
     addproperty(toXfer, "Art_Contact_Orig", nvl(toImp.contact_information, ""))
-    * ...
+    if '@' $ toXfer.Art_Contact_Orig
+      lcTemp = chrtran(toXfer.Art_Contact_Orig, ',', ';')
+      addproperty(toXfer, "Art_Email", alltrim(getwordnum(m.lcTemp, 1, ";")))
+      addproperty(toXfer, "Art_Phone", alltrim(getwordnum(m.lcTemp, 2, ";")))
+    else
+      addproperty(toXfer, "Art_Phone", alltrim(toXfer.Art_Contact_Orig))
+    endif 
+    
+    addproperty(toXfer, "Art_Artist", .f.)
+    addproperty(toXfer, "Art_Panel_Count", 0)
+        
     addproperty(toXfer, "Art_Panel_Info", nvl(toImp.full_panel_and_count, ""))
     * ...
     addproperty(toXfer, "Art_Participation", nvl(toImp.I_want_to_participate_in_Knit_the_Bridge_by___, ""))
-    * ......
+    if "making a partial panel" $ lower(toXfer.Art_Participation)
+      addproperty(toXfer, "Art_Partial_Panel", .t.)
+      toXfer.Art_Artist = .t.
+    endif 
+    if "making a full panel" $ lower(toXfer.Art_Participation) or ;
+        "making a panel" $ lower(toXfer.Art_Participation) 
+      toXfer.Art_Panel_Count = 1
+      toXfer.Art_Artist = .t.
+    endif 
+    if "machine" $ lower(toXfer.Art_Participation)
+      addproperty(toXfer, "Art_Towers", .t.)
+    endif 
+    if "meet up" $ lower(toXfer.Art_Participation)
+      addproperty(toXfer, "Art_Help_Meet_Up", .t.)
+    endif 
+    if "install" $ lower(toXfer.Art_Participation)
+      addproperty(toXfer, "Art_Help_Install", .t.)
+    endif 
+    if "school" $ lower(toXfer.Art_Participation)
+      addproperty(toXfer, "Art_Help_Outreach", .t.)
+    endif 
+    
     addproperty(toXfer, "Art_KTB_Response", nvl(toImp.KTB_email_response, ""))
     
     addproperty(toXfer, "Art_Address", nvl(toImp.Neighborhood_or_Township, ""))
@@ -102,7 +137,7 @@ define class AisImport as Custom
       messagebox("sqlexec() failed. You may or may not have just been told why. ")
     else
       select (m.lcAlias)
-      browse nowait 
+      * browse nowait 
     endif
     return 
   endfunc 

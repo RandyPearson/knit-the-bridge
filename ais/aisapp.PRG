@@ -251,7 +251,7 @@ function CreateArtistTable
       Art_Neighborhood C(50), ;
       Art_Age_Range C(THISAPP_LENGTH_AGE_RANGE) default "n/a", ;
       Art_Participation M, ;
-      Art_Bit L, ;
+      Art_Partial_Panel L, ;
       Art_Bit_Info M, ;
       Art_Panel_Info M, ;
       Art_Panel_Count I, ;
