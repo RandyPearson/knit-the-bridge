@@ -5,7 +5,8 @@
 
 * App Classes:
 set procedure to AisApp     additive  && Application Object
-set procedure to AisClasses additive  && Misc Classes and FW Subclasses
+set procedure to AisClasses additive  && THIS file
+set procedure to AisUser    additive  && User class
 
 * Page Classes:
 set procedure to AisPages   additive   

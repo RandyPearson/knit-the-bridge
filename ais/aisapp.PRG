@@ -244,7 +244,7 @@ function CreateArtistTable
       Art_Last_Name C(20), ;
       Art_First_Name C(24), ;
       Art_Name_Orig M, ; 
-      Art_Email C(80), ;
+      Art_Email C(THISAPP_USER_EMAIL_LEN), ;  && 80
       Art_Phone C(24), ;
       Art_Contact_Orig M, ; 
       Art_Address M, ;
@@ -267,7 +267,7 @@ function CreateArtistTable
       Art_Register_Time T, ;
       Art_KTB_Response M, ;
       Art_Access_Token C(32), ;
-      Art_User_ID C(20), ;
+      Art_User_ID C(THISAPP_USER_ID_LEN), ; && 20 
       Art_Password_Hash C(16), ;      
       Art_Previous_Passwords C(80), ; 
       Art_Password_Count I, ;         
