@@ -1,0 +1,31 @@
+***** BEGIN LICENSE BLOCK *****
+Version: MPL 1.1
+
+The contents of this file are subject to the Mozilla Public License Version 
+1.1 (the "License"); you may not use this file except in compliance with 
+the License. You may obtain a copy of the License at 
+http://www.mozilla.org/MPL/
+
+Software distributed under the License is distributed on an "AS IS" basis,
+WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+for the specific language governing rights and limitations under the
+License.
+
+The Original Code is "Level 7 Framework for Web Connection" and 
+"Level 7 Toolkit" (collectively referred to as "L7").
+
+The Initial Developer of the Original Code is Randy Pearson of 
+Cycla Corporation.
+
+Portions created by the Initial Developer are Copyright (C) 2004 by
+the Initial Developer. All Rights Reserved.
+
+Contributor(s):
+1. Lauren Clarke, Cornerstone Systems NW, provided the design for the
+L7 parser technology (see L7Parsers.PRG).
+
+2. Portions of the L7 subclass for the Web Connection server (see 
+L7wwServer.PRG) derived and/or copied from West-Wind Technologies
+original wwServer class. That code is also thus Copyright (C) 2004 by 
+West-Wind Technologies. All Rights Reserved.
+***** END LICENSE BLOCK *****

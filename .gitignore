@@ -20,7 +20,10 @@ _command.prg
 node_modules
 classes
 
-L7
+; L7 removed, and for now ignore: 
+package.json
+json.fll
+
 JUNK
 junk*
 temp*
