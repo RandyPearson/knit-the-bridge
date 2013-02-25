@@ -1,0 +1,168 @@
+body { margin: 0; font-family: Tahoma; cursor: default; overflow: hidden /* for status bar, WHY NOT 17?! */ }
+
+/* Header */
+a { text-decoration: underline }
+#header { position: absolute; top: 0; left: 0; right: 0; height: 57px; color: white; background: -moz-linear-gradient(top, #CC0000, #990000); padding: 5px 0 0 0; z-index: 200 }
+#header h1 { font-weight: normal; font-size: 20px; margin: 0; cursor: pointer}
+#header .user { position: absolute; right: 5px; top: 7px; font-size: 14px }
+#header .link { font-size: 14px }
+#header #signOut { color: white }
+#header .box { cursor: pointer; background: transparent none no-repeat scroll bottom left; font-size: 20px; z-index: 400; }
+#header .box #demo-header-label {cursor: default; margin-left: 4px; display: none;}
+#header .box #demo-header-label img {vertical-align: -6%;}
+#header .label { float: left; padding: 0 3px 0 5px; font-weight: normal; margin-right: 0px }
+#header.staging {background: -moz-linear-gradient(top, #0000CC, #000066)}
+.development #header{background: -moz-linear-gradient(top, #00CC00, #006600)}
+#server-override-notice-content {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  margin-left: -115px;
+  width: 230px;
+  height: 19px;
+  background-image: url("../icons/Server_Override_Trapezoid.png");
+  color: black;
+  font-size: 10px;
+  text-align: center;
+  padding-top: 3px
+}
+
+#header .tabs { clear: both; padding: 4px 10px 0 10px; position: absolute; right: 0; left: 0; bottom: 0; }
+.tab { float: left; background: -moz-linear-gradient(top, #E6E6E6, #A2A2A2); height: 21px; padding: 2px 15px 0 15px; margin-right: 1px; font-weight: bold; color: #777; font-family: Arial; cursor: pointer }
+.tab:hover {background: -moz-linear-gradient(top, #F1F1F1, #CBCBCB);}
+.tab.current {background: #FFF;}
+.tab.tools.current {background: #EEE;}
+.tab.tools {float: right;}
+
+/* Sidebar subtract 17px for scrollbar*/
+#sidebar { position: absolute; right: 16px; top: 62px; width: 238px !important; bottom: 23px; background-color: #eee; padding: 0 !important; margin: 0 !important; overflow-x: hidden; overflow-y: auto; white-space: nowrap; padding-top: 15px; z-index: 0; box-shadow: inset 0 5px 5px #ccc }
+#sidebar h1 { color: #C00; font-family: Arial; font-weight: 900; font-size: 17px; margin: 20px 0 5px 10px; line-height: 14px; padding:0px; }
+#sidebar h1.first { margin-top: 0px }
+#sidebar ul { margin-left: 0px; padding-left: 0; list-style-type: none; margin-top: 0; margin-bottom: 5px; padding-top: 0 }
+#sidebar ul.noncontext li { color: #bbb }
+#sidebar li { margin-left: 0; color: #666; font-size: 14px; padding: 2px 0 2px 10px; line-height: 14px; cursor: pointer }
+#sidebar li a { color: #666;}
+
+#sidebar li.link:hover { text-decoration: underline }
+#sidebar ul.context li:hover { text-decoration: underline }
+#sidebar ul li.highlight { color: white; background-color: #C00 }
+#sidebar ul li.highlight a {color: white;}
+#sidebar h2 { color: #999; margin: 9px 0 0 10px; font-size: 13px; font-weight: normal !important; font-family: Arial !important; font-style: italic }
+#sidebar h2 .label { color: #999 !important; font-size: 13px }
+#sidebar h3 { color: #999; margin: 0; margin-left: 10px; font-style: italic; font-size: 14px; font-weight: normal }
+
+.caps-lock {font-size: 12px; color: #900; display: inline-block; padding-left: 5px;}
+#frmLogin .is-caps {padding-left: 116px;}
+
+/* Main Content */
+#content{position: absolute; left: 0; right: 0; top: 62px; bottom: 23px; overflow-x: scroll; overflow-y: scroll;}
+/*.wrapper {margin: 0; padding: 0; overflow-y: scroll; overflow-x: scroll; background: white}*/
+#content{padding: 10px;}
+#content { padding-right: 255px }
+
+/*
+.wide #sidebar{display: none;}
+.wide #content{padding-right: 10px }
+*/
+
+h2 { color: #C00; font-family: Arial; font-weight: 900; font-size: 13px; margin: 0 0 5px 5px; display: block }
+a.action { color: #999; text-decoration: underline; font-weight: normal }
+a.action:hover { color: #c00; cursor: pointer }
+div.inline { display: inline-block; vertical-align: middle }
+td.inline {display: inline-block}
+
+h2 { color: #333; font-weight: bold; font-size: 15px; font-family: Tahoma; padding: 0; margin: 0 0 0 0}
+
+.invalid { color: red !important }
+
+ul.contextMenu { margin-left: 0px; padding-left: 0; list-style-type: none; margin-top: 0; margin-bottom: 5px; padding-top: 0 }
+.contextMenu li { margin-left: 0; color: #666; padding: 2px 0 2px 10px; line-height: 14px; cursor: pointer }
+.contextMenu a {outline: none;}
+.box { cursor: pointer; background: transparent none no-repeat scroll bottom left }
+.label { float: left; padding: 0 3px 0 5px; font-weight: bold; margin-right: 0px; color: inherit }
+
+p.break { margin-bottom: 5em }
+
+/* status and notification areas */
+#status_bar { position: absolute; bottom: 0; height: 17px; left: 0; right: 0; background-image: url(../icons/status.png); padding: 1px 5px 5px 30px; margin: 0 }
+#status_bar div { margin-top: 2px !important; padding: 0 !important }
+#status { float: left; margin-right: 10px; margin-left: 5px }
+#statusText { overflow: hidden; height: 14px }
+#statusErrors { float: right; margin-right: 10px; text-align:right }
+#statusErrors.failure { background-color: red; color: white; cursor: pointer; padding: 1px 8px 1px 8px !important; -moz-border-radius: 8px }
+#statusErrors.success { background-color: green; color: white; cursor: pointer; padding: 1px 8px 1px 8px !important; -moz-border-radius: 8px }
+
+/* DataTables display */
+table.display {margin: 0 auto;}
+
+table.display thead th {
+	padding: 3px 10px 0 1px;
+	font-weight: bold;
+	cursor: pointer;
+}
+
+table.display tfoot th {
+	padding: 3px 10px 0 1px;
+	border-top: 1px solid black;
+	font-weight: bold;
+}
+
+table.display tr.heading2 td {
+	border-bottom: 1px solid #aaa;
+}
+
+table.display td {padding: 3px 10px 0 1px;}
+table.display td.center {	text-align: center;}
+
+/* First para, subsequent para margins in table cells */
+table.display td p{ margin: 0;}
+table.display td p+p{margin: 10px 0 0 0;}
+
+/* DataTables row classes */
+table.display tr.oddX { background-color: #ddffdd;}
+table.display tr.evenX{	background-color: #eeffee;}
+
+/* DataTables sorting */
+.sorting_asc  { background: url('../icons/SortTableUp.gif') no-repeat center right;	background-color: #f5f5f5;}
+.sorting_desc { background: url('../icons/SortTableDown.gif') no-repeat center right;	background-color: #f5f5f5;}
+
+.sort_image {	margin-left: 5px;}
+
+table.sortable th { padding-right: 13px !important; padding-left: 13px !important }
+table.sortable .sortup { background-image: url('../icons/SortTableUp.gif'); background-repeat: no-repeat; background-position: center right }
+table.sortable .sortdown { background-image: url('../icons/SortTableDown.gif'); background-repeat: no-repeat; background-position: center right }
+
+/*  Misc */
+div.admin{border: 1px dashed #333; background-color: #ccc; margin: 5px;}
+
+.top, .bottom {	padding: 15px;	background-color: #F5F5F5;	border: 1px solid #CCCCCC;}
+.top {	float: none;}
+.clear {clear: both;}
+
+span.current {padding-right: 5px;}
+
+/* Reports */
+.reportTitle { background-color:transparent; border-bottom:1px solid #D0D0D0; margin: 5px 0 5px 10px;  padding: 0 0 6px 0;  display: block;}
+.reportTitle h1{ color:#444444;  font-size:24px;  font-weight:700;  display: inline;}
+.reportTitle a{ display: inline;  margin: 0 0 0 3px;  padding: 0;}
+
+/* TOOLTIP */
+#tooltip {
+	position: absolute;
+	border: 1px solid #333;
+	background: #f7f5d1;
+	padding: 2px 5px;
+	color: #333;
+	display: none;
+	z-index: 100;
+	font-family: Tahoma;
+	font-size: 14px;
+	font-weight: bold;
+}
+
+#hoverTip { height: 120px !important; overflow-y: hidden }
+#hoverTip h4 {padding:0; margin:0; color: #C00;}
+
+/* Floats */
+.hidden {display: none;}
+

@@ -22,8 +22,10 @@ define class AisApp AS KtbApp
   cClassPrefix              = "ais_"
   cPageAlias                = null
 
-  cUserClass                = "KtbUser"
+  cUserClass                = "AisUser"
   cSessionClass             = "L7Session"  
+
+  cLogRequestClass          = "aisLogRequest"  && see aisClasses
 
   cTitle                    = THISAPP_ORG_NAME + " Artwork Information System"
   cDataBase                 = THISAPP_DATABASE
@@ -32,6 +34,16 @@ define class AisApp AS KtbApp
   
   oLookup = NULL
 
+  * --------------------------------------------------------- *
+  function determineBrowser()
+
+    local loDevice
+    loDevice = createobject("aisBrowserDevice")
+    Environ.Set('app.client_device', m.loDevice)
+
+    dodefault()  && does: THIS.cBrowserName = Request.cBrowser
+    return 
+  endfunc  && determineBrowser
   * --------------------------------------------------------- *
   function SetAppProcedures
     do (THISAPP_APPLICATION + "Classes") && [[ promote to L7! 
@@ -51,9 +63,47 @@ define class AisApp AS KtbApp
     OpenIfNot( "Piece",  "Piece_Perform_")
     OpenIfNot( "Panel",  "Panel_Perform_")
     * Force lookups to get created now (so they stay open):
-    *!* = this.cRegionAlias
+    * Deploy physical files needed in http space:
+    this.DeployContent()
     return .T.
   endfunc  && OnFirstPostMaintenanceHit
+  * --------------------------------------------------------- *
+  function DeployContent()
+    this._deployContentFile("ktb-ais.css", ".\css\")
+    
+    this._deployContentFile("prototype-1.5.1.js", ".\js\")
+    this._deployContentFile("jquery-1.3.1.js",    ".\js\")
+    this._deployContentFile("sortTable.js",       ".\js\")
+    this._deployContentFile("l7CoreP.js",         ".\js\")
+    this._deployContentFile("l7CoreJQ.js",        ".\js\")
+
+    return .T.
+  endfunc  && DeployContent
+  * --------------------------------------------------------- *
+  function _DeployContentFile(tcFile, tcRelPath, tcBasePath)
+    if !file(m.tcFile) && should be built into project/EXE
+      this.app_log(L7_SEVERITY_WARNING, "Deployable file missing: " + m.tcFile)
+      return
+    endif
+    local lcContNew, lcContOld, lcPath, lcOldFile, llOld
+    lcContNew = filetostr(m.tcFile)
+    lcPath = fullpath(m.tcRelPath, evl(m.tcBasePath, this.oConfig.cHtmlPagePath))
+    if !directory(m.lcPath)
+      mkdir (m.lcPath)
+      this.app_log(L7_SEVERITY_INFO, "Created deployment folder: " + m.lcPath)
+    endif 
+    lcOldFile = addbs(m.lcPath) + m.tcFile
+    if file(m.lcOldFile)
+      llOld = .t.
+      lcContOld = filetostr(m.lcOldFile)
+    endif 
+    if !m.llOld or !m.lcContNew == m.lcContOld 
+      strtofile(m.lcContNew, m.lcOldFile)
+      this.app_log(L7_SEVERITY_INFO, "Content file deployed: " + m.lcOldFile)
+    endif 
+   
+    return .T.
+  endfunc  && DeployContent
   * --------------------------------------------------------- *
   function CheckRevision()
     * Check if database revision in the System table matches
