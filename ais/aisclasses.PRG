@@ -63,17 +63,20 @@ enddefine
 *** ========================================================= ***
 * Configuration class for the application -- values controlled by matching INI file settings:
 define class AisConfig as L7AppConfig
-  cFilePath = "" && for doc/pdf/etc.
-  cHTMLPagePath = "c:\Inetpub\wwwroot\ktb-ais\"
-  cDATAPath = "c:\vfpdata\ais\"
-  cLogPath = "d:\VfpLogs\ktb-ais\"
-  cMessagingPath = "d:\VfpMessaging\ktb-ais\"
-  cTransactionPath = "d:\VfpTransaction\ktb-ais\"
-  lReadOnly = .F.
-  lDebugQueries = .F.
+  cPageExtension       = "ktb"
+  cServerRole          = "production"
+  nSessionTimeout      = 14400  && 4 hrs 
+
+  lReadOnly            = .F.
+  lDebugQueries        = .F.
   lSendMailImmediately = .T.
-  cPageExtension = "ktb"
-  cServerRole = "production" 
+
+  cFilePath            = "d:\WebDocs\ktb-ais\" && for doc/pdf/etc.
+  cHTMLPagePath        = "c:\Inetpub\wwwroot\ktb-ais\" && css, js 
+  cDATAPath            = "c:\vfpdata\ais\"
+  cLogPath             = "d:\VfpLogs\ktb-ais\"
+  cMessagingPath       = "d:\VfpMessaging\ktb-ais\"
+  cTransactionPath     = "d:\VfpTransaction\ktb-ais\"
 enddefine 
 
 
