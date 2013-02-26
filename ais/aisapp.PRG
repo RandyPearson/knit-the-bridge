@@ -821,16 +821,6 @@ define class KtbApp AS L7App
   nErrorPageInfo     = L7_NONE
   
   lAllowStateless    = .T. 
-  * --------------------------------------------------------- *
-  function SetupSessionObject  && overrides L7
-    with this
-      .oSession = createobject(.cSessionClass)
-      .oSession.setDataPath(.oConfig.cLogPath) && place session with logs, both daily and intertwined
-      .oSession.SetTableName(NVL(.cSessionTableName, .cApplication + "Session"))
-      .oSession.SetTimeout(.nSessionTimeout)
-    endwith 
-    return   
-  endfunc 
   * ---------------------------------------------------------- *
   FUNCTION CreateTransaction(lcType)
     LOCAL loTrans, lcID, loExc, llCreated

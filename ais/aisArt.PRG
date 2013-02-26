@@ -3,11 +3,30 @@
 #INCLUDE WCONNECT.H
 #INCLUDE AIS.H
 
+function AisArtQueryFlags()
+  return L7JsonParse( ;
+    '[' + ;
+    '{"root": "core", "prompt": "Team"}' + ;
+    ',{"root": "install", "field": "Art_Help_Install"}' + ;
+    ',{"root": "outreach", "field": "Art_Help_Outreach"}' + ;
+    ',{"root": "artist"}' + ;
+    ',{"root": "admin", "menu": false}' + ;
+    ']' )
+endfunc 
+
 *** ========================================================= ***
 define class aisArtPage as aisPage 
   cArt = ""
   oArt = null
   lArtRequired = .t.
+  oArtQueryFlags = null && _ACCESS
+  * --------------------------------------------------------- *
+  function oArtQueryFlags_ACCESS
+    if isnull(this.oArtQueryFlags)
+      this.oArtQueryFlags = AisArtQueryFlags()
+    endif
+    return this.oArtQueryFlags 
+  endfunc 
   * --------------------------------------------------------- *
   function BeforeProcessRequest
     if this.lArtRequired
@@ -40,21 +59,59 @@ enddefine
 *** ========================================================= ***
 define class ais_ArtList as aisArtPage 
   lArtRequired = .f.
+  cPage_Flags = null
+  * --------------------------------------------------------- *
+  function BeforeProcessRequest
+    this.cPage_Flags = this.ReadQueryString("flags", .t., .t.)
+    dodefault()  && required bubble-up
+    return    
+  endfunc  
+  * ----------------------------------------------------- *  
+  function AddDefaultMenu
+    local loFlags, lnFlag, loFlag 
+    loFlags = this.oArtQueryFlags
+    for lnFlag = 1 to loFlags.count
+      loFlag = loFlags.item[m.lnFlag]
+      if pemstatus(loFlag, "menu", 5) and !loFlag.menu
+        loop
+      endif
+      this.addMenuItem("main\This", proper(loFlag.root), StuffUrl(this.cUrlB, "flags", loFlag.root))
+    next 
+    dodefault()
+    return 
+  endfunc 
   * ----------------------------------------------------- *  
   function ProcessRequest
-    local loQry, loTbl, loCol, loGrp
+    local loQry, loFlags, lnFlag, loFlag, lcProp, ;
+       loTbl, loCol, loGrp
+       
     loQry = createobject("AisArtQuery")
     with loQry
-      .cSearch = 'gross'
+      ** .cSearch = 'gross'
+
+      loFlags = this.oArtQueryFlags
+      for lnFlag = 1 to loFlags.count
+        loFlag = loFlags.item[m.lnFlag]
+        if "," + loFlag.root + "," $ "," + this.cPage_Flags + ","
+          lcProp = "l" + loFlag.root
+          store .t. to loQry.&lcProp
+        endif 
+      next 
+      
       .execute()
     endwith 
     
     urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
     loTbl = createobject("AisTable")
     with loTbl
+      loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Art_Last_Name", "Name", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), trim(Art_Last_Name) + ", " + trim(Art_First_Name))])
-      loCol = .addCursorColumn("Art_Email")
+      loCol = .addCursorColumn("Art_Email", "Email")
+      loCol = .addCursorColumn("Art_Phone", "Phone")
+      loCol = .addCursorColumn("Art_Register_Time", "Sign-Up Time", [L7TimeDiff(Art_Register_Time)])
+      loCol = .addCursorColumn("Art_KTB_Response", "Respose")
+      loCol = .addCursorColumn("Art_ID")
       response.write(.render())
     endwith 
     
@@ -89,6 +146,9 @@ DEFINE CLASS AisArtQuery AS L7Query
   lAdmin = .F.
   lCore = .F.
   lArtist = .F.
+  lInstall = .F.
+  lTowers = .F.
+  lOutreach = .F.
 
   * Name Search
   cName = ""
@@ -102,8 +162,8 @@ DEFINE CLASS AisArtQuery AS L7Query
 
   * --------------------------------------------------------- *
   function BuildWhereClause
-    local lcStr, lcInnerWhere, lcGroupWhere, ii
-    store "" to lcInnerWhere, lcGroupWhere
+    local lcStr, lcInnerWhere, loFlags, lnFlag, loFlag, lcField
+    store "" to lcInnerWhere
 
     WITH this 
       .lWhereBuilt = .T.
@@ -124,48 +184,43 @@ DEFINE CLASS AisArtQuery AS L7Query
 
       * People with accounts:
       if !isnull( .lUser)
-        .cWhereClause = .cWhereClause + [ AND Art_User_Id ] + IIF(.lUser, [<> ' '], [= ' '])
+        .cWhereClause = .cWhereClause + [ AND Art_User_Id ] + IIF(.lUser, [<> ' '], [= ' '])
       endif 
       if !isnull( .lAccountInactive)
         .cWhereClause = .cWhereClause + [ AND Art_Approved = ] + IIF(.lAccountInactive, [.T.], [.F.])
       ENDIF
 
-      * Build "inner" WHERE clause that is used to control
-      * security, etc.
-      if !( .lCore or .lArtist OR .lAdmin)
-        * If none checked, assume no people should be listed.
-      else 
-        lcInnerWhere = m.lcInnerWhere + ;
-          IIF( .lCore, [ OR Art_Core = .T.], []) + ;
-          IIF( .lArtist, [ OR Art_Artist = .T.], []) + ;
-          IIF( .lAdmin, [ OR Art_Admin = .T.], [])
-      endif 
-      
-      * Build "outer" or "group" WHERE based on query conditions:
-      
-      * Now combine inner-WHERE with group-WHERE clauses:
-      DO CASE
-      CASE EMPTY( m.lcInnerWhere) AND EMPTY( m.lcGroupWhere)
-        = .F.
-        
-      CASE NOT EMPTY( m.lcInnerWhere) AND EMPTY( m.lcGroupWhere)
-        .cWhereClause = .cWhereClause + [ AND (] + ;
-          SUBSTR( m.lcInnerWhere, 5) + [)]
+*!*        * Build "inner" WHERE clause that is used to control security, etc.
+*!*        if !( .lCore or .lArtist OR .lAdmin ;
+*!*          or .lInstall or .lTowers or .lOutreach )
+*!*          * If none checked, assume no people should be listed.
+*!*        else 
+*!*          lcInnerWhere = m.lcInnerWhere + ;
+*!*            iif( .lCore, [ OR Art_Core = .T.], []) + ;
+*!*            iif( .lArtist, [ OR Art_Artist = .T.], []) + ;
+*!*            iif( .lAdmin, [ OR Art_Admin = .T.], [])
+*!*            iif( .lInstall, [ OR Art_Help_Install = .T.], [])
+*!*            iif( .lTowers, [ OR Art_Towers = .T.], [])
+*!*            iif( .lOutreach, [ OR Art_Help_Outreach = .T.], [])
+*!*        endif 
 
-      CASE EMPTY( m.lcInnerWhere) AND NOT EMPTY( m.lcGroupWhere)
-        .cWhereClause = .cWhereClause + [ AND ] + m.lcGroupWhere
-        
-      CASE NOT EMPTY( m.lcInnerWhere) AND NOT EMPTY( m.lcGroupWhere)
-        .cWhereClause = .cWhereClause + [ AND ] + ;
-          [((] + ;
-          SUBSTR( m.lcInnerWhere, 5) + [)] + ;
-          IIF( .lOrGroups, [ OR ], [ AND ]) + ;
-          m.lcGroupWhere + ;
-          [)]
-      ENDCASE
-    ENDWITH 
-    RETURN 
-  ENDFUNC  && BuildWhereClause
+      loFlags = AisArtQueryFlags()
+      for lnFlag = 1 to loFlags.count
+        loFlag = loFlags.item[m.lnFlag]
+        if evaluate("this.l" + loFlag.root)
+          lcField = iif(pemstatus(loFlag, "field", 5), loFlag.field, "Art_" + proper(loFlag.root))
+          lcInnerWhere = m.lcInnerWhere + [ or ] + m.lcField + [ = .T.]
+        endif
+      next 
+      
+      * Combine inner-WHERE with WHERE clauses:
+      if !empty( m.lcInnerWhere) 
+        .cWhereClause = .cWhereClause + [ and (] + substr(m.lcInnerWhere, 1 + len([ or ])) + [)]
+      endif 
+
+    endwith   
+    return  
+  endfunc   && BuildWhereClause
 enddefine  && AisArtQuery
 
 

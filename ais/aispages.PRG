@@ -310,7 +310,7 @@ define class aisPage as L7Page
   function AddDefaultMenu
     local lcMenu
     lcMenu = "main\Navigate"
-    this.addMenuItem(m.lcMenu, 'People', StuffUrl(this.cUrlA, 2, "ArtList"))
+    this.addMenuItem(m.lcMenu, 'People', StuffUrl(this.cUrlA, 2, "ArtList", "flags", "core"))
     this.addMenuItem(m.lcMenu, 'About', StuffUrl(this.cUrlA, 2, "About"))
     this.addMenuItem('main\User', 'Sign Out', StuffUrl(this.cUrlA, 2, 'Login', 'l', '0'))
 
