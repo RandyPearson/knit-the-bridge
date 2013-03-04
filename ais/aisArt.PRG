@@ -9,6 +9,7 @@ function AisArtQueryFlags()
     '{"root": "core", "prompt": "Team"}' + ;
     ',{"root": "install", "field": "Art_Help_Install"}' + ;
     ',{"root": "outreach", "field": "Art_Help_Outreach"}' + ;
+    ',{"root": "towers"}' + ;
     ',{"root": "artist"}' + ;
     ',{"root": "admin", "menu": false}' + ;
     ']' )
@@ -121,10 +122,401 @@ enddefine
 *** ========================================================= ***
 define class ais_ArtHome as aisArtPage 
   * ----------------------------------------------------- *  
+  function AddDefaultMenu
+    this.addMenuItem("main\This", "Modify...", StuffUrl(this.cUrlA, 2, "ArtForm", "art", this.cArt))
+    dodefault()
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
   function ProcessRequest
     response.write(L7ShowObject(this.oArt))
   endfunc 
 enddefine 
+
+*** ========================================================= ***
+define class ais_ArtNew as aisArtPage 
+  lAdding = .t.
+enddefine 
+
+*** ========================================================= ***
+define class ais_ArtForm as aisArtPage 
+  lAdding = .f.
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+
+    this.Assert(poContext.lCore)
+    this.cCancelUrl = StuffURL(THIS.cUrlA, 2, "OrgList")
+
+    local loForm, vp_cArt_PK
+    vp_cArt_PK = IIF(THIS.lAdding, space(32), THIS.cArt)
+    use V_Artist in select("V_Artist")
+    cursorsetprop("Buffering", 5, "V_Artist")
+    loForm = this.createForm('aisArtistForm')
+    with loForm
+      .lNewRecord = THIS.lAdding
+      .AddControls()
+      .DoEvents() 
+
+      if .Valid()
+        select V_Artist
+        if this.lAdding
+          append blank
+        endif 
+        .UpdateControlSources()
+        select V_Artist && UpdateControlSources can alter work area
+        StampRec( CurrentUser, THIS.tNow )
+        
+        * Now save it using a transaction:
+        local loTrans, loExc, lcMailMessage, lcExcMessage, llSendEmail
+        llSendEmail = .f.  
+        loTrans = THIS.CreateTransaction()
+        loTrans.AddCursor("V_Artist")
+
+        if loTrans.Save()  
+          
+          select V_Artist
+        
+*!*            lcExcMessage = ""
+*!*            IF m.llSendEmail
+*!*  error "not done..."
+*!*              TEXT TO lcMailMessage NOSHOW PRETEXT 3
+*!*                System..: OQDB
+*!*                Event...: Snippet <<IIF(THIS.lAdding, "Created", "Revised")>> (Snippet <<V_Snippet.Snp_PK>>)
+*!*                Actor...: <<CurrentUser.GetUserName()>>
+*!*                Snippet.: <<TRIM(V_Snippet.Snp_Title)>>
+*!*                URL.....:
+*!*                <<THIS.FullUrl(STRTRAN(THIS.cCancelUrl,'&amp;','&'))>>
+*!*                
+*!*                  (UNPARSED) SNIPPET TEXT
+*!*                  -----------------------
+*!*                  <<MemoToEmail(V_Snippet.Snp_Text)>>
+*!*              ENDTEXT
+*!*              TRY
+*!*                THIS.oApp.NotifyAdmin("Snippet Record Edited", TEXTMERGE(m.lcMailMessage))
+*!*              CATCH TO loExc
+*!*                lcExcMessage = TEXTMERGE(' [Error: <<loExc.Message>>, <<loExc.LineNo>>, <<loExc.Procedure>>]')
+*!*              ENDTRY
+*!*            ENDIF
+
+          Response.Redirect(THIS.cCancelUrl)
+          return 
+        else 
+          this.ErrorMsg( "Database Failure Saving Record!", ;
+            "Error " + TRANSFORM( loTrans.aFailures[1, 1]) + [ :] + ;
+            loTrans.aFailures[1, 2] )
+        endif  && Save()
+        
+      endif 
+
+    endwith 
+    response.write(loForm.render())
+  endfunc 
+enddefine && ais_ArtForm
+
+*** ========================================================= ***
+define class aisArtistForm AS AisForm
+  cTitle = "Artist Form"
+  * --------------------------------------------------------- *
+  function AddControls
+    with this
+
+      .AddObject("txtId", "L7Textbox")
+      with .txtId
+        .cGroupID = "PK"
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_Id"
+        .cLabel = "Id"
+      endwith
+      .AddObject("chkApproved", "L7Checkbox")
+      with .chkApproved
+        .cGroupID = "PK"
+        .cControlSource = "V_artist.Art_Approved"
+        .cLabel = "Approved?"
+      endwith
+      .AddObject("lblPk", "L7Label")
+      with .lblPk
+        .cGroupID = "PK"
+        .cControlSource = "V_artist.Art_Pk"
+        .cLabel = "ID"
+      endwith
+      .AddObject("chkInactive", "L7Checkbox")
+      with .chkInactive
+        .cGroupID = "PK"
+        .cControlSource = "V_artist.Art_Inactive"
+        .cLabel = "Delete?"
+        .lDisabled = !m.poContext.lAdmin
+      endwith
+
+      .addTimeStampControls()
+
+      .AddObject("txtFull_Name", "L7Textbox")
+      with .txtFull_Name
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_Full_Name"
+        .cLabel = "Full Name"
+      endwith
+      .AddObject("txtLast_Name", "L7Textbox")
+      with .txtLast_Name
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_Last_Name"
+        .cLabel = "Last Name"
+      endwith
+      .AddObject("txtFirst_Name", "L7Textbox")
+      with .txtFirst_Name
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_First_Name"
+        .cLabel = "First Name"
+      endwith
+      .AddObject("edtName_Orig", "L7Textarea")
+      with .edtName_Orig
+        .cControlSource = "V_artist.Art_Name_Orig"
+        .cLabel = "Name Orig"
+        .nRows = 5
+      endwith
+
+      .AddObject("chkUnknown", "L7Checkbox")
+      with .chkUnknown
+        .cControlSource = "V_artist.Art_Unknown"
+        .cLabel = "Unknown"
+      endwith
+
+      .AddObject("txtEmail", "L7Textbox")
+      with .txtEmail
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_Email"
+        .cLabel = "Email"
+      endwith
+      .AddObject("txtPhone", "L7Textbox")
+      with .txtPhone
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_Phone"
+        .cLabel = "Phone"
+      endwith
+      .AddObject("edtContact_Orig", "L7Textarea")
+      with .edtContact_Orig
+        .cControlSource = "V_artist.Art_Contact_Orig"
+        .cLabel = "Contact Orig"
+        .nRows = 5
+      endwith
+      .AddObject("txtNeighborhood", "L7Textbox")
+      with .txtNeighborhood
+        .cGroupID  ="addr"
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_Neighborhood"
+        .cLabel = "Neighborhood"
+      endwith
+      .AddObject("edtAddress", "L7Textarea")
+      with .edtAddress
+        .cGroupID  ="addr"
+        .cControlSource = "V_artist.Art_Address"
+        .cLabel = "Address"
+        .nRows = 5
+      endwith
+      .AddObject("txtAge_Range", "L7Textbox")
+      with .txtAge_Range
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_Age_Range"
+        .cLabel = "Age Range"
+      endwith
+
+      .AddParticipationControls()
+      
+
+      .AddObject("edtBit_Info", "L7Textarea")
+      with .edtBit_Info
+        .cControlSource = "V_artist.Art_Bit_Info"
+        .cLabel = "Bit Info"
+        .nRows = 5
+      endwith
+      .AddObject("edtPanel_Info", "L7Textarea")
+      with .edtPanel_Info
+        .cControlSource = "V_artist.Art_Panel_Info"
+        .cLabel = "Panel Info"
+        .nRows = 5
+      endwith
+      .AddObject("chkReceived", "L7Checkbox")
+      with .chkReceived
+        .cControlSource = "V_artist.Art_Received"
+        .cLabel = "Received"
+      endwith
+      .AddObject("edtStorage_Location", "L7Textarea")
+      with .edtStorage_Location
+        .cControlSource = "V_artist.Art_Storage_Location"
+        .cLabel = "Storage Location"
+        .nRows = 5
+      endwith
+      .AddObject("edtHelp_Other", "L7Textarea")
+      with .edtHelp_Other
+        .cControlSource = "V_artist.Art_Help_Other"
+        .cLabel = "Help Other"
+        .nRows = 5
+      endwith
+      .AddObject("edtComments", "L7Textarea")
+      with .edtComments
+        .cControlSource = "V_artist.Art_Comments"
+        .cLabel = "Comments"
+        .nRows = 5
+      endwith
+      .AddObject("edtKtb_Response", "L7Textarea")
+      with .edtKtb_Response
+        .cControlSource = "V_artist.Art_Ktb_Response"
+        .cLabel = "Ktb Response"
+        .nRows = 5
+      endwith
+
+      .addSecurityControls()
+      
+      .AddObject("edtNotes", "L7Textarea")
+      with .edtNotes
+        .cControlSource = "V_artist.Art_Notes"
+        .cLabel = "Notes"
+        .nRows = 5
+      endwith
+    endwith
+  endfunc  && AddControls
+      
+  * --------------------------------------------------------- *
+  function addParticipationControls()
+    with this
+      .AddObject("colPart", "L7CheckboxCollection")
+      with .colPart
+        .cGroupId = "part"
+      endwith
+      
+      .colPart.AddObjectToParent("chkPartial_Panel", "L7Checkbox")
+      with .chkPartial_Panel
+        .cControlSource = "V_artist.Art_Partial_Panel"
+        .cCaption = "Partial Panel"
+      endwith
+      .colPart.AddObjectToParent("chkTowers", "L7Checkbox")
+      with .chkTowers
+        .cControlSource = "V_artist.Art_Towers"
+        .cCaption = "Towers"
+      endwith
+      .colPart.AddObjectToParent("chkHelp_Install", "L7Checkbox")
+      with .chkHelp_Install
+        .cControlSource = "V_artist.Art_Help_Install"
+        .cCaption = "Help Install"
+      endwith
+      .colPart.AddObjectToParent("chkHelp_Materials", "L7Checkbox")
+      with .chkHelp_Materials
+        .cControlSource = "V_artist.Art_Help_Materials"
+        .cCaption = "Help Materials"
+      endwith
+      .colPart.AddObjectToParent("chkHelp_Meet_Up", "L7Checkbox")
+      with .chkHelp_Meet_Up
+        .cControlSource = "V_artist.Art_Help_Meet_Up"
+        .cCaption = "Help Meet Up"
+      endwith
+      .colPart.AddObjectToParent("chkHelp_Outreach", "L7Checkbox")
+      with .chkHelp_Outreach
+        .cControlSource = "V_artist.Art_Help_Outreach"
+        .cCaption = "Help Outreach"
+      endwith
+
+      .AddObject("edtParticipation", "L7Textarea")
+      with .edtParticipation
+        .cGroupId = "part"
+        .cControlSource = "V_artist.Art_Participation"
+        .cLabel = "Participation"
+        .nRows = 5
+      endwith
+
+    endwith
+    return 
+  endfunc  && addParticipationControls
+  * --------------------------------------------------------- *
+  * --------------------------------------------------------- *
+  function addSecurityControls()
+    with this
+
+      .AddObject("colSec", "L7CheckboxCollection")
+      with .colSec
+        .cGroupId = "sec"
+      endwith
+      
+      .colSec.AddObjectToParent("chkAdmin", "L7Checkbox")
+      with .chkAdmin
+        .cControlSource = "V_artist.Art_Admin"
+        .cCaption = "Admin"
+      endwith
+      .colSec.AddObjectToParent("chkCore", "L7Checkbox")
+      with .chkCore
+        .cControlSource = "V_artist.Art_Core"
+        .cCaption = "Core"
+      endwith
+      .colSec.AddObjectToParent("chkArtist", "L7Checkbox")
+      with .chkArtist
+        .cControlSource = "V_artist.Art_Artist"
+        .cCaption = "Artist"
+      endwith
+      .colSec.AddObjectToParent("chkAnonymous", "L7Checkbox")
+      with .chkAnonymous
+        .cControlSource = "V_artist.Art_Anonymous"
+        .cCaption = "Anonymous"
+      endwith
+      .colSec.AddObjectToParent("chkAccount_Lockout", "L7Checkbox")
+      with .chkAccount_Lockout
+        .cControlSource = "V_artist.Art_Account_Lockout"
+        .cCaption = "Account Lockout"
+      endwith
+      .colSec.AddObjectToParent("chkAccount_Revoked", "L7Checkbox")
+      with .chkAccount_Revoked
+        .cControlSource = "V_artist.Art_Account_Revoked"
+        .cCaption = "Account Revoked"
+      endwith
+
+      .AddObject("txtAccess_Token", "L7Textbox")
+      with .txtAccess_Token
+        .cGroupId = "sec"
+        .lDISABLED = .t. 
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_Access_Token"
+        .cLabel = "Access Token"
+      endwith
+      .AddObject("txtUser_Id", "L7Textbox")
+      with .txtUser_Id
+        .cGroupId = "sec"
+        .lDISABLED = .t. 
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_User_Id"
+        .cLabel = "User Id"
+      endwith
+    endwith
+    return 
+  endfunc  && addSecurityControls
+  * --------------------------------------------------------- *
+  function addTimeStampControls()
+    with this
+      .AddObject("lblOrig_Time", "L7Label")
+      with .lblOrig_Time
+        .cGroupId = 'created'
+        .cControlSource = "V_artist.Art_Orig_Time"
+        .cLabel = "Created"
+      endwith
+      .AddObject("lblOrig_Art_Fk", "L7Label")
+      with .lblOrig_Art_Fk
+        .cGroupId = 'created'
+        .cControlSource = "V_artist.Art_Orig_Art_Fk"
+        .cLabel = "Created By"
+      endwith
+      .AddObject("lblRev_Time", "L7Label")
+      with .lblRev_Time
+        .cGroupId = 'revised'
+        .cControlSource = "V_artist.Art_Rev_Time"
+        .cLabel = "Last Revised"
+      endwith
+      .AddObject("lblRev_Art_Fk", "L7Label")
+      with .lblRev_Art_Fk
+        .cGroupId = 'revised'
+        .cControlSource = "V_artist.Art_Rev_Art_Fk"
+        .cLabel = "Revised By"
+      endwith
+    endwith
+    return 
+  endfunc  && addTimeStampControls
+enddefine  && ArtistForm
+
 
 *** ===================================================== ***
 DEFINE CLASS AisArtQuery AS L7Query

@@ -1705,6 +1705,46 @@ DEFINE CLASS L7Toolbar AS L7CollectionControl
   * ------------------------------------------------------------------- *
 ENDDEFINE  && Class L7Toolbar
 
+*** ===================================================== ***
+define class L7CheckboxCollection AS L7CollectionControl  
+  cDefaultControlPattern = "%c(%s%i)"
+  cInterControlText = L7BR  && CHR(38) + 'nbsp;'       && &nbsp
+  ** nStyle = L7_MULTISTYLE_VERTICAL
+  lAutoRender = .T.
+  nMinChecked = 0
+  nMaxChecked = NULL && positive integer to enforce
+  * --------------------------------------------------------- *
+  function Valid
+    * Collect validation info to display at the "super-control" level:
+    local lnK, loControl, lnChecked
+    lnChecked = 0
+    for lnK = 1 TO THIS.nItems
+      loControl = THIS.aItems[m.lnK, 2]
+      if vartype(loControl.vNewValue) <> "L"
+        loop  && not a checkbox! -- something else inserted for rendering purposes
+      endif 
+      if loControl.vNewValue = .T.
+        lnChecked = m.lnChecked + 1 
+      endif 
+      if loControl.nInvalidCount > 0
+        this.nInvalidCount = this.nInvalidCount + loControl.nInvalidCount
+        *[[ Following line is unclear in value. Maybe better not to collect
+        * the text, but to have RenderValidation() walk the members.
+        * Inefficiency here when used in grids (flyweight chatter).
+        this.cValidationMessage = this.cValidationMessage + loControl.cValidationMessage
+      endif 
+    next  
+    if this.nMinChecked > m.lnChecked
+      this.AddValidationMessage(textmerge("Must check at least <<THIS.nMinChecked>>."))
+    endif 
+    if !isnull(this.nMaxChecked) and this.nMaxChecked < m.lnChecked
+      this.AddValidationMessage(textmerge("Cannot check more than <<THIS.nMaxChecked>>."))
+    endif 
+    * Any "combination of controls" stuff could go here...
+    return (this.nInvalidCount = 0 )
+  endfunc   
+enddefine && L7CheckboxCollection 
+
 #if .f.
 05/06/2003 - added cPreText/cPostText properties and adjusted Render() to use.
 05/07/2003 - RenderLabel: added flag to quash <label for> wrapper (used by grids)

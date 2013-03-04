@@ -330,7 +330,9 @@ enddefine
 *** ===================================================== ***
 define class aisForm AS L7Form
   * App-wide sub-class.
+  cCssStyle = "width: 80%;"
   cRenderClass = "L7FormRenderOverUnder"
+  nLayoutStyle = 2  && 1 = over/under, 2 = 2-column
   lToolbarAtTop = .T.
   lResetButton = .F.
   lNewRecord = .F.
