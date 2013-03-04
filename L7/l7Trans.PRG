@@ -43,11 +43,18 @@ DEFINE CLASS L7ViewTransaction AS LINE
   lAllowReadOnlySave     = .F.  && override with TRUE in special cases 
   *                         && like a user saving their own contact info
   lErrorOnUnchangedSave  = .F.
-  
   lAutoCloseViews        = .T.
+
+  * updategrams:
   lWriteXmlupdategram    = .F.
   lXmlupdategramOnErrors = .T.
   cXmlupdategram         = ""
+
+  * logging properties:
+  cLogPath               = NULL
+  lLogTransactions       = .F.
+  lDailyLogFolders       = .T.
+  cTransId               = NULL
   * --------------------------------------------------------- *
   FUNCTION DESTROY
     IF THIS.lAutoCloseViews
@@ -56,13 +63,11 @@ DEFINE CLASS L7ViewTransaction AS LINE
     RETURN 
   ENDFUNC
   * --------------------------------------------------------- *
-**  #IF .F.
-    FUNCTION ERROR( lnErr, lcMeth, lnLine )
-      THIS.lError = .T.
-      THIS.nFailures = AERROR( THIS.aFailures)
-      RETURN 
-    ENDFUNC  && ERROR
-**  #ENDIF
+  FUNCTION ERROR( lnErr, lcMeth, lnLine )
+    THIS.lError = .T.
+    THIS.nFailures = AERROR( THIS.aFailures)
+    RETURN 
+  ENDFUNC  && ERROR
   * --------------------------------------------------------- *
   FUNCTION GetErrorInfo
     IF THIS.lError
@@ -109,24 +114,32 @@ DEFINE CLASS L7ViewTransaction AS LINE
     RETURN 
   ENDFUNC  && CloseCursors
   * --------------------------------------------------------- *
-  FUNCTION Save
+  function Save
     * Template Method!
     * In a subclass, override BeforeSave()/AfterSave().
-    LOCAL llSaved
-    IF THIS.lReadOnlyUser AND NOT this.lAllowReadOnlySave
-      ERROR "Read only user cannot save."  && [to do: find more graceful approach]
-    ENDIF 
-    IF THIS.BeforeSave() AND NOT THIS.lError
-      llSaved = THIS.SaveImplementation()
-      THIS.lSaved = m.llSaved
-    ENDIF
-    THIS.AfterSave()
-    RETURN THIS.lSaved
-  ENDFUNC  && Save
+    local llSaved
+    if this.lReadOnlyUser AND NOT this.lAllowReadOnlySave
+      error "Read only user cannot save."  && [to do: find more graceful approach]
+    endif  
+    if this.lLogTransactions
+      this.lWriteXmlupdategram = .T. && even if not otherwise requested
+    endif 
+    if this.BeforeSave() AND !this.lError
+      llSaved = this.SaveImplementation()
+      this.lSaved = m.llSaved
+    endif 
+    this.AfterSave()
+    this.Log()
+    return this.lSaved
+  endfunc  && Save
   * --------------------------------------------------------- *
-  FUNCTION BeforeSave
+  function BeforeSave && blocking hook, return .f. to block
+    return .t. 
+  endfunc 
   * --------------------------------------------------------- *
-  FUNCTION AfterSave
+  function AfterSave && hook, could tweak logging choices
+    return .t. 
+  endfunc 
   * --------------------------------------------------------- *
   FUNCTION SaveImplementation
     LOCAL llTransOK, lnCursor
@@ -175,6 +188,52 @@ DEFINE CLASS L7ViewTransaction AS LINE
     ENDTRY 
     RETURN 
   ENDFUNC 
+  * --------------------------------------------------------- *
+  function Log
+    local loExc, lcFile, lcPath, llLog
+    if !this.lSaved 
+      if this.lXmlupdategramOnErrors
+        llLog = .T.
+        lcPath = THIS.GetFailureLogPath()
+      endif 
+    else  && saved
+      if this.lLogTransactions 
+        llLog = .T.
+        lcPath = THIS.cLogPath
+      endif 
+    endif  
+    if m.llLog
+      if !directory(m.lcPath)
+        mkdir (m.lcPath)
+      endif  
+      lcFile = addbs(m.lcPath) + forceext(this.cTransId, "xml")
+      strtofile(this.cXmlUpdateGram, m.lcFile)
+    endif  
+    return  
+  endfunc && Log 
+  * --------------------------------------------------------- *
+  function SetID(lcId)
+    this.cTransId = m.lcId
+    return  
+  endfunc  
+  * --------------------------------------------------------- *
+  function GetFailureLogPath()
+    return addbs(this.cLogPath) + "Failures\"
+  endfunc  
+  * --------------------------------------------------------- *
+  function SetLogPath(lcTopPath)  && called by App/Page factory
+    local ldDate
+    ldDate = date()
+    if this.lDailyLogFolders 
+      lcTopPath = addbs(m.lcTopPath) + ;
+        str(year(m.ldDate), 4, 0)  + "-Q" + str(ceiling(month(m.ldDate) / 3), 1, 0) + "\" + ;
+        padl(month(m.ldDate), 2, "0") + "\" + ;
+        padl(day(m.ldDate), 2, "0") + "\"
+      * e.g., path...\2006-Q4\12\01\
+    endif 
+    this.cLogPath = addbs(m.lcTopPath)
+    return  
+  endfunc 
   * --------------------------------------------------------- *
   FUNCTION PendingChanges
     * Are any changes pending (i.e., not yet saved).

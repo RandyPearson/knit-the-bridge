@@ -575,6 +575,78 @@ DEFINE CLASS L7Page AS CUSTOM
     RETURN m.lcBodyTag
   ENDFUNC
   * --------------------------------------------------------- *
+  function CreateTransaction(lcType)
+    * mostly, passthrough to app.CreateTransaction
+    local loExc, loTrans
+    try 
+      if empty(m.lcType) && if no name passed, build one from page name
+        lcType = this.Class
+        lcType = substr(m.lcType, 1 + at("_", m.lcType))  && remove app prefix, if applicable
+      endif 
+      loTrans = this.oApp.CreateTransaction(m.lcType)
+      if vartype(m.CurrentUser) = "O" AND CurrentUser.IsReadOnly()
+        loTrans.lReadOnlyUser = .T.  && can set .lAllowReadOnlySave for specific transactions
+      endif  
+    catch to loExc
+    endtry 
+    if vartype(loExc) = "O"
+      if loExc.ErrorNo = 1098
+        this.ErrorMsg("Cannot complete transaction at this time. " + loExc.Message)
+      else 
+        this.ErrorMsg("Cannot complete transaction at this time. " + loExc.Message)
+      endif 
+      return  
+    endif 
+    if vartype(loTrans) <> 'O'
+      this.ErrorMsg("Cannot complete transaction at this time: Transaction object not created.")
+      return  
+    endif 
+    return m.loTrans
+  endfunc  && CreateTransaction
+  * --------------------------------------------------------- *
+  function AssertTransaction(lcViewList, lcUpdateGram, lcType)
+    * Attempt transaction of specified views, and abort page creation
+    * upon failure.
+    local loTrans, lcMsg, llFail, llUpdateGram
+    llUpdateGram = VARTYPE(m.lcUpdateGram) = "C"  && pass by reference
+    loTrans = THIS.CreateTransaction(m.lcType)  && used to be direct class name: CREATE("GimTransaction")  
+    loTrans.lAutoCloseViews = .T.
+    if m.llUpdateGram
+      loTrans.lWriteXmlupdategram = .T.
+    endif 
+    loTrans.AddCursors(m.lcViewList)
+    if loTrans.Save()
+      if m.llUpdateGram
+        lcUpdateGram = loTrans.cXmlupdategram 
+      endif 
+    else 
+      llFail = .T.
+      lcMsg = loTrans.GetErrorInfo()
+    endif 
+    loTrans = NULL
+    if m.llFail
+      this.ErrorMsg( "Transaction failed", "Sorry, your changes could not be saved.", ;
+        , , .T., m.lcMsg)
+    endif 
+    return !m.llFail
+  endfunc && AssertTransaction
+  * --------------------------------------------------------- *
+  function AssertSave(loTrans)
+    * Attempts save using existing transaction, and aborts page processing 
+    * (via ErrorMsg) if save fails. Provides single-line handling of transaction logging/messaging. 
+    local lcMsg, llFail
+    if loTrans.Save()
+    else 
+      llFail = .T.
+      lcMsg = loTrans.GetErrorInfo()
+    endif 
+    if m.llFail
+      this.ErrorMsg( "Transaction failed", "Sorry, your changes could not be saved.", ;
+        , , .T., m.lcMsg)
+    endif 
+    return !m.llFail
+  endfunc  && AssertSave
+  * --------------------------------------------------------- *
   FUNCTION SSLCheck
     IF THIS.lSSLRequired
       IF THIS.SSLAvailable()

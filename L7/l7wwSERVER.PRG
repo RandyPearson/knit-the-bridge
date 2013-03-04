@@ -666,11 +666,13 @@ ENDDEFINE
 *** ========================================================= ***
 DEFINE CLASS L7AppConfig AS wwConfig
   lDisabled            = .F. && turn OFF the app temporarily
+  lReadOnly            = .F. && prevents data updates but allows app to function 
   cHTMLPagePath        = ""  && physical path for templates, etc.
   cDataPath            = ""  && physical path for data, if applicable
   cBackupDataPath      = ""  && often used for copying prior rev before structure mods
   cMessagingPath       = ""  && schedule task server data path
   cLogPath             = ""  && request logs
+  cTransactionPath     = ""  && transaction XMLUPDATEGRAMS
   nVirtualLevel        = 1   && http path levels consumed reaching virtual (0 = root operation)
   cVirtualPath         = ""  && (optional, ex: "/myApp/")
   cPageExtension       = ""  && (optional) app-specific script map

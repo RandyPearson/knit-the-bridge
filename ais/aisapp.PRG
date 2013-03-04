@@ -10,7 +10,6 @@
 define class AisApp AS KtbApp
 
   cConfigClass              = "AisConfig"  
-  cTransactionClass         = "AisTransaction"
   
   * Update as structures change - see CheckRevision() method:
   nDatabaseRevision         = THISAPP_DATABASE_REVISION

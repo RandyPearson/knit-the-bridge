@@ -145,7 +145,8 @@ define class ais_ArtForm as aisArtPage
   function ProcessRequest
 
     this.Assert(poContext.lCore)
-    this.cCancelUrl = StuffURL(THIS.cUrlA, 2, "OrgList")
+    this.cCancelUrl = iif(this.lAdding, StuffURL(THIS.cUrlA, 1, "ArtList"), ;
+      StuffURL(THIS.cUrlB, 2, "ArtHome"))
 
     local loForm, vp_cArt_PK
     vp_cArt_PK = IIF(THIS.lAdding, space(32), THIS.cArt)
