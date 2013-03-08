@@ -302,16 +302,16 @@ define class aisUser as L7User
     if isnull(this.oData)
       return "--no data--"
     endif
-    if empty(this.oData.Art_Last_Name )
-      return trim(this.oData.Art_User_ID )
-    else 
-      if empty(this.oData.Art_First_Name )
-        return trim(this.oData.Art_Last_Name )
-      else 
-        return trim(this.oData.Art_First_Name ) + [ ] + trim(this.oData.Art_Last_Name )
-      endif 
-    endif 
-    return  
+    *!*      if empty(this.oData.Art_Last_Name )
+    *!*        return trim(this.oData.Art_User_ID )
+    *!*      else 
+    *!*        if empty(this.oData.Art_First_Name )
+    *!*          return trim(this.oData.Art_Last_Name )
+    *!*        else 
+    *!*          return trim(this.oData.Art_First_Name ) + [ ] + trim(this.oData.Art_Last_Name )
+    *!*        endif 
+    *!*      endif 
+    return aisArtistName(this.oData)
   endfunc  && GetUserName                  
   * --------------------------------------------------------- *
   function GetEmailAddress

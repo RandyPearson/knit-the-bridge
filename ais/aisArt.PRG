@@ -105,15 +105,18 @@ define class ais_ArtHome as aisArtPage
   endfunc 
   * ----------------------------------------------------- *  
   function ProcessRequest
+    this.cSubTitle = AisArtistName(this.oArt)
     response.write(this.page_getPieceInfo())
-    response.write(L7ShowObject(this.oArt))
+
+    response.write(HTWrap("Raw Data for " + this.cSubTitle, 'h3'))
+    response.write(L7ShowObject(this.oArt, this.cSubTitle))
     return 
   endfunc 
   * ----------------------------------------------------- *  
   function page_getPieceInfo()
     local lcRet, loQ, loTbl, loCol
     lcRet = ''
-    lcRet = m.lcRet + HTWrap("This Person's Pieces", 'h3')
+    lcRet = m.lcRet + HTWrap("Pieces from " + this.cSubTitle, 'h3')
     loQ = createobject("AisPceQuery")
     with loQ
       .cArt = this.cArt
