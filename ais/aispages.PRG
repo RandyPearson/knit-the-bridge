@@ -24,6 +24,39 @@ define class aisPage as L7Page
   cCancelPage   = "InsList"
 
   cBodyElementClass = "aisBody"
+
+  cArt = ""
+  oArt = null
+  lArtRequired = .f.
+  * --------------------------------------------------------- *
+  function BeforeProcessRequest
+    if this.lArtRequired
+      if empty(this.cArt)
+        this.cArt = evl(this.cArt, this.StripUrl("art", .f., .t.))
+      endif 
+      if empty(this.cArt)  && Item required, but neither set nor found in URL.
+        this.NotFound()
+      else 
+        this.VerifyArtist()
+      endif 
+    endif 
+    dodefault()  && required bubble-up
+    return    
+  endfunc  
+  * --------------------------------------------------------- *
+  function VerifyArtist(tcKey)
+    local loData
+    lcKey = evl(m.tcKey, this.cArt)
+    loData = createobject("AisArtData")
+    if loData.FindRecord(m.lcKey)
+      if m.lcKey = this.cArt
+        this.oArt = loData.GetRecord()
+      endif 
+    else 
+      this.NotFound()
+    endif 
+    return  
+  endfunc   
   * --------------------------------------------------------- *
   function BeforeIdentifyUser()
     local llPageRequiresSession, llSessionRequired, llBlock, lcSessID, lcReason, lcSessUser, llLoggedIn, llReestablish, ;

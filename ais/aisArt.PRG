@@ -28,33 +28,6 @@ define class aisArtPage as aisPage
     endif
     return this.oArtQueryFlags 
   endfunc 
-  * --------------------------------------------------------- *
-  function BeforeProcessRequest
-    if this.lArtRequired
-      this.cArt = evl(this.cArt, this.StripUrl("art", .f., .t.))
-      if empty(this.cArt)  && Item required, but not found in URL.
-        this.NotFound()
-      else 
-        this.VerifyArtist()
-      endif 
-    endif 
-    dodefault()  && required bubble-up
-    return    
-  endfunc  
-  * --------------------------------------------------------- *
-  function VerifyArtist(tcKey)
-    local loData
-    lcKey = evl(m.tcKey, this.cArt)
-    loData = createobject("AisArtData")
-    if loData.FindRecord(m.lcKey)
-      if m.lcKey = this.cArt
-        this.oArt = loData.GetRecord()
-      endif 
-    else 
-      this.NotFound()
-    endif 
-    return  
-  endfunc   
 enddefine 
 
 *** ========================================================= ***
@@ -124,18 +97,50 @@ define class ais_ArtHome as aisArtPage
   * ----------------------------------------------------- *  
   function AddDefaultMenu
     this.addMenuItem("main\This", "Modify...", StuffUrl(this.cUrlA, 2, "ArtForm", "art", this.cArt))
+    if this.oArt.Art_Artist
+      this.addMenuItem("main\This", "New Piece...", StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt))
+    endif   
     dodefault()
     return 
   endfunc 
   * ----------------------------------------------------- *  
   function ProcessRequest
+    response.write(this.page_getPieceInfo())
     response.write(L7ShowObject(this.oArt))
+    return 
   endfunc 
-enddefine 
+  * ----------------------------------------------------- *  
+  function page_getPieceInfo()
+    local lcRet, loQ, loTbl, loCol
+    lcRet = ''
+    lcRet = m.lcRet + HTWrap("This Person's Pieces", 'h3')
+    loQ = createobject("AisPceQuery")
+    with loQ
+      .cArt = this.cArt
+      .Execute()
+    endwith 
+    
+    select (loQ.cAlias)
+    loTbl = createobject("AisTable")
+    with loTbl
+      loCol = .AddCursorColumn('Pce_ID')
+      loCol = .AddCursorColumn('Pce_Whole_Panel', 'Whole Panel?')
+      loCol = .AddCursorColumn('Pce_Dim_1', 'Dim 1')
+      loCol = .AddCursorColumn('Pce_Dim_2', 'Dim 2')
+      loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
+      loCol = .AddCursorColumn('Pce_Received', 'Received')
+
+      lcRet = m.lcRet + .Render()
+    endwith 
+    
+    return m.lcRet
+  endfunc && page_getPieceInfo
+enddefine && ArtHome
 
 *** ========================================================= ***
-define class ais_ArtNew as aisArtPage 
+define class ais_ArtNew as ais_ArtForm 
   lAdding = .t.
+  lArtRequired = .f. 
 enddefine 
 
 *** ========================================================= ***
@@ -145,7 +150,7 @@ define class ais_ArtForm as aisArtPage
   function ProcessRequest
 
     this.Assert(poContext.lCore)
-    this.cCancelUrl = iif(this.lAdding, StuffURL(THIS.cUrlA, 1, "ArtList"), ;
+    this.cCancelUrl = iif(this.lAdding, StuffURL(THIS.cUrlA, 2, "ArtList"), ;
       StuffURL(THIS.cUrlB, 2, "ArtHome"))
 
     local loForm, vp_cArt_PK
