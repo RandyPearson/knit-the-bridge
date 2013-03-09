@@ -109,7 +109,7 @@ define class ais_ArtHome as aisArtPage
     response.write(this.page_getPieceInfo())
 
     response.write(HTWrap("Raw Data for " + this.cSubTitle, 'h3'))
-    response.write(L7ShowObject(this.oArt, this.cSubTitle))
+    response.write(L7ShowObject(this.oArt, this.cSubTitle, [class="record"]))
     return 
   endfunc 
   * ----------------------------------------------------- *  

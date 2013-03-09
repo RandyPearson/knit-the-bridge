@@ -13,6 +13,7 @@ set procedure to AisDQ      additive  && Data and Query classes
 set procedure to AisPages   additive   
 set procedure to AisArt     additive  && Artist pages  
 set procedure to AisPce     additive  && Piece pages  
+set procedure to AisPnl     additive  && Panel pages  
 
 return 
 
@@ -329,7 +330,9 @@ define class aisTable as L7Table
   lSortable      = .t. 
   cTableClass    = "display"  && CSS Class [note, will have sortable added if above flag set]
   * additional overrides of L7Table:
-  nTableCellSpacing = 0
+  nTableCellSpacing = null
+  nTableBorder      = null
+  
   cDataRowClass  = [IIF(THIS.nGroupRowCount%2=1,"oddX","evenX")] 
   cNullDisplay   = "--"  && CHR(38) + [nbsp;]
   *--------------------------------------------  

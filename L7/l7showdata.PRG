@@ -47,52 +47,57 @@ EXTERNAL ARRAY ASTACKINFO, ASESSIONS
 FUNCTION L7ShowException(loExc, lcTitle)
   * TO DO: Customize later.
   RETURN L7ShowObject(m.loExc, EVL(m.lcTitle, "Exception Object"))
-ENDFUNC
+endfunc
+
 * --------------------------------------------------------- *
-FUNCTION L7ShowRecord
-  *    Author: J. Randy Pearson, Cycla Corp.
-  * Copyright: 2002 by Cycla Corp.
-  *   License: Free-ware. Sale or publication prohibited.
-  LPARAMETERS lcTitle, lcAlias, lcAttributes
+function L7ShowRecord(lcTitle, lcAlias, lcAttributes, lcExcludeProps, llExcludeNulls)
   * Pass a .T. for no title, a string for a specific title, 
   * and no parameter or .F. for self-generated title.
-  IF EMPTY( m.lcAlias)
-    lcALias = ALIAS()
-  ENDIF
-  IF VARTYPE( lcTitle) = "L"
-  	IF m.lcTitle
-  		lcTitle = ""
-  	ELSE
-  		lcTitle = m.lcALias + " Record " + TRANSFORM( RECNO(m.lcAlias)) + ;
-  			" of " + TRANSFORM( RECCOUNT(m.lcALias))
-  	ENDIF
-  ENDIF
-  lcAttributes = IIF( EMPTY( m.lcAttributes), "", m.lcAttributes)
-  LOCAL lcText, lcFieldText, lnFields, ii
-  lnFields = FCOUNT(m.lcAlias)
-  IF m.lnFields = 0
-  	RETURN "<P><B>No data table selected [L7ShowRecord].</B>"
-  ENDIF
+  local lcText, lcFieldText, lnFields, lcProp, ii, lvValue
+  if empty(m.lcAlias)
+    lcAlias = alias()
+  endif 
+  if vartype(m.lcTitle) = "L"
+    if m.lcTitle
+      lcTitle = ""
+    else 
+      lcTitle = m.lcALias + " Record " + transform( recno(m.lcAlias)) + ;
+        " of " + transform(reccount(m.lcAlias))
+    endif 
+  endif 
+  lcAttributes = iif(empty(m.lcAttributes), "", m.lcAttributes)
+  lnFields = fcount(m.lcAlias)
+  if m.lnFields = 0
+    return "<p><strong>No data table selected [L7ShowRecord].</strong></p>" + crlf
+  endif 
   lcText = []
   lcText = m.lcText + ;
-    [<a name="] + m.lcAlias + [Table] + TRANSFORM( RECNO(m.lcAlias)) + ["></a>] + ;
-    [<table align=center] + ;
-    IIF( [class=] $ LOWER( m.lcAttributes), [], [ class="DebugInfo"]) + ;
-    IIF( EMPTY( m.lcAttributes), [], [ ] + m.lcAttributes) + [>] + CHR(13) + CHR(10)
-  IF NOT EMPTY( m.lcTitle)
-  	lcText = m.lcText + [<tr><th class="DebugInfoSectionHeading" colspan="2" align=center>] + ;
-  		m.lcTitle + [</th></tr>] + CHR(13) + CHR(10)
-  ENDIF
-  FOR ii = 1 TO m.lnFields
-  	lcFieldText = [<tr valign=top><th width="25%" align=right>] + ;
-  		PROPER( STRTRAN( FIELD( m.ii, m.lcAlias), "_", " ")) + [:</th>] + ;
-  		[<TD>] + ;
-  		TRANSFORM( EVAL( m.lcALias + "." + FIELD( m.ii, m.lcALias))) + [</td></tr>]
-  	lcText = m.lcText + m.lcFieldText  + CHR(13) + CHR(10)
-  ENDFOR
-  lcText = m.lcText + [</table>] + CHR(13) + CHR(10)
-  RETURN m.lcText
-ENDFUNC  && L7ShowRecord
+    [<a name="] + m.lcAlias + [Table] + transform(recno(m.lcAlias)) + ["></a>] + ;
+    [<table] + ;
+    iif([class=] $ lower(m.lcAttributes), [], [ class="DebugInfo"]) + ;
+    iif( empty( m.lcAttributes), [], [ ] + m.lcAttributes) + [>] + crlf 
+  if !empty(m.lcTitle)
+    lcText = m.lcText + [<caption>] + m.lcTitle + [</caption>] + crlf
+  endif 
+  
+  for ii = 1 TO m.lnFields
+    lcProp = field( m.ii, m.lcAlias)
+    if [,] + lower(m.lcProp) + [,] $ m.lcExcludeProps
+      loop 
+    endif 
+    lvValue = eval( m.lcAlias + "." + m.lcProp)
+    if m.llExcludeNulls and isnull(m.lvValue)
+      loop
+    endif 
+    lcFieldText = [<tr valign="top"><th style="width: 25%; text-align: right;">] + ;
+      proper( strtran( m.lcProp, "_", " ")) + [:</th>] + ;
+      [<td>] + transform(m.lvValue) + [</td></tr>] 
+    lcText = m.lcText + m.lcFieldText  + CRLF
+  next && field 
+  
+  lcText = m.lcText + [</table>] + CRLF
+  return m.lcText
+endfunc  && L7ShowRecord 
 
 * --------------------------------------------------------- *
 FUNCTION L7ShowArray
@@ -332,13 +337,10 @@ define class L7ShowCOMPOBJ_HTMLRenderer as Custom
 enddefine  && L7ShowCOMPOBJ_HTMLRenderer 
 
 * --------------------------------------------------------- *
-FUNCTION L7ShowObject(loObject, lcTitle, lcAttributes, lcExcludeProps, llExcludeNulls)
-  *    Author: J. Randy Pearson, Cycla Corp.
-  * Copyright: 2002 by Cycla Corp.
-  *   License: Free-ware. Sale or publication prohibited.
-  IF VARTYPE( m.loObject) <> 'O'
-  	RETURN "<p><b>No object passed [L7ShowObject].</b>"
-  ENDIF
+function L7ShowObject(loObject, lcTitle, lcAttributes, lcExcludeProps, llExcludeNulls)
+  if vartype( m.loObject) <> 'O'
+    return "<p><strong>No object passed [L7ShowObject].</strong></p>" + crlf
+  endif 
   lcAttributes = IIF( EMPTY( m.lcAttributes), "", m.lcAttributes)
   lcExcludeProps = IIF( EMPTY( m.lcExcludeProps), "", ;
     [,] + LOWER( STRTRAN( m.lcExcludeProps, [ ])) + [,])
@@ -348,119 +350,104 @@ FUNCTION L7ShowObject(loObject, lcTitle, lcAttributes, lcExcludeProps, llExclude
 
   * Pass a .T. for no title, a string for a specific title, 
   * and no parameter or .F. for self-generated title.
-  IF VARTYPE( lcTitle) = "L"
-  	IF m.lcTitle
+  if vartype(m.lcTitle) = "L"
+  	if m.lcTitle
   		lcTitle = ""
-  	ELSE
+  	else 
   		lcTitle = IIF( m.lcObjName = "empty", "Data Object Properties", ;
   			"Object " + m.lcObjName + " Properties" )
-  	ENDIF
-  ENDIF
-  LOCAL loExc, lcText, lcFieldText, lvValue, lnProps, ii, lcType, lcType1, lcProp, llIsArray, llIsNull, lnArrayRows, lnArrayCols
-TRY
-  LOCAL ARRAY laProps[1]
-  lnProps = AMEMBERS( laProps, m.loObject, 0 )
-  lcText = []
-  IF VARTYPE( loObject.Name) = "C"
-    lcText = m.lcText + [<a name="] + loObject.Name + [Object"></a>]
-  ELSE  && scatter name objects don't have a name
-    lcText = m.lcText + [<a name="] + m.lcObjName + [Object"></a>]
-  ENDIF
-  lcText = m.lcText + [<table] + ;
-    IIF( [border=] $ LOWER( m.lcAttributes), [], [ border="1"]) + ;
-    IIF( [class=] $ LOWER( m.lcAttributes), [], [ class="DebugInfo"]) + ;
-    IIF( EMPTY( m.lcAttributes), [], [ ] + m.lcAttributes) + [>] + CHR(13) + CHR(10)
-  IF NOT EMPTY( m.lcTitle)
-  	lcText = m.lcText + [<tr><th colspan="2" class="DebugInfoSectionHeading">] + ;
-  		m.lcTitle + [</td></th>] + CHR(13) + CHR(10)
-  ENDIF
-  FOR ii = 1 TO m.lnProps
-    llIsNull = .F.
-    lcType1 = ""
-    lcProp = laProps[ m.ii]
-    IF [,] + lower(m.lcProp) + [,] $ m.lcExcludeProps
-      LOOP
-    ENDIF
-  	lcType = TYPE( 'loObject.' + m.lcProp )
-    if !m.lcType = 'U'
-      lcType1 = type('m.loObject.' + m.lcProp, 1)  && A = array, C = collection, else U
-      do case
-      case m.lcType1 = 'U'
-        lvValue = evaluate('m.loObject.' + m.lcProp) 
-        llIsNull = isnull(m.lvValue)
-      
-      case m.lcType1 = "A"  && array
-        lnLen = alen(m.loObject.&lcProp)
-        lvValue = []
-        for lnArrItem = 1 to m.lnLen
-          lvArrItem = m.loObject.&lcProp[m.lnArrItem]
-          lvValue = m.lvValue + transform(m.lvArrItem) + [<br/>]
-        next
-
-      case m.lcType1 = "C"  && collection 
-        lvValue = L7JsonSerialize(m.loObject.&lcProp) 
-      
-      endcase
-      
-        *!*        llIsArray = m.lcType1 = 'A'  && TYPE('ALEN(loObject.' + laProps[ m.ii] + ')') = "N"
-        *!*        IF m.llIsArray
-        *!*          lnArrayRows = EVALUATE('ALEN(loObject.' + laProps[ m.ii] + ',1)')
-        *!*          lnArrayCols = EVALUATE('ALEN(loObject.' + laProps[ m.ii] + ',2)')
-        *!*        ELSE
-        *!*          lvValue = EVALUATE('loObject.' + m.lcProp )
-        *!*          llIsNull = ISNULL(m.lvValue)
-        *!*        ENDIF
-    endif   
-    if m.llIsNull and m.llExcludeNulls
-      loop
+  	endif 
+  endif 
+  local loExc, lcText, lcFieldText, lvValue, lnProps, ii, lcType, lcType1, lcProp, llIsArray, llIsNull, lnArrayRows, lnArrayCols
+  try 
+    local ARRAY laProps[1]
+    lnProps = AMEMBERS( laProps, m.loObject, 0 )
+    lcText = []
+    lcText = m.lcText + [<a name="] + iif(VARTYPE(loObject.Name) = "C", loObject.Name, m.lcObjName) + [Object"></a>] + CRLF
+    lcText = m.lcText + [<table] + ;
+      IIF( [class=] $ LOWER( m.lcAttributes), [], [ class="DebugInfo"]) + ;
+      IIF( EMPTY( m.lcAttributes), [], [ ] + m.lcAttributes) + [>] + CRLF
+    if !empty(m.lcTitle)
+      lcText = m.lcText + [<caption>] + m.lcTitle + [</caption>] + crlf
     endif 
-  	do case 
-    case m.lcType = "U"
-      lcFieldText = [(not defined)]
-
-    case m.llIsNull
-      lcFieldText = [.NULL.]
-
-  	case inlist(m.lcType1, 'A', 'C')  && serialized array or collection 
-      lcFieldText = m.lvValue
-      
-    case m.lcType = "O" && object, so serialize it
-  		lcFieldText = L7JsonSerialize(m.lvValue)
-
-    case m.lcType = "L"
-      lcFieldText = IIF(m.lvValue, "YES", "no") && IIF(m.lvValue, ".TRUE.", ".FALSE.")
-
-    case m.lcType = "C"
-      lcFieldText = m.lvValue
-
-      * Strip HTML tags: [[why???
-      
-      lcFieldText = STRTRAN( m.lcFieldText, "<", "&lt;")
-      lcFieldText = STRTRAN( m.lcFieldText, ">", "&gt;")
-      lcFieldText = STRTRAN( m.lcFieldText, '"', "&quot;")
-
-  	otherwise && other types like numeric or date
-  		lcFieldText = TRANSFORM(m.lvValue)
-      
-  	endcase 
     
-  	lcFieldText = [<tr valign=top><th style="font: normal small-caps medium xx-small; width: 25%; text-align: right;">] + ;
-  		proper(chrtran(m.lcProp, "_", " ")) + ;
-      [:</th>] + ;
-      [<td style="font-size: small;">] + ;
-  		m.lcFieldText + [</td></tr>]
-  		
-  	lcText = m.lcText + m.lcFieldText + CHR(13) + CHR(10)
-  ENDFOR
-  lcText = m.lcText + [</table>] + CHR(13) + CHR(10)
-CATCH TO loExc
-  lcText = '<h2>Error: ' + loExc.Message + ;
-    ' [function L7ShowObject + line ' + TRANSFORM(loExc.LineNo) + ']</h2>' + ;
-    L7ShowStackInfo()
-ENDTRY
+    for ii = 1 TO m.lnProps
+      llIsNull = .F.
+      lcType1 = ""
+      lcProp = laProps[ m.ii]
+      if [,] + lower(m.lcProp) + [,] $ m.lcExcludeProps
+        loop 
+      endif 
+    	lcType = TYPE( 'loObject.' + m.lcProp )
+      if !m.lcType = 'U'
+        lcType1 = type('m.loObject.' + m.lcProp, 1)  && A = array, C = collection, else U
+        do case
+        case m.lcType1 = 'U'
+          lvValue = evaluate('m.loObject.' + m.lcProp) 
+          llIsNull = isnull(m.lvValue)
+        
+        case m.lcType1 = "A"  && array
+          lnLen = alen(m.loObject.&lcProp)
+          lvValue = []
+          for lnArrItem = 1 to m.lnLen
+            lvArrItem = m.loObject.&lcProp[m.lnArrItem]
+            lvValue = m.lvValue + transform(m.lvArrItem) + [<br/>]
+          next
 
-  RETURN m.lcText
-ENDFUNC  && L7ShowObject
+        case m.lcType1 = "C"  && collection 
+          lvValue = L7JsonSerialize(m.loObject.&lcProp) 
+        
+        endcase
+        
+      endif   
+      if m.llIsNull and m.llExcludeNulls
+        loop
+      endif 
+    	do case 
+      case m.lcType = "U"
+        lcFieldText = [(not defined)]
+
+      case m.llIsNull
+        lcFieldText = [.NULL.]
+
+    	case inlist(m.lcType1, 'A', 'C')  && serialized array or collection 
+        lcFieldText = m.lvValue
+        
+      case m.lcType = "O" && object, so serialize it
+    		lcFieldText = L7JsonSerialize(m.lvValue)
+
+      case m.lcType = "L"
+        lcFieldText = IIF(m.lvValue, "YES", "no") && IIF(m.lvValue, ".TRUE.", ".FALSE.")
+
+      case m.lcType = "C"
+        lcFieldText = m.lvValue
+
+        * Strip HTML tags: [[why???
+        
+        lcFieldText = STRTRAN( m.lcFieldText, "<", "&lt;")
+        lcFieldText = STRTRAN( m.lcFieldText, ">", "&gt;")
+        lcFieldText = STRTRAN( m.lcFieldText, '"', "&quot;")
+
+    	otherwise && other types like numeric or date
+    		lcFieldText = TRANSFORM(m.lvValue)
+        
+    	endcase 
+      
+    	lcFieldText = [<tr valign="top"><th style="width: 25%; text-align: right;">] + ;
+    		proper(chrtran(m.lcProp, "_", " ")) + [:</th>] + ;
+        [<td>] + m.lcFieldText + [</td></tr>]
+    		
+    	lcText = m.lcText + m.lcFieldText + CRLF
+    endfor 
+    lcText = m.lcText + [</table>] + CRLF
+  catch to loExc
+    lcText = '<h2>Error: ' + loExc.Message + ;
+      ' [function L7ShowObject + line ' + TRANSFORM(loExc.LineNo) + ']</h2>' + ;
+      L7ShowStackInfo()
+  endtry 
+
+  return m.lcText
+endfunc  && L7ShowObject
 
 * --------------------------------------------------------- *
 FUNCTION L7ShowStackInfo( llNoHTML, lcAttributes, lnTruncate)
