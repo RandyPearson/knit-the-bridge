@@ -18,7 +18,8 @@ function aisCreatePanel(toPce)
     Pnl_Single_Piece with toPce.Pce_Whole_Panel ;
     Pnl_Dim_1 with toPce.Pce_Dim_1 ; && initial approx, can free-wheel 
     Pnl_Dim_2 with toPce.Pce_Dim_2 ; &&  ''
-    Pnl_Type with toPce.Pce_Type 
+    Pnl_Type with toPce.Pce_Type ; 
+    Pnl_ID with AisAssignID("PNL")
 
   select V_Panel  && UpdateControlSources can alter work area
   StampRec( CurrentUser, Environ.item("appManager.startTime") )
@@ -110,6 +111,64 @@ define class ais_PnlList as aisPnlPage
   endfunc 
 enddefine 
 
+*** ========================================================= ***
+define class ais_PnlHome as aisPnlPage 
+  * ----------------------------------------------------- *  
+  function AddDefaultMenu
+    this.addMenuItem("main\This", "Modify...", StuffUrl(this.cUrlA, 2, "PnlForm", "pnl", this.cPnl))
+    dodefault()
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    this.cSubTitle = "Panel " + this.oPnl.Pnl_ID
+    response.write(this.page_getPieceInfo())
+
+    response.write(HTWrap("Raw Data for " + this.cSubTitle, 'h3'))
+    response.write(L7ShowObject(this.oPnl, this.cSubTitle, [class="record"]))
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_getPieceInfo()
+    local lcRet, loQ, loTbl, loCol
+    lcRet = ''
+    lcRet = m.lcRet + HTWrap("Pieces from " + this.cSubTitle, 'h3')
+    loQ = createobject("AisPceQuery")
+    with loQ
+      .cPnl = this.cPnl
+      .lJoinArtist = .t. 
+      .Execute()
+    endwith 
+    
+    urls.add(StuffUrl(this.cUrlA, 2, "PceHome"), "PceHome")
+    urls.add(StuffUrl(this.cUrlA, 2, "PceForm"), "PceForm")
+    urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
+
+    select (loQ.cAlias)
+    loTbl = createobject("AisTable")
+    with loTbl
+      loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
+      loCol = .addCursorColumn("Pce_ID", "Piece ID", ;
+        [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)])
+      loCol = .addCursorColumn("Art_ID", "Artist ID", ;
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), Art_ID)])
+      loCol = .addCursorColumn("Art_Last_Name", "Last Name", ;
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), Art_Last_Name)])
+      loCol = .addCursorColumn("Art_First_Name", "First Name")
+      loCol = .AddCursorColumn('Pce_Whole_Panel', 'Whole Panel?')
+      loCol = .AddCursorColumn('Pce_Dim_1', 'Dim 1')
+      loCol = .AddCursorColumn('Pce_Dim_2', 'Dim 2')
+      loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
+      loCol = .AddCursorColumn('Pce_Received', 'Received')
+      loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
+        'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit Piece...]")')
+
+      lcRet = m.lcRet + .Render()
+    endwith 
+    
+    return m.lcRet
+  endfunc && page_getPieceInfo
+enddefine && ArtHome
 
 *** ===================================================== ***
 define class AisPnlQuery as L7Query

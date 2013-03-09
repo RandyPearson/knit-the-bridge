@@ -45,6 +45,46 @@ function aisArtistName(tvArt)
   endif 
   return  
 endfunc  && aisArtistName
+* --------------------------------------------------------- *
+function AisAssignID(lcPref)
+  local lnNo, lcRet
+  lcPref = upper(alltrim(m.lcPref))
+  lnNo = AisNextId(m.lcPref)
+  return m.lcPref + padl(transform(m.lnNo), THISAPP_LENGTH_ID_FIELDS - len(m.lcPref), "0")
+endfunc 
+* --------------------------------------------------------- *
+function AisNextId(lcName)
+  local lnNextId, loSelect, vp_cName, ii, llOK
+  lcName = padr(upper(m.lcName), THISAPP_LENGTH_UNIQUE_NAME)
+  loSelect = createobject("L7PreserveSelect") 
+  lnNextId = -1
+  use KtbAis!Unique again alias AisNextId_ in select("AisNextId_")
+  select AisNextId_ 
+  llOk = .t.
+  locate for Unq_Name = m.lcName
+
+  if !found()
+    lnNextId = 1
+    append blank
+    = rlock()
+    replace Unq_Name WITH m.lcName
+  else
+    if rlock() 
+      lnNextId = Unq_Last_Num + 1
+    else
+      llOK = .f. 
+      error "could not lock Unique"
+    endif 
+  endif 
+  if m.llOK
+    replace Unq_Last_Num WITH m.lnNextId, ;
+      Unq_Rev_Time with Environ.item("appManager.startTime")
+  endif 
+  unlock 
+  use in select("AisNextId_")
+  return m.lnNextId
+endfunc 
+* End: NextId()
 
 *** ========================================================= ***
 * [[ all methods here need to defend against correct database not being current

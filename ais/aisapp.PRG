@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION 0
+#DEFINE THISAPP_DATABASE_REVISION 1
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -183,11 +183,14 @@ define class AisApp AS KtbApp
     ltNow = DATETIME()
 
     do case 
-    * CASE m.lnRev = 1
+    case m.lnRev = 1
+      do CreateTable ;
+        with "Unique", this.cDataPath, this.cDataBase
+
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
-      error "Unknown Database Revision " + TRANSFORM(m.lnRev)
+      error "Unknown Database Revision " + transform(m.lnRev)
     
     endcase 
   endfunc && ApplyRevision
@@ -216,6 +219,9 @@ function CreateEmptyDatabase( lcPath)
 
   create database ( THISAPP_DATABASE )
 
+  * Unique ID Table:
+  DO CreateUniqueTable
+
   * System Table:
   do CreateSystemTable
 
@@ -241,6 +247,28 @@ function CreateEmptyDatabase( lcPath)
 
   return 
 endfunc  && CreateEmptyDatabase
+
+* ---------------------------------------------------------- *
+FUNCTION CreateUniqueTable
+  * Unique ID Table
+
+  * Don't declare this PRIVATE. This command allows this procedure
+  * to be run by itself, as in DO <thisproc> IN <thisfile>.PRG:
+  poEnv = GetEnvObject()
+
+  CREATE TABLE ( "Unique" ) NAME Unique ;
+    ( ;
+      Unq_Name C( THISAPP_LENGTH_UNIQUE_NAME) PRIMARY KEY, ;
+      Unq_Last_Num I, ;
+      Unq_Rev_Time T ;
+    )
+  INDEX ON DELETED() TAG Deleted
+  INDEX ON UPPER( Unq_Name) TAG Name_U
+  * Comment:
+  DBSETPROP( "Unique", "Table", "Comment", ;
+    [One record per "counter" of unique ID assignments. ])
+  return  
+endfunc   && CreateUniqueTable
 
 * ---------------------------------------------------------- *
 FUNCTION CreateSystemTable
