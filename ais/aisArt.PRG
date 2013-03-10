@@ -120,18 +120,69 @@ define class ais_ArtHome as aisArtPage
   endfunc 
   * ----------------------------------------------------- *  
   function page_getMainRecord()
-    local loElem, loRow, lcRet
+    local loElem, loRow, lcRet, loData
     lcRet = ""
+    loData = this.oArt
     loElem = createobject("aisRecordElement")
     with loElem
       loRow = .getRowObject()
-      .cCaption = AisArtistName(this.oArt) + " Data"
+      .cCaption = AisArtistName(m.loData) + " Data"
+      .AddHeading('Artist Information')
       
-      .AddRow("Artist Name", AisArtistName(this.oArt))
+      .AddRow("Approved", loData.ART_APPROVED, .F.)
+      .AddRow("Admin", loData.ART_ADMIN, .F.)
+      .AddRow("Core", loData.ART_CORE, .F.)
+      .AddRow("Artist", loData.ART_ARTIST, .F.)
+      .AddRow("Anonymous", loData.ART_ANONYMOUS, .F.)
+      .AddRow("Unknown", loData.ART_UNKNOWN, .F.)
+      .AddRow("Full Name", TRIM(loData.ART_FULL_NAME), .F.)
+      .AddRow("Last Name", TRIM(loData.ART_LAST_NAME), .F.)
+      .AddRow("First Name", TRIM(loData.ART_FIRST_NAME), .F.)
+      .AddRow("Name Orig", L7ParseOnView(loData.ART_NAME_ORIG), .F.)
+      .AddRow("Email", TRIM(loData.ART_EMAIL), .F.)
+      .AddRow("Phone", TRIM(loData.ART_PHONE), .F.)
+      .AddRow("Contact Orig", L7ParseOnView(loData.ART_CONTACT_ORIG), .F.)
+      .AddRow("Address", L7ParseOnView(loData.ART_ADDRESS), .F.)
+      .AddRow("Neighborhood", TRIM(loData.ART_NEIGHBORHOOD), .F.)
+      .AddRow("Age Range", TRIM(loData.ART_AGE_RANGE), .F.)
+      .AddRow("Participation", L7ParseOnView(loData.ART_PARTICIPATION), .F.)
+      .AddRow("Partial Panel", loData.ART_PARTIAL_PANEL, .F.)
+      .AddRow("Bit Info", L7ParseOnView(loData.ART_BIT_INFO), .F.)
+      .AddRow("Panel Info", L7ParseOnView(loData.ART_PANEL_INFO), .F.)
+      .AddRow("Panel Count", loData.ART_PANEL_COUNT, .F.)
+      .AddRow("Received", loData.ART_RECEIVED, .F.)
+      .AddRow("Storage Location", L7ParseOnView(loData.ART_STORAGE_LOCATION), .F.)
+      .AddRow("Towers", loData.ART_TOWERS, .F.)
+      .AddRow("Help Install", loData.ART_HELP_INSTALL, .F.)
+      .AddRow("Help Materials", loData.ART_HELP_MATERIALS, .F.)
+      .AddRow("Help Meet Up", loData.ART_HELP_MEET_UP, .F.)
+      .AddRow("Help Outreach", loData.ART_HELP_OUTREACH, .F.)
+      .AddRow("Help Other", L7ParseOnView(loData.ART_HELP_OTHER), .F.)
+      .AddRow("Comments", L7ParseOnView(loData.ART_COMMENTS), .F.)
+      .AddRow("Register Time", loData.ART_REGISTER_TIME, .F.)
+      .AddRow("Ktb Response", L7ParseOnView(loData.ART_KTB_RESPONSE), .F.)
+
+      if poContext.lCore
+        .AddHeading('Administrative Information')
+        .AddRow("Pk", TRIM(loData.ART_PK), .F., "Private")
+        .AddRow("Inactive", loData.ART_INACTIVE, .F., "Private")
+        .AddRow("Access Token", TRIM(loData.ART_ACCESS_TOKEN), .F.)
+        .AddRow("User Id", TRIM(loData.ART_USER_ID), .F.)
+        .AddRow("Password Count", loData.ART_PASSWORD_COUNT, .F.)
+        .AddRow("Password Time", loData.ART_PASSWORD_TIME, .F.)
+        .AddRow("Password Expiry Time", loData.ART_PASSWORD_EXPIRY_TIME, .F.)
+        .AddRow("Account Lockout", loData.ART_ACCOUNT_LOCKOUT, .F.)
+        .AddRow("Account Revoked", loData.ART_ACCOUNT_REVOKED, .F.)
+        .AddRow("Notes", L7ParseOnView(loData.ART_NOTES), .F., "Private")
+        .AddRow("Created", TRANSFORM(loData.ART_ORIG_TIME) + [ by ] + AisArtistName(loData.ART_Orig_Art_FK), .F., "Private")
+        .AddRow("Last Modified", TRANSFORM(loData.ART_REV_TIME) + [ by ] + AisArtistName(loData.ART_Rev_Art_FK), .F., "Private")
+      endif
+      
       lcRet = lcRet + .Render()
     endwith 
     return m.lcRet
   endfunc && page_getMainRecord
+
   * ----------------------------------------------------- *  
   function page_getPieceInfo()
     local lcRet, loQ, loTbl, loCol
