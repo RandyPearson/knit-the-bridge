@@ -381,18 +381,20 @@ enddefine && AisPage
 *** ========================================================= ***
 define class ais_Home as aisPage 
   nMinLoginLevel = L7_NONE  && users always need access to login form
+  cSubTitle = "Home"
   * ----------------------------------------------------- *  
   function ProcessRequest
-    Response.Write("Hello?")
+    Response.Write("Home page content goes here...")
   endfunc 
 enddefine 
 
 *** ========================================================= ***
 define class ais_About as aisPage 
   nMinLoginLevel = L7_NONE  && users always need access to login form
+  cSubTitle = "About"
   * ----------------------------------------------------- *  
   function ProcessRequest
-    Response.Write("Hello?")
+    Response.Write("About page content goes here...")
   endfunc 
 enddefine 
 

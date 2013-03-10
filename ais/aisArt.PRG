@@ -34,6 +34,7 @@ enddefine
 define class ais_ArtList as aisArtPage 
   lArtRequired = .f.
   cPage_Flags = null
+  cSubTitle = "Artists N'At"
   * --------------------------------------------------------- *
   function BeforeProcessRequest
     this.cPage_Flags = this.ReadQueryString("flags", .t., .t.)

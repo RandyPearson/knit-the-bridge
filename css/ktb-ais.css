@@ -3,7 +3,8 @@ body { margin: 0; font-family: Tahoma; cursor: default; overflow: hidden /* for 
 /* Header */
 a { text-decoration: underline }
 #header { position: absolute; top: 0; left: 0; right: 0; height: 57px; color: white; background: -moz-linear-gradient(top, #CC0000, #990000); padding: 5px 0 0 0; z-index: 200 }
-#header h1 { font-weight: normal; font-size: 20px; margin: 0; cursor: pointer}
+#header h1 { font-weight: normal; font-face: Tahoma, Arial; font-size: 18px; margin: 0;}
+#header h2 { font-weight: normal; font-face: Tahoma, Arial; font-size: 16px; margin: 0;}
 #header .user { position: absolute; right: 5px; top: 7px; font-size: 14px }
 #header .link { font-size: 14px }
 #header #signOut { color: white }
@@ -14,17 +15,9 @@ a { text-decoration: underline }
 #header.staging {background: -moz-linear-gradient(top, #0000CC, #000066)}
 .development #header{background: -moz-linear-gradient(top, #00CC00, #006600)}
 #server-override-notice-content {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  margin-left: -115px;
-  width: 230px;
-  height: 19px;
+  position: absolute; top: 0; left: 50%; margin-left: -115px; width: 230px; height: 19px; padding-top: 3px;
   background-image: url("../icons/Server_Override_Trapezoid.png");
-  color: black;
-  font-size: 10px;
-  text-align: center;
-  padding-top: 3px
+  color: black;  font-size: 10px; text-align: center;
 }
 
 #header .tabs { clear: both; padding: 4px 10px 0 10px; position: absolute; right: 0; left: 0; bottom: 0; }
@@ -60,8 +53,8 @@ a { text-decoration: underline }
 #content{padding: 10px;}
 #content { padding-right: 255px }
 
-#content h2, #content h3, #content h4 {font-family: Tahoma}
-
+#content h2, #content h3, #content h4 {font-family: Tahoma, Arial}
+#content {font-family: Tahoma, Arial; font-size: 11px;}
 a.action { color: #999; text-decoration: underline; font-weight: normal }
 a.action:hover { color: #c00; cursor: pointer }
 div.inline { display: inline-block; vertical-align: middle }
@@ -119,7 +112,9 @@ table.sortable .sortdown { background-image: url('../icons/SortTableDown.gif'); 
 table.sortable thead th {	padding: 3px 10px 0 1px;	cursor: pointer;}
 
 /*  Misc */
-div.admin{border: 1px dashed #333; background-color: #ccc; margin: 5px;}
+div.admin{border: 1px dashed #333; background-color: #ddd; margin-top: 20px;}
+p.debug{margin: 1px;}
+.debug{font-size: 10px; font-family: Courier, monospace; color: #303;}
 
 .top, .bottom {	padding: 15px;	background-color: #F5F5F5;	border: 1px solid #CCCCCC;}
 .top {	float: none;}

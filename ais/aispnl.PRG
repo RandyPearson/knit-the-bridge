@@ -81,6 +81,7 @@ enddefine && AisPnlPage
 *** ========================================================= ***
 define class ais_PnlList as aisPnlPage 
   lPnlRequired = .f.
+  cSubTitle = "Panels"
   * ----------------------------------------------------- *  
   function AddDefaultMenu
     dodefault()

@@ -245,7 +245,8 @@ define class aisBody AS L7PageElement
       .WriteLn(textmerge('<div id="server-override-notice-content"><<request.getServerName()>></div>'))
 
       text to lcTmp noshow pretext 3
-        <h2 id="server-page-title"><<page.cSubTitle>></h2>
+        <h2 id="server-app-title"><<page.cTitle>></h2>
+        <h1 id="server-page-title"><<page.cSubTitle>></h1>
         <div class="user">
           User: <span class="user-name"><<CurrentUser.getUserName()>></span> 
           (<a href="<<stuffUrl(page.cUrlA,'l','0',2,'Login')>>" id="signOut">sign out</a>)
