@@ -86,20 +86,28 @@ DEFINE CLASS L7Menu AS L7CollectionHierarchy
     loObj = DODEFAULT(m.lcName, m.lcPrompt)  && this does the Add()
     * Assign further menu-specific properties:
     loObj.cUrl = m.lcUrl
-    loObj.cTooltip = m.lcTooltip
-    loObj.cLinkAtt = m.lcAttrib
-    RETURN loObj
-  ENDFUNC  && AddItem
+    if vartype(m.lcToolTip) = 'C'
+      loObj.cTooltip = m.lcTooltip
+    endif
+    if vartype(m.lcAttrib) = 'C'
+      loObj.cLinkAtt = m.lcAttrib
+    endif 
+    return m.loObj
+  endfunc  && AddItem
   * ----------------------------------------------------------- *
-  FUNCTION AddFolder(lcPath, lcDisplayName, lcUrl, lcTooltip, lcAttrib)
-    LOCAL loObj
-    loObj = DODEFAULT(m.lcPath, m.lcDisplayName)
+  function  AddFolder(lcPath, lcDisplayName, lcUrl, lcTooltip, lcAttrib)
+    local loObj
+    loObj = dodefault(m.lcPath, m.lcDisplayName)
     * Assign further menu-specific properties:
     loObj.cUrl = m.lcUrl
-    loObj.cTooltip = m.lcTooltip
-    loObj.cLinkAtt = m.lcAttrib
-    RETURN m.loObj
-  ENDFUNC
+    if vartype(m.lcToolTip) = 'C'
+      loObj.cTooltip = m.lcTooltip
+    endif 
+    if vartype(m.lcAttrib) = 'C'
+      loObj.cLinkAtt = m.lcAttrib
+    endif 
+    return  m.loObj
+  endfunc && AddFolder 
   * ----------------------------------------------------------- *
   FUNCTION AddSubmenu(lcPath, lcPrompt)  && (somewhat) Deprecated
     RETURN THIS.AddFolder(m.lcPath, m.lcPrompt)
@@ -124,7 +132,7 @@ DEFINE CLASS L7CollectionHierarchy AS Collection
   * ----------------------------------------------------------- *
   FUNCTION AddFolder(lcPath, lcDisplayName)
     THIS.CleanPath(@lcPath)
-    LOCAL lnCount, lnKey, lcWord, loObj, loRet
+    LOCAL lnCount, lnKey, lcWord, loObj, loRet, lcChildPath
     lcWord = GETWORDNUM(m.lcPath, 1, [\])
     IF EMPTY(m.lcWord)
       ERROR "Invalid path sent to AddFolder method."
@@ -149,9 +157,8 @@ DEFINE CLASS L7CollectionHierarchy AS Collection
       ENDIF
       loRet = m.loObj
     ELSE  && traverse further
-      LOCAL lcChildPath
       lcChildPath = SUBSTR(m.lcPath, LEN(m.lcWord) + 2)
-      loRet = m.loObj.AddFolder(m.lcChildPath, m.lcDisplayName)
+      loRet = m.loObj.AddFolder(m.lcChildPath, m.lcDisplayName)  && <<-- RECURSION! 
     ENDIF
     RETURN m.loRet
   ENDFUNC  && AddFolder
@@ -178,7 +185,7 @@ DEFINE CLASS L7CollectionHierarchy AS Collection
   * ----------------------------------------------------------- *
   FUNCTION GetItem(lcPath)
     THIS.CleanPath(@lcPath)
-    LOCAL lnKey, lcWord
+    LOCAL lnKey, lcWord, lcChildPath
     lcWord = GETWORDNUM(m.lcPath, 1, [\])
     IF EMPTY(m.lcWord)
       RETURN NULL
@@ -190,11 +197,11 @@ DEFINE CLASS L7CollectionHierarchy AS Collection
       IF GETWORDCOUNT(m.lcPath, [\]) = 1  && immediate node
         RETURN THIS.Item(m.lnKey)
       ELSE  && traverse further down path hierarchy
-        LOCAL lcChildPath
         lcChildPath = SUBSTR(m.lcPath, LEN(m.lcWord) + 2)
         RETURN THIS.Item(m.lnKey).GetItem(m.lcChildPath)
       ENDIF
-    ENDIF
+    endif
+    return 
   ENDFUNC  && GetItem
   * ----------------------------------------------------------- *
   FUNCTION IsFolder()

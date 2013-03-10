@@ -1293,33 +1293,36 @@ DEFINE CLASS L7Page AS CUSTOM
     THIS.oMenu.AddNamedMenuItem(m.lcPath, m.lcPrompt, m.lcUrl, m.lcTooltip, m.lcLinkAtt)
   ENDFUNC
   * --------------------------------------------------------- *
-  FUNCTION AddMenuItem( lcMenuList, lcPrompt, lcUrl, lcTooltip, lcExcludePage, lcLinkAtt)
-    IF VARTYPE( m.lcExcludePage ) = "C" AND NOT EMPTY( m.lcExcludePage )
-      IF UPPER( m.lcExcludePage) == UPPER( THIS.oApp.cActivePage )
-        * Specfically exclude menu item -- typically because it is 
-        * a link to the current page!
-        RETURN
-      ENDIF
-      IF EMPTY( m.lcUrl )
-        lcUrl = StuffURL( THIS.cUrlA, 2, m.lcExcludePage )
-      ENDIF
-    ENDIF
-    IF EMPTY( m.lcPrompt)
+  function AddMenuItem( lcMenuList, lcPrompt, lcUrl, lcTooltip, lvExcludePage, lcLinkAtt)
+    if vartype( m.lvExcludePage ) = "L" AND m.lvExcludePage
+      return
+    endif 
+    if vartype( m.lvExcludePage ) = "C" and !empty( m.lvExcludePage )
+      if upper( m.lvExcludePage) == upper( this.oApp.cActivePage )
+        * Specfically exclude menu item -- typically because it is a link to the current page!
+        return 
+      endif 
+      if empty( m.lcUrl )
+        lcUrl = StuffURL( THIS.cUrlA, 2, m.lvExcludePage )
+      endif 
+    endif 
+    if empty( m.lcPrompt)
       lcPrompt = m.lcURL
-    ENDIF
-    IF [,] $ m.lcMenuList
-      THIS.oMenu.AddMenuItemMultiple(m.lcMenuList, m.lcPrompt, m.lcUrl, m.lcTooltip, m.lcLinkAtt)
-    ELSE
-      THIS.oMenu.AddMenuItem(m.lcMenuList,, m.lcPrompt, m.lcUrl, m.lcTooltip, m.lcLinkAtt)
-    ENDIF
-    RETURN 
-  ENDFUNC  && AddMenuItem
+    endif 
+    if [,] $ m.lcMenuList
+      this.oMenu.AddMenuItemMultiple(m.lcMenuList, m.lcPrompt, m.lcUrl, m.lcTooltip, m.lcLinkAtt)
+    else 
+      this.oMenu.AddMenuItem(m.lcMenuList,, m.lcPrompt, m.lcUrl, m.lcTooltip, m.lcLinkAtt)
+    endif 
+    return  
+  endfunc  && AddMenuItem
   * --------------------------------------------------------- *
-  FUNCTION AddSubmenu(lcMenu, lcPrompt, lcUrl, lcTooltip, lcLinkAtt)
+  function AddSubmenu(lcMenu, lcPrompt, lcUrl, lcTooltip, lcLinkAtt)
     * Backward compatibility.
     *THIS.AddMenuItem("main\" + m.lcMenu, .F., m.lcPrompt)
-    THIS.oMenu.AddFolder("main\" + m.lcMenu, m.lcPrompt, m.lcUrl, m.lcTooltip, m.lcLinkAtt)
-  ENDFUNC
+    this.oMenu.AddFolder("main\" + m.lcMenu, m.lcPrompt, m.lcUrl, m.lcTooltip, m.lcLinkAtt)
+    return 
+  endfunc 
   * --------------------------------------------------------- *
   FUNCTION GetPageMenu(lcRenderClass)
     LOCAL loElem, loMenu

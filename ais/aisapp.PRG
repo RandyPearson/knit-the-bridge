@@ -11,6 +11,9 @@ define class AisApp AS KtbApp
 
   cConfigClass              = "AisConfig"  
   
+  nErrorPageInfo            = L7_ERRORINFO_TYPICAL
+  nErrorEmailInfo           = L7_ERRORINFO_TYPICAL
+
   * Update as structures change - see CheckRevision() method:
   nDatabaseRevision         = THISAPP_DATABASE_REVISION
   
@@ -68,13 +71,19 @@ define class AisApp AS KtbApp
   endfunc  && OnFirstPostMaintenanceHit
   * --------------------------------------------------------- *
   function DeployContent()
-    this._deployContentFile("ktb-ais.css", ".\css\")
+    * CAUTION: New files added here must be explicitly added to PJX (built into EXE)! 
+    *          Otherwise, they will appear to work in development, but not in production.  
+  
+    this._deployContentFile("ktb-ais.css",     ".\css\")
+    this._deployContentFile("ktb-aisForm.css", ".\css\")
     
-    this._deployContentFile("prototype-1.5.1.js", ".\js\")
-    this._deployContentFile("jquery-1.3.1.js",    ".\js\")
+    this._deployContentFile("prototype-1.7.0.js", ".\js\") && prototype-1.5.1.js
+    this._deployContentFile("jquery-1.7.1.js",    ".\js\") && jquery-1.3.1.js
     this._deployContentFile("sortTable.js",       ".\js\")
     this._deployContentFile("l7CoreP.js",         ".\js\")
     this._deployContentFile("l7CoreJQ.js",        ".\js\")
+
+    this._deployContentFile("Server_Override_Trapezoid.png", ".\icons\")
 
     return .T.
   endfunc  && DeployContent

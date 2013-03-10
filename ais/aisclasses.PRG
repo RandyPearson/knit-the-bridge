@@ -295,15 +295,14 @@ define class aisSidebar AS L7MenuElement
   endfunc
   * --------------------------------------------------------- *
   function renderSubMenuStart( toMenu )
-    local lcRet
-    WITH toMenu
-      lcRet = EVL(.cDisplayName, .cFullNodePath )
-      IF VARTYPE(.cUrl) = "C" AND NOT EMPTY(.cUrl)
-        LOCAL lcOptions
-        lcOptions  = LTRIM(IIF( empty( .cLinkAtt ), [], .cLinkAtt ) + ;
-                     IIF( EMPTY( .cToolTip ), "", [ title="] + .cToolTip + ["] ))
+    local lcRet, lcOptions
+    with toMenu
+      lcRet = evl(.cDisplayName, .cFullNodePath )
+      if vartype(.cUrl) = "C" and !empty(.cUrl)
+        lcOptions = ltrim(iif(vartype(.cLinkAtt) <> 'C' or empty(.cLinkAtt ), [], .cLinkAtt) + ;
+                    iif(empty(.cToolTip ), "", [ title="] + .cToolTip + ["] ))
         lcRet = HTLink(.cUrl, m.lcRet, m.lcOptions)
-      ENDIF
+      endif 
       lcRet =   [<!-- ] + toMenu.cFullNodePath + [ Sub-Menu -->] + CR + ;
                 [<h1>] + m.lcRet + [</h1>] + CR + ;
                 [<ul>] + CR
@@ -331,8 +330,8 @@ define class aisSidebar AS L7MenuElement
     
     with toItem
       llInContext = this.isInContext( this.cCurrentContext, m.toItem)
-      lcOptions  = LTRIM(IIF( empty( .cLinkAtt ), [], .cLinkAtt ) + ;
-                   IIF( EMPTY( .cToolTip ), "", [ title="] + .cToolTip + ["] ))
+      lcOptions  = ltrim(iif(vartype(.cLinkAtt) <> 'C' or empty(.cLinkAtt), [], .cLinkAtt ) + ;
+                   iif(empty( .cToolTip ), "", [ title="] + .cToolTip + ["] ))
       lcLinkText = .cDisplayName 
 
       IF m.llInContext

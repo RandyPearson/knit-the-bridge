@@ -66,7 +66,7 @@
 #DEFINE L7_ERRORINFO_LOG_OBJECT         8192
 #DEFINE L7_ERRORINFO_ALL               16384-1
 #DEFINE L7_ERRORINFO_NONE                  0
-#DEFINE L7_ERRORINFO_TYPICAL               1 + 2 + 4 + 8 + 512 + 2048 + 4096 + 8192
+#DEFINE L7_ERRORINFO_TYPICAL               1 + 2 + 4 + 512 + 2048 + 4096 + 8192
 
 * Allowed techniques for application class instantiation (additive):
 #DEFINE L7_APPCREATION_DIRECT    1

@@ -61,8 +61,6 @@ define class ais_ArtList as aisArtPage
        
     loQry = createobject("AisArtQuery")
     with loQry
-      ** .cSearch = 'gross'
-
       loFlags = this.oArtQueryFlags
       for lnFlag = 1 to loFlags.count
         loFlag = loFlags.item[m.lnFlag]

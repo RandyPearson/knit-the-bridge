@@ -331,8 +331,8 @@ define class aisPage as L7Page
     * all files listed in cJsFile come before these:
     with this.oHead
 
-      .AddJavaScript("", [./js/prototype-1.5.1.js]) && Prototype
-      .AddJavaScript("", [./js/jquery-1.3.1.js])    && jQuery
+      .AddJavaScript("", [./js/prototype-1.7.0.js]) && Prototype (./js/prototype-1.5.1.js)
+      .AddJavaScript("", [./js/jquery-1.7.1.js])    && jQuery (./js/jquery-1.3.1.js)
 
       * jQuery conflict avoidance w/ Prototype; Use $ for Prototype, $j for jQuery
       .AddJavaScript([var $j = jQuery.noConflict();] + CRLF)
@@ -367,7 +367,7 @@ define class aisPage as L7Page
     this.addMenuItem(m.lcMenu, 'People', StuffUrl(this.cUrlA, 2, "ArtList", "flags", "core"))
     this.addMenuItem(m.lcMenu, 'Pieces', StuffUrl(this.cUrlA, 2, "PceList"))
     this.addMenuItem(m.lcMenu, 'Panels', StuffUrl(this.cUrlA, 2, "PnlList"))
-    this.addMenuItem(m.lcMenu, 'About', StuffUrl(this.cUrlA, 2, "About"))
+    this.addMenuItem(m.lcMenu, 'About', StuffUrl(this.cUrlA, 2, "About"), "About")
     this.addMenuItem('main\User', 'Sign Out', StuffUrl(this.cUrlA, 2, 'Login', 'l', '0'))
 
 
