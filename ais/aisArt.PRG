@@ -15,6 +15,38 @@ function AisArtQueryFlags()
     ']' )
 endfunc 
 
+* --------------------------------------------------------- *
+function aisArtistName(tvArt)
+  local loData, loPreserve
+  if vartype(m.tvArt) = "O"
+    loData = m.tvArt
+  else  && PK
+    if isnull(m.tvArt) or empty(m.tvArt)
+      return "--"
+    endif
+    loPreserve = createobject("L7PreserveSelect")
+    select * from KtbAis!Artist ;
+      where Art_PK = m.tvArt ;
+      into cursor aisArtistName_
+    if _tally < 1
+      error "Artist " + m.tvArt + " was not found!"
+    endif
+    scatter memo name loData
+    loPreserve = null 
+  endif 
+    
+  if empty(loData.Art_Last_Name )
+    return trim(loData.Art_User_ID )
+  else 
+    if empty(loData.Art_First_Name )
+      return trim(loData.Art_Last_Name )
+    else 
+      return trim(loData.Art_First_Name ) + [ ] + trim(loData.Art_Last_Name )
+    endif 
+  endif 
+  return  
+endfunc  && aisArtistName
+
 *** ========================================================= ***
 define class aisArtPage as aisPage 
   cArt = ""
@@ -75,6 +107,8 @@ define class ais_ArtList as aisArtPage
     endwith 
     
     urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
+    urls.add(StuffUrl(this.cUrlA, 2, "ArtForm"), "ArtForm")
+
     loTbl = createobject("AisTable")
     with loTbl
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
@@ -85,6 +119,10 @@ define class ais_ArtList as aisArtPage
       loCol = .addCursorColumn("Art_Register_Time", "Sign-Up Time", [L7TimeDiff(Art_Register_Time)])
       loCol = .addCursorColumn("Art_KTB_Response", "Respose")
       loCol = .addCursorColumn("Art_ID")
+      if poContext.lCore
+        loCol = .addCursorColumn("Art_PK", "Edit Artist", ;
+          'HTLink(StuffUrl(urls.item("ArtForm"), "art", Art_PK), "[Edit Artist...]")')
+      endif 
       response.write(.render())
     endwith 
     
@@ -104,7 +142,9 @@ define class ais_ArtHome as aisArtPage
   endfunc 
   * ----------------------------------------------------- *  
   function ProcessRequest
-    this.cSubTitle = AisArtistName(this.oArt)
+    this.cSubTitle = AisArtistName(this.oArt) + ;
+      iif(this.oArt.Art_Approved, ", ID: " + this.oArt.Art_ID, ", No ID (still not approved)")
+    
     if this.oArt.Art_Artist
       response.write(this.page_getPieceInfo())
     endif
@@ -126,44 +166,52 @@ define class ais_ArtHome as aisArtPage
     with loElem
       loRow = .getRowObject()
       .cCaption = AisArtistName(m.loData) + " Data"
-      .AddHeading('Artist Information')
+      .AddHeading('Key Information')
       
-      .AddRow("Approved", loData.ART_APPROVED, .F.)
-      .AddRow("Admin", loData.ART_ADMIN, .F.)
-      .AddRow("Core", loData.ART_CORE, .F.)
-      .AddRow("Artist", loData.ART_ARTIST, .F.)
-      .AddRow("Anonymous", loData.ART_ANONYMOUS, .F.)
-      .AddRow("Unknown", loData.ART_UNKNOWN, .F.)
-      .AddRow("Full Name", TRIM(loData.ART_FULL_NAME), .F.)
+      .AddRow("Approved", loData.ART_APPROVED)
+      .AddRow("ID", loData.ART_ID)
+
       .AddRow("Last Name", TRIM(loData.ART_LAST_NAME), .F.)
       .AddRow("First Name", TRIM(loData.ART_FIRST_NAME), .F.)
-      .AddRow("Name Orig", L7ParseOnView(loData.ART_NAME_ORIG), .F.)
-      .AddRow("Email", TRIM(loData.ART_EMAIL), .F.)
-      .AddRow("Phone", TRIM(loData.ART_PHONE), .F.)
-      .AddRow("Contact Orig", L7ParseOnView(loData.ART_CONTACT_ORIG), .F.)
-      .AddRow("Address", L7ParseOnView(loData.ART_ADDRESS), .F.)
+      .AddRow("Alternative Full Name", TRIM(loData.ART_FULL_NAME), .F.)
+      .AddRow("Original Name (from blog)", loData.ART_NAME_ORIG, .F.)
+      .AddRow("Anonymous", loData.ART_ANONYMOUS, .F.)
+      .AddRow("Unknown", loData.ART_UNKNOWN, .F.)
+
+      .AddHeading('Key Information')
+      .AddRow("Email", HTEmailLink(TRIM(loData.ART_EMAIL), .f., .f., .f., .t.))
+      .AddRow("Phone", TRIM(loData.ART_PHONE))
+      .AddRow("Original Contact (from blog)", loData.ART_CONTACT_ORIG, .F.)
       .AddRow("Neighborhood", TRIM(loData.ART_NEIGHBORHOOD), .F.)
+      .AddRow("Address (from blog)", L7ParseOnView(loData.ART_ADDRESS), .F.)
       .AddRow("Age Range", TRIM(loData.ART_AGE_RANGE), .F.)
-      .AddRow("Participation", L7ParseOnView(loData.ART_PARTICIPATION), .F.)
-      .AddRow("Partial Panel", loData.ART_PARTIAL_PANEL, .F.)
+
+      .AddHeading('Participation')
+      .AddRow("Artist?", loData.ART_ARTIST)
+      .AddRow("Partial Panel", loData.ART_PARTIAL_PANEL)
+      .AddRow("Panel Info", L7ParseOnView(loData.ART_PANEL_INFO))
+      .AddRow("Panel Count", loData.ART_PANEL_COUNT)
+      .AddRow("Towers", loData.ART_TOWERS)
+      .AddRow("Help Install", loData.ART_HELP_INSTALL)
+      .AddRow("Help Materials", loData.ART_HELP_MATERIALS)
+      .AddRow("Help Meet Up", loData.ART_HELP_MEET_UP)
+      .AddRow("Help Outreach", loData.ART_HELP_OUTREACH)
+      .AddRow("Help Other", L7ParseOnView(loData.ART_HELP_OTHER))
+      .AddRow("Comments", L7ParseOnView(loData.ART_COMMENTS))
+      .AddRow("Participation (from blog)", L7ParseOnView(loData.ART_PARTICIPATION))
+
+      .AddHeading('Other Info and Characteristics')
+      .AddRow("Register Time", loData.ART_REGISTER_TIME, .F.)
+      .AddRow("Ktb Response", L7ParseOnView(loData.ART_KTB_RESPONSE))
       .AddRow("Bit Info", L7ParseOnView(loData.ART_BIT_INFO), .F.)
-      .AddRow("Panel Info", L7ParseOnView(loData.ART_PANEL_INFO), .F.)
-      .AddRow("Panel Count", loData.ART_PANEL_COUNT, .F.)
       .AddRow("Received", loData.ART_RECEIVED, .F.)
       .AddRow("Storage Location", L7ParseOnView(loData.ART_STORAGE_LOCATION), .F.)
-      .AddRow("Towers", loData.ART_TOWERS, .F.)
-      .AddRow("Help Install", loData.ART_HELP_INSTALL, .F.)
-      .AddRow("Help Materials", loData.ART_HELP_MATERIALS, .F.)
-      .AddRow("Help Meet Up", loData.ART_HELP_MEET_UP, .F.)
-      .AddRow("Help Outreach", loData.ART_HELP_OUTREACH, .F.)
-      .AddRow("Help Other", L7ParseOnView(loData.ART_HELP_OTHER), .F.)
-      .AddRow("Comments", L7ParseOnView(loData.ART_COMMENTS), .F.)
-      .AddRow("Register Time", loData.ART_REGISTER_TIME, .F.)
-      .AddRow("Ktb Response", L7ParseOnView(loData.ART_KTB_RESPONSE), .F.)
 
       if poContext.lCore
         .AddHeading('Administrative Information')
         .AddRow("Pk", TRIM(loData.ART_PK), .F., "Private")
+        .AddRow("Admin", loData.ART_ADMIN, .F.)
+        .AddRow("Core", loData.ART_CORE, .F.)
         .AddRow("Inactive", loData.ART_INACTIVE, .F., "Private")
         .AddRow("Access Token", TRIM(loData.ART_ACCESS_TOKEN), .F.)
         .AddRow("User Id", TRIM(loData.ART_USER_ID), .F.)

@@ -18,34 +18,6 @@ set procedure to AisPnl     additive  && Panel pages
 return 
 
 * --------------------------------------------------------- *
-function aisArtistName(tvArt)
-  local loData, loPreserve
-  if vartype(m.tvArt) = "O"
-    loData = m.tvArt
-  else
-    loPreserve = createobject("L7PreserveSelect")
-    select * from KtbAis!Artist ;
-      where Art_PK = m.tvArt ;
-      into cursor aisArtistName_
-    if _tally < 1
-      error "Artist " + m.tvArt + " was not found!"
-    endif
-    scatter memo name loData
-    loPreserve = null 
-  endif 
-    
-  if empty(loData.Art_Last_Name )
-    return trim(loData.Art_User_ID )
-  else 
-    if empty(loData.Art_First_Name )
-      return trim(loData.Art_Last_Name )
-    else 
-      return trim(loData.Art_First_Name ) + [ ] + trim(loData.Art_Last_Name )
-    endif 
-  endif 
-  return  
-endfunc  && aisArtistName
-* --------------------------------------------------------- *
 function AisAssignID(lcPref)
   local lnNo, lcRet
   lcPref = upper(alltrim(m.lcPref))

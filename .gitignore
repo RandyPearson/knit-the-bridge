@@ -2,6 +2,7 @@
 *.BAK
 *.fxp
 *.FXP
+*.ERR
 
 *.EXE
 *.dll
