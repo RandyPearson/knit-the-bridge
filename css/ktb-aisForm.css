@@ -1,0 +1,171 @@
+/* Ktb-AisForm.CSS */
+
+/* ---    FORM AND CONTROL STYLES  --- */
+FORM {
+	display: block;
+	text-align: left;
+	margin: 0px auto;
+	padding: 0px;
+ }
+.FormTable{
+	color: #333; background-color: #eee;
+	border: 1px solid #333; border-collapse: collapse;
+	margin: 0; /*5px;*/
+ }
+/* radio button options in tabular layout */
+.multipleOptionTable{
+	border: none;
+}
+.multipleOptionTable TD{
+	border: none;
+	padding: 1px 2em 1px 1em;
+}
+DIV.FormTitle {
+	border: 1px solid #333;
+	padding: 3px;
+	font-weight: bolder;
+	font-size: 110%;
+	color: rgb(255,255,255);
+	background-color: rgb(0,0,128);
+	text-align: left;
+ }
+.FormSubTitle, .FormDivider {
+	padding: 1px 3px;
+	font-weight: bolder;
+	/*font-style: italic;*/
+	color: rgb(15,15,135);
+	background-color: rgb(225,192,192);
+	text-align: left;
+ }
+.FormSubTitle A { color: yellow; }
+
+.FormContainer{
+	text-align: left;
+	width: 100%;
+	/*margin: 0px;*/
+	margin: auto;
+	padding: 0px;
+ }
+
+div.FormToolbar{
+	border: 1px solid #333;
+	padding: 2px;
+	text-align: center;
+	color: brown; background-color: silver;
+ }
+
+.qno{ /* Question numbers in monospace for visual alignment. */
+	font-family: monospace;	font-weight: bolder;}
+
+.FormCheckboxCaption { color: #000; }
+
+.FormLabel{ color: #000; font-weight: normal; }
+
+.FormControlLabel, .FormGridTable TH {
+	text-align: left;
+	font-size: 98%; font-family: Arial, Helvetica, sans-serif;
+	font-weight: normal;
+	color: brown; /*#374;*/
+ }
+/*.FormControlRequired .FormControlLabel{ color: brown; font-weight: normal; }*/
+.FormControlInvalid .FormControlLabel{ color: #800; font-weight: bold; }
+
+.required{
+	color: red;
+}
+.FormValidation{
+	border: 1px solid #333;
+	padding: 5px;
+	font-weight: bolder;
+	color: #800;
+ }
+span.FormControlValidation{
+	font-style: italic;
+	color: #800;
+ }
+
+div.FormControlInvalid, td.FormControlInvalid {
+	text-align: left;
+	border: 1px solid #333;
+	padding: 2px;
+	margin: 0px;
+	background-color: #FFCCCC;
+ }
+
+.FormContainer TD { border: 1px solid #333; }
+
+.FormControlInvalid, .FormControlDisabled, .FormControlRequired, .FormControl, .FormControlPrivate {
+	border: 1px solid #333;
+	color: #000;
+	vertical-align: top;
+}
+
+div.FormControlDisabled, td.FormControlDisabled {
+	text-align: left;
+	padding: 2px 2px;
+	margin: 0px;
+	background-color: #eee;
+ }
+div.FormControlRequired, td.FormControlRequired {
+	text-align: left;
+	padding: 2px 2px;
+	margin: 0px;
+	background-color: #ffd;
+}
+div.FormControlPrivate, td.FormControlPrivate {
+	text-align: left;
+	padding: 2px 2px;
+	margin: 0px;
+	background-color: #dfd;
+ }
+.FormControl { text-align: left; }
+
+div.FormControl, td.FormControl { padding: 2px 2px; margin: 0px; }
+
+div.FormControl, TABLE.FormContainer  { border: 1px solid #333; }
+
+table.FormGridTable{
+  padding: 2px 2px; width: 90%; margin: 0px;	
+}
+
+.FormGridTable, .FormGridTable TD, .FormGridTable TH { 
+  border: 1px solid #333; border-collapse: collapse; }
+
+.FormReadOnlyData { font-weight: normal; color: brown; }
+
+.FormFootnotes {
+	padding: 5px;
+	font-weight: bolder;
+	font-size: 80%;
+	color: #fff;
+	background-color: #0073aa;
+	text-align: center;
+ }
+
+/*.FormButton INPUT {
+	font-weight: bolder;
+	border: 2px outset;
+	text-align: center;
+ }*/
+/*INPUT.Submit {	border-color: darkgreen;	color: #ccc; background-color: #333; }
+INPUT.FormButtonOver {	border-color: green;	color: #fff; background-color: #333; }
+INPUT.FormButtonClick {	border-color: yellow;	color: #fff; background-color: darkgreen; }*/
+
+/*INPUT.Submit{color: white; background-color: green;}
+INPUT.Cancel{color: red; background-color: #c00;}
+.SubmitOver{color: darkgreen; background-color: gray;}
+.CancelOver{color: red; background-color: gray;}*/
+
+TEXTAREA{ min-width: 8em; width: 90%; }
+
+.FormTextbox {
+	font-family: courier new,courier,sans-serif;
+	border: 1px solid #0073aa;
+ }
+.FormPopup { font-family: courier new,courier,sans-serif; }
+
+.inlineForm{
+	display: inline; font: 0.9em Arial;
+}
+.inlineForm INPUT{font: 0.9em Arial; border: 1px solid #999; padding: 1px;}
+ 
