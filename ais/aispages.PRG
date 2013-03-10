@@ -358,18 +358,28 @@ define class aisPage as L7Page
   function AddMenuHeadings
     this.AddSubMenu("This", "THIS PAGE")
     this.AddSubMenu("Navigate", "Navigate")
+    this.AddSubMenu("Search", "Search")
     return 
   endfunc 
   * ----------------------------------------------------- *  
   function AddDefaultMenu
-    local lcMenu
+    local lcMenu, lcLpInfo, lcForm
     lcMenu = "main\Navigate"
     this.addMenuItem(m.lcMenu, 'People', StuffUrl(this.cUrlA, 2, "ArtList", "flags", "core"))
+
+    lcLpInfo = THIS.GetBaseHiddenFormvars() && sustains license plate, etc. for GET form
+    
+    lcForm = [<form style="margin:0;" method="get" action="] + StuffUrl(THIS.cUrlA, 2, "ArtList") + ;
+      ["><input id="srch1" alt="Search string" type="text" name="srch1" size="16" maxlen="40" value="" onchange="this.form.submit();">] + ;
+      m.lcLpInfo + ;
+      [<br><input style="margin: 1px 0px 0px 0px;" name="btn" type="submit" value="Search People">] + ;
+      [</form>]
+    this.AddMenuItem("main\Search", m.lcForm, .t.)
+
     this.addMenuItem(m.lcMenu, 'Pieces', StuffUrl(this.cUrlA, 2, "PceList"))
     this.addMenuItem(m.lcMenu, 'Panels', StuffUrl(this.cUrlA, 2, "PnlList"))
     this.addMenuItem(m.lcMenu, 'About', StuffUrl(this.cUrlA, 2, "About"), "About")
     this.addMenuItem('main\User', 'Sign Out', StuffUrl(this.cUrlA, 2, 'Login', 'l', '0'))
-
 
     dodefault()  && always chain upward
     return 

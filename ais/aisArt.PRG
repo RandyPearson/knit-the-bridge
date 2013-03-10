@@ -66,28 +66,43 @@ enddefine
 define class ais_ArtList as aisArtPage 
   lArtRequired = .f.
   cPage_Flags = null
+  lPage_Approved = null
   cSubTitle = "Artists N'At"
+  cPage_Srch1 = null
   * --------------------------------------------------------- *
   function BeforeProcessRequest
+    local lcStr
+
+    this.cPage_Srch1 = this.ReadQueryString("srch1", .t., .t., .t.)
     this.cPage_Flags = this.ReadQueryString("flags", .t., .t.)
+
+    lcStr = this.ReadQueryString("approved", .t., .t.)
+    this.lPage_Approved = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+    
     dodefault()  && required bubble-up
     return    
   endfunc  
   * ----------------------------------------------------- *  
   function AddDefaultMenu
     local loFlags, lnFlag, loFlag 
-    loFlags = this.oArtQueryFlags
-    for lnFlag = 1 to loFlags.count
-      loFlag = loFlags.item[m.lnFlag]
-      if pemstatus(loFlag, "menu", 5) and !loFlag.menu
-        loop
-      endif
-      this.addMenuItem("main\This", proper(loFlag.root), StuffUrl(this.cUrlB, "flags", loFlag.root))
-    next 
-    if poContext.lAdmin
-      this.addMenuItem("main\This", "Process Approvals", StuffUrl(this.cUrlB, 2, "BrowseUnapproved"))
-      
-    endif 
+    with this
+      loFlags = .oArtQueryFlags
+      for lnFlag = 1 to loFlags.count
+        loFlag = loFlags.item[m.lnFlag]
+        if pemstatus(loFlag, "menu", 5) and !loFlag.menu
+          loop
+        endif
+        .addMenuItem("main\This", proper(loFlag.root), StuffUrl(.cUrlB, "flags", loFlag.root))
+      next 
+      if poContext.lAdmin
+        .addMenuItem("main\This", "Approved", StuffUrl(.cUrlB, "Approved", "1"),, !isnull(.lPage_Approved) and .lPage_Approved)
+        .addMenuItem("main\This", "Not Approved", StuffUrl(.cUrlB, "Approved", "0"),, !isnull(.lPage_Approved) and !.lPage_Approved)
+        .addMenuItem("main\This", "Approved and Not Approved", StuffUrl(.cUrlB, "Approved", .f.),, isnull(.lPage_Approved))
+
+        .addMenuItem("main\This", "Process Approvals", StuffUrl(.cUrlB, 2, "BrowseUnapproved"))
+      endif 
+      .addMenuItem("main\This", "ALL", StuffUrl(.cUrlB))
+    endwith
     dodefault()
     return 
   endfunc 
@@ -106,6 +121,8 @@ define class ais_ArtList as aisArtPage
           store .t. to loQry.&lcProp
         endif 
       next 
+      .lAccountInactive = this.lPage_Approved
+      .cSrch1 = this.cPage_Srch1
       
       .execute()
     endwith 
@@ -129,6 +146,10 @@ define class ais_ArtList as aisArtPage
           'HTLink(StuffUrl(urls.item("ArtForm"), "art", Art_PK), "[Edit Artist...]")')
       endif 
       response.write(.render())
+
+      if poContext.lCore
+        Response.Write(HTWrap(loQry.cSqlStatement, 'div,p', 'admin,debug'))
+      endif
     endwith 
     
   endfunc 
@@ -307,6 +328,9 @@ define class ais_ArtForm as aisArtPage
           lcStub = padr(alltrim(upper(evl(Art_Last_Name, "NLN"))), 5, 'X')
           replace Art_ID with AisAssignID(m.lcStub)
         endif
+        if Art_Approved and empty(Art_Id) 
+          replace Art_Access_Token with GetGuidString(32)
+        endif
         StampRec( CurrentUser, THIS.tNow )
         
         * Now save it using a transaction:
@@ -319,28 +343,6 @@ define class ais_ArtForm as aisArtPage
           
           select V_Artist
         
-*!*            lcExcMessage = ""
-*!*            IF m.llSendEmail
-*!*  error "not done..."
-*!*              TEXT TO lcMailMessage NOSHOW PRETEXT 3
-*!*                System..: OQDB
-*!*                Event...: Snippet <<IIF(THIS.lAdding, "Created", "Revised")>> (Snippet <<V_Snippet.Snp_PK>>)
-*!*                Actor...: <<CurrentUser.GetUserName()>>
-*!*                Snippet.: <<TRIM(V_Snippet.Snp_Title)>>
-*!*                URL.....:
-*!*                <<THIS.FullUrl(STRTRAN(THIS.cCancelUrl,'&amp;','&'))>>
-*!*                
-*!*                  (UNPARSED) SNIPPET TEXT
-*!*                  -----------------------
-*!*                  <<MemoToEmail(V_Snippet.Snp_Text)>>
-*!*              ENDTEXT
-*!*              TRY
-*!*                THIS.oApp.NotifyAdmin("Snippet Record Edited", TEXTMERGE(m.lcMailMessage))
-*!*              CATCH TO loExc
-*!*                lcExcMessage = TEXTMERGE(' [Error: <<loExc.Message>>, <<loExc.LineNo>>, <<loExc.Procedure>>]')
-*!*              ENDTRY
-*!*            ENDIF
-
           Response.Redirect(THIS.cCancelUrl)
           return 
         else 
@@ -349,7 +351,7 @@ define class ais_ArtForm as aisArtPage
             loTrans.aFailures[1, 2] )
         endif  && Save()
         
-      endif 
+      endif && Valid
 
     endwith 
     response.write(loForm.render())
@@ -683,6 +685,9 @@ define class Ais_BrowseUnapproved as AisArtPage
             lcStub = padr(alltrim(upper(evl(Art_Last_Name, "NLN"))), 5, 'X')
             replace Art_ID with AisAssignID(m.lcStub)
           endif
+          if Art_Approved and empty(Art_Id) 
+            replace Art_Access_Token with GetGuidString(32)
+          endif
           lcFldState = getfldstate(-1)
           if empty( strtran( m.lcFldState, "1"))  && no change
             loop 
@@ -728,13 +733,6 @@ define class AisArtBrowseForm AS AisForm
           .cLabel = "First Name"
         endwith
 
-        .AddObject("edtName_Orig", "L7Textarea")
-        with .edtName_Orig
-          .cControlSource = this.cAlias + ".Art_Name_Orig"
-          .cLabel = "Name Orig (from blog)"
-          .nRows = 2
-        endwith
-
         .AddObject("chkApproved", "L7Checkbox")
         with .chkApproved
           .cControlSource = this.cAlias + ".Art_Approved"
@@ -743,15 +741,29 @@ define class AisArtBrowseForm AS AisForm
           .cCssClass = "FormControlPrivate"
         endwith
 
+        .AddObject("edtName_Orig", "L7Textarea")
+        with .edtName_Orig
+          .cControlSource = this.cAlias + ".Art_Name_Orig"
+          .cLabel = "Name Orig (from blog)"
+          .nRows = 2
+        endwith
+
         .AddObject("lblID", "L7Label")
         with .lblID
           .cFieldType = "C"
           .cControlSource = this.cAlias + ".Art_ID"
           .cLabel = "ID"
         endwith 
-      endwith
 
+        .AddObject("chkInactive", "L7Checkbox")
+        with .chkInactive
+          .cGroupID = "PK"
+          .cControlSource = this.cAlias + ".Art_Inactive"
+          .cLabel = "Delete?"
+          .lDisabled = !m.poContext.lAdmin
+        endwith
       
+      endwith
     endwith 
   endfunc 
 enddefine 
@@ -770,7 +782,7 @@ define class AisArtQuery AS L7Query
 
   * Account-based params:
   lUser = NULL
-  lAccountInactive = null 
+  lAccountInactive = null && surrogate is "approved"
 
   * Types of people:
   lAdmin = .F.
@@ -780,10 +792,11 @@ define class AisArtQuery AS L7Query
   lTowers = .F.
   lOutreach = .F.
 
+
   * Name Search
   cName = ""
   cUser_Id = ""
-  cSearch = ""
+  cSrch1 = ""
 
   nOrderBy = 1
   DIMENSION aOrderBy[ 1, 2]
@@ -803,9 +816,9 @@ define class AisArtQuery AS L7Query
         .cWhereClause = .cWhereClause + [ AND Art_Last_Name LIKE '] + .cName + [']
       endif 
 
-      if !empty(.cSearch)
-        lcStr = lower(.cSearch)
-        .cWhereClause = .cWhereClause + [ AND '] + m.lcStr + [' $ lower(Art_Last_Name + Art_User_Id + Art_Email + Art_Access_Token + Art_PK)]
+      if !empty(.cSrch1)
+        lcStr = lower(.cSrch1)
+        .cWhereClause = .cWhereClause + [ AND '] + m.lcStr + [' $ lower(Art_Last_Name + Art_First_Name + Art_User_Id + Art_Email + Art_Access_Token + Art_PK + Art_ID)]
       endif 
       if !empty(.cUser_Id)
         .cWhereClause = .cWhereClause + ;
@@ -818,7 +831,7 @@ define class AisArtQuery AS L7Query
       endif 
       if !isnull( .lAccountInactive)
         .cWhereClause = .cWhereClause + [ AND Art_Approved = ] + IIF(.lAccountInactive, [.T.], [.F.])
-      ENDIF
+      endif 
 
 *!*        * Build "inner" WHERE clause that is used to control security, etc.
 *!*        if !( .lCore or .lArtist OR .lAdmin ;
