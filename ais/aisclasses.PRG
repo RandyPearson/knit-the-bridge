@@ -352,6 +352,13 @@ define class aisSidebar AS L7MenuElement
 enddefine  && aisSidebar
 
 *** ===================================================== ***
+define class aisRecordElement as L7RecordElement
+  cTag              = "div"
+  cCssClass         = "record"
+  cHeadingCssClass  = "record-heading"  && default for separator rows
+enddefine 
+
+*** ===================================================== ***
 define class aisContentElement AS L7PageElement
   * --------------------------------------------------------- *
   function RenderImplementation(tcText)

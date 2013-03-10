@@ -36,7 +36,7 @@ a { text-decoration: underline }
 
 /* Sidebar subtract 17px for scrollbar*/
 #sidebar { position: absolute; right: 16px; top: 62px; width: 238px !important; bottom: 23px; background-color: #eee; padding: 0 !important; margin: 0 !important; overflow-x: hidden; overflow-y: auto; white-space: nowrap; padding-top: 15px; z-index: 0; box-shadow: inset 0 5px 5px #ccc }
-#sidebar h1 { color: #C00; font-family: Arial; font-weight: 900; font-size: 17px; margin: 20px 0 5px 10px; line-height: 14px; padding:0px; }
+#sidebar h1 { color: #C00; font-family:cursive; font-weight: 900; font-size: 17px; margin: 20px 0 5px 10px; line-height: 14px; padding:0px; }
 #sidebar h1.first { margin-top: 0px }
 #sidebar ul { margin-left: 0px; padding-left: 0; list-style-type: none; margin-top: 0; margin-bottom: 5px; padding-top: 0 }
 #sidebar ul.noncontext li { color: #bbb }
@@ -60,20 +60,13 @@ a { text-decoration: underline }
 #content{padding: 10px;}
 #content { padding-right: 255px }
 
-/*
-.wide #sidebar{display: none;}
-.wide #content{padding-right: 10px }
-*/
+#content h2, #content h3, #content h4 {font-family: Tahoma}
 
-h2 { color: #C00; font-family: Arial; font-weight: 900; font-size: 13px; margin: 0 0 5px 5px; display: block }
 a.action { color: #999; text-decoration: underline; font-weight: normal }
 a.action:hover { color: #c00; cursor: pointer }
 div.inline { display: inline-block; vertical-align: middle }
 td.inline {display: inline-block}
 
-h2 { color: #333; font-weight: bold; font-size: 15px; font-family: Tahoma; padding: 0; margin: 0 0 0 0}
-
-.invalid { color: red !important }
 
 ul.contextMenu { margin-left: 0px; padding-left: 0; list-style-type: none; margin-top: 0; margin-bottom: 5px; padding-top: 0 }
 .contextMenu li { margin-left: 0; color: #666; padding: 2px 0 2px 10px; line-height: 14px; cursor: pointer }
@@ -95,18 +88,11 @@ p.break { margin-bottom: 5em }
 /* Data record and tables display */
 table, table th, table td {border: 1px solid #c6c; border-collapse: collapse;}
 
-table.display thead th, table.record tbody th{font-weight: bold;}
-
-table.display thead th {
-	padding: 3px 10px 0 1px;
-	font-weight: bold;
-	cursor: pointer;
-}
+table.display thead th, .record tbody th{font-weight: normal;}
 
 table.display tfoot th {
 	padding: 3px 10px 0 1px;
 	border-top: 1px solid black;
-	font-weight: bold;
 }
 
 table.display td {padding: 3px 10px 0 1px;}
@@ -116,9 +102,9 @@ table.display td.center {	text-align: center;}
 table.display td p{ margin: 0;}
 table.display td p+p{margin: 10px 0 0 0;}
 
-/* DataTables row classes */
-table.display tr.oddX { background-color: #ddffdd;}
-table.display tr.evenX{	background-color: #eeffee;}
+/* Ledger row classes */
+table tr.oddX { background-color: #ddffdd;}
+table tr.evenX{	background-color: #eeffee;}
 
 /* DataTables sorting */
 .sorting_asc  { background: url('../icons/SortTableUp.gif') no-repeat center right;	background-color: #f5f5f5;}
@@ -130,6 +116,8 @@ table.sortable th { padding-right: 13px !important; padding-left: 13px !importan
 table.sortable .sortup { background-image: url('../icons/SortTableUp.gif'); background-repeat: no-repeat; background-position: center right }
 table.sortable .sortdown { background-image: url('../icons/SortTableDown.gif'); background-repeat: no-repeat; background-position: center right }
 
+table.sortable thead th {	padding: 3px 10px 0 1px;	cursor: pointer;}
+
 /*  Misc */
 div.admin{border: 1px dashed #333; background-color: #ccc; margin: 5px;}
 
@@ -138,11 +126,6 @@ div.admin{border: 1px dashed #333; background-color: #ccc; margin: 5px;}
 .clear {clear: both;}
 
 span.current {padding-right: 5px;}
-
-/* Reports */
-.reportTitle { background-color:transparent; border-bottom:1px solid #D0D0D0; margin: 5px 0 5px 10px;  padding: 0 0 6px 0;  display: block;}
-.reportTitle h1{ color:#444444;  font-size:24px;  font-weight:700;  display: inline;}
-.reportTitle a{ display: inline;  margin: 0 0 0 3px;  padding: 0;}
 
 /* TOOLTIP */
 #tooltip {

@@ -96,6 +96,8 @@ define class ais_PnlList as aisPnlPage
     endwith 
     
     urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
+    urls.add(StuffUrl(this.cUrlA, 2, "PnlForm"), "PnlForm")
+
     loTbl = createobject("AisTable")
     with loTbl
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
@@ -104,6 +106,8 @@ define class ais_PnlList as aisPnlPage
       loCol = .addCursorColumn("Pnl_Single_Piece", "Single-Piece?")
       loCol = .addCursorColumn("Pnl_Dim_1", "Dimension 1")
       loCol = .addCursorColumn("Pnl_Dim_2", "Dimension 2")
+      loCol = .addCursorColumn("Pnl_PK", "Edit Panel", ;
+        'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit Panel...]")')
       response.write(.render())
     endwith 
     
@@ -115,7 +119,7 @@ enddefine
 define class ais_PnlHome as aisPnlPage 
   * ----------------------------------------------------- *  
   function AddDefaultMenu
-    this.addMenuItem("main\This", "Modify...", StuffUrl(this.cUrlA, 2, "PnlForm", "pnl", this.cPnl))
+    this.addMenuItem("main\This,page", "Edit Piece...", StuffUrl(this.cUrlA, 2, "PnlForm", "pnl", this.cPnl))
     dodefault()
     return 
   endfunc 
@@ -169,6 +173,151 @@ define class ais_PnlHome as aisPnlPage
     return m.lcRet
   endfunc && page_getPieceInfo
 enddefine && ArtHome
+
+*** ========================================================= ***
+define class ais_PnlNew as ais_PnlForm
+  lAdding = .t.
+  lPnlRequired = .f.
+enddefine 
+
+*** ========================================================= ***
+define class ais_PnlForm as aisPnlPage 
+  lAdding = .f.
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+
+    this.Assert(poContext.lCore)
+    this.cCancelUrl = iif(this.lAdding, StuffURL(THIS.cUrlA, 2, "PnlList"), ;
+      StuffURL(THIS.cUrlB, 2, "PnlHome"))
+
+    local loForm, vp_cPnl_PK, loOldRec, loNewRec
+    vp_cPnl_PK = IIF(THIS.lAdding, space(32), THIS.cPnl)
+    use V_Panel in select("V_Panel")
+    if !this.lAdding
+      select V_Panel
+      scatter memo name loOldRec
+    endif 
+    cursorsetprop("Buffering", 5, "V_Panel")
+    loForm = this.createForm('aisPanelForm')
+    with loForm
+      .lNewRecord = THIS.lAdding
+      .AddControls()
+      .DoEvents() 
+
+      if .Valid()
+        select V_Panel
+        if this.lAdding
+          append blank
+        endif 
+        if empty(Pnl_Id)
+          replace Pnl_ID with AisAssignID("PNL")
+        endif
+        .UpdateControlSources()
+        select V_Panel  && UpdateControlSources can alter work area
+        StampRec( CurrentUser, THIS.tNow )
+        scatter memo name loNewRec 
+        
+        * Now save the record using a transaction:
+        local loTrans, loExc, lcMailMessage, lcExcMessage, llSendEmail
+        llSendEmail = .f.  
+        loTrans = THIS.CreateTransaction()
+        loTrans.AddCursor("V_Panel")
+
+        if loTrans.Save()  
+          select V_Panel
+          Response.Redirect(StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", Pnl_PK))
+          return 
+        else 
+          this.ErrorMsg( "Database Failure Saving Record!", ;
+            "Error " + TRANSFORM( loTrans.aFailures[1, 1]) + [ :] + ;
+            loTrans.aFailures[1, 2] )
+        endif  && Save()
+        
+      endif 
+
+    endwith 
+    response.write(loForm.render())
+  endfunc 
+enddefine && ais_PnlForm
+
+*** ========================================================= ***
+define class aisPanelForm as AisForm
+  cTitle = "Panel Form"
+  * --------------------------------------------------------- *
+  function  AddControls
+    with this
+      .AddObject("lblPk", "L7Label")
+      with .lblPk
+        .cGroupID = "ADMIN"
+        .cControlSource = "V_Panel.Pnl_Pk"
+        .cLabel = "Internal Key"
+      endwith 
+      .AddObject("chkInactive", "L7Checkbox")
+      with .chkInactive
+        .cGroupID = "ADMIN"
+        .cControlSource = "V_Panel.Pnl_Inactive"
+        .cLabel = "Delete?"
+        .lDisabled = !m.poContext.lAdmin
+      endwith
+      if !this.lNewRecord
+        .AddObject("txtId", "L7Textbox")
+        with .txtId
+          .cGroupID = "ID"
+          .cFieldType = "C"
+          .cControlSource = "V_Panel.Pnl_Id"
+          .cLabel = "Pacel ID"
+          .lDisabled = .t. 
+        endwith
+      endif 
+      
+      .AddObject("chkSingle_Piece", "L7Checkbox")
+      with .chkSingle_Piece
+        .cGroupID = "DIM"
+        .cControlSource = "V_Panel.Pnl_Single_Piece"
+        .cLabel = "Is this a single-piece panel?"
+        .nMode = L7_MULTI_RADIOBUTTON
+        .nStyle = L7_MULTISTYLE_VERTICAL  && only applies to radio-button transforms
+        .cCaption = "Yes - single piece"
+        .cFalseCaption = "No - multiple pieces" 
+        .lFalseBeforeTrue = .T.
+        .cInterControlText = NULL 
+      endwith 
+      
+      .AddObject("txtDim_1", "L7Textbox")
+      with .txtDim_1
+        .cGroupID = "DIM"
+        .cFieldType = "C"
+        .cControlSource = "V_Panel.Pnl_Dim_1"
+        .cLabel = "Dimension 1 (inches)"
+        .cInstructions = "If not same, please enter larger dimension here!"
+      endwith
+       
+      .AddObject("txtDim_2", "L7Textbox")
+      with .txtDim_2
+        .cGroupID = "DIM"
+        .cFieldType = "C"
+        .cControlSource = "V_Panel.Pnl_Dim_2"
+        .cLabel = "Dimension 2 (inches)"
+      endwith 
+
+      .AddObject("edtComments", "L7Textarea")
+      with .edtComments
+        .cGroupID = "NOTES"
+        .cControlSource = "V_Panel.Pnl_Comments"
+        .cLabel = "Comments about Panel"
+        .nRows = 5
+      endwith 
+
+      .AddObject("edtNotes", "L7Textarea")
+      with .edtNotes
+        .cGroupID = "NOTES"
+        .cControlSource = "V_Panel.Pnl_Notes"
+        .cLabel = "Internal KtB Notes"
+        .nRows = 5
+      endwith
+    endwith
+  endfunc
+enddefine  && PanelForm
 
 *** ===================================================== ***
 define class AisPnlQuery as L7Query

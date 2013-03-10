@@ -96,9 +96,9 @@ enddefine
 define class ais_ArtHome as aisArtPage 
   * ----------------------------------------------------- *  
   function AddDefaultMenu
-    this.addMenuItem("main\This", "Modify...", StuffUrl(this.cUrlA, 2, "ArtForm", "art", this.cArt))
+    this.addMenuItem("main\This,page", "Modify Artist...", StuffUrl(this.cUrlA, 2, "ArtForm", "art", this.cArt))
     if this.oArt.Art_Artist
-      this.addMenuItem("main\This", "New Piece...", StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt))
+      this.addMenuItem("main\This,page", "New Piece from this artist...", StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt))
     endif   
     dodefault()
     return 
@@ -106,12 +106,32 @@ define class ais_ArtHome as aisArtPage
   * ----------------------------------------------------- *  
   function ProcessRequest
     this.cSubTitle = AisArtistName(this.oArt)
-    response.write(this.page_getPieceInfo())
+    if this.oArt.Art_Artist
+      response.write(this.page_getPieceInfo())
+    endif
 
-    response.write(HTWrap("Raw Data for " + this.cSubTitle, 'h3'))
-    response.write(L7ShowObject(this.oArt, this.cSubTitle, [class="record"]))
+    response.write(this.page_getMainRecord())
+    
+    if poContext.lCore
+      response.write(HTWrap("Core Info" + this.cSubTitle, 'h3'))
+      response.write(L7ShowObject(this.oArt, this.cSubTitle, [class="record"]))
+    endif 
     return 
   endfunc 
+  * ----------------------------------------------------- *  
+  function page_getMainRecord()
+    local loElem, loRow, lcRet
+    lcRet = ""
+    loElem = createobject("aisRecordElement")
+    with loElem
+      loRow = .getRowObject()
+      .cCaption = AisArtistName(this.oArt) + " Data"
+      
+      .AddRow("Artist Name", AisArtistName(this.oArt))
+      lcRet = lcRet + .Render()
+    endwith 
+    return m.lcRet
+  endfunc && page_getMainRecord
   * ----------------------------------------------------- *  
   function page_getPieceInfo()
     local lcRet, loQ, loTbl, loCol
@@ -122,16 +142,23 @@ define class ais_ArtHome as aisArtPage
       .cArt = this.cArt
       .Execute()
     endwith 
+
+    urls.add(StuffUrl(this.cUrlA, 2, "PceHome"), "PceHome")
+    urls.add(StuffUrl(this.cUrlA, 2, "PceForm"), "PceForm")
     
     select (loQ.cAlias)
     loTbl = createobject("AisTable")
     with loTbl
-      loCol = .AddCursorColumn('Pce_ID')
+      loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
+      loCol = .addCursorColumn("Pce_ID", "Piece ID", ;
+        [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)])
       loCol = .AddCursorColumn('Pce_Whole_Panel', 'Whole Panel?')
       loCol = .AddCursorColumn('Pce_Dim_1', 'Dim 1')
       loCol = .AddCursorColumn('Pce_Dim_2', 'Dim 2')
       loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
       loCol = .AddCursorColumn('Pce_Received', 'Received')
+      loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
+        'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit Piece...]")')
 
       lcRet = m.lcRet + .Render()
     endwith 
@@ -156,7 +183,7 @@ define class ais_ArtForm as aisArtPage
     this.cCancelUrl = iif(this.lAdding, StuffURL(THIS.cUrlA, 2, "ArtList"), ;
       StuffURL(THIS.cUrlB, 2, "ArtHome"))
 
-    local loForm, vp_cArt_PK
+    local loForm, vp_cArt_PK, lcStub
     vp_cArt_PK = IIF(THIS.lAdding, space(32), THIS.cArt)
     use V_Artist in select("V_Artist")
     cursorsetprop("Buffering", 5, "V_Artist")
@@ -173,6 +200,10 @@ define class ais_ArtForm as aisArtPage
         endif 
         .UpdateControlSources()
         select V_Artist && UpdateControlSources can alter work area
+        if Art_Approved and empty(Art_Id)
+          lcStub = padr(alltrim(upper(evl(Art_Last_Name, "NLN"))), 5, 'X')
+          replace Art_ID with AisAssignID(m.lcStub)
+        endif
         StampRec( CurrentUser, THIS.tNow )
         
         * Now save it using a transaction:

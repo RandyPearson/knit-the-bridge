@@ -299,11 +299,31 @@ define class aisPage as L7Page
     *!* this.lStatelessUser = this.oApp.lAllowStateless AND Browser.lCrawler
     this.SetCss()
     this.SetJs()
-    RETURN
-  ENDFUNC && AfterDetermineBrowser
+    return
+  endfunc && AfterDetermineBrowser
+  * --------------------------------------------------------- *
+  function RenderBodyTag
+    this.alterBodyProperties()
+    return dodefault()
+  endfunc 
+  * --------------------------------------------------------- *
+  function alterBodyProperties()
+    this.cBodyCssClass = "server-override" 
+    return 
+  endfunc 
+  * --------------------------------------------------------- *
+  function CreateBodyElement
+    local loObj
+    loObj = dodefault()
+    loObj.setClass("+" + lower(this.class))
+    loObj.setClass("+" + config.cServerRole)
+    return m.loObj
+  endfunc 
+
   * --------------------------------------------------------- *
   function SetCss  && defeat parent
     this.oHead.AddCssLink("./css/ktb-ais.css", "all")
+    this.oHead.AddCssLink("./css/ktb-aisForm.css", "all")
     return  
   endfunc  
   * --------------------------------------------------------- *

@@ -59,11 +59,11 @@ FUNCTION NewForm
   lcFormCls = PROPER( SUBSTR( ALIAS(), 3)) + "Form"
   lcRet = ;
     [*** ========================================================= ***] + CRLF + ;
-    [DEFINE CLASS ] + m.lcFormCls + [ AS L7Form] + CRLF + ;
+    [define class ] + m.lcFormCls + [ AS L7Form] + CRLF + ;
     [  cTitle = "] + PROPER( SUBSTR( ALIAS(), 3)) + [ Form"] + CRLF + ;
     [  * --------------------------------------------------------- *] + CRLF + ;
-    [  FUNCTION AddControls] + CRLF + ;
-    [    WITH THIS] + CRLF 
+    [  function AddControls] + CRLF + ;
+    [    with this] + CRLF 
   lnFlds = AFIELDS( laFlds)
   FOR ii = 1 TO m.lnFlds
     lcFld = laFlds[ m.ii,1]
@@ -83,94 +83,94 @@ FUNCTION NewForm
     CASE m.lcStub == "PK" 
       lcItem = ;
         [      .AddObject("lbl] + m.lcProperStub + [", "L7Label")] + CRLF + ;
-        [      WITH .lbl] + m.lcProperStub + CRLF + ;
+        [      with .lbl] + m.lcProperStub + CRLF + ;
         [        .cGroupID = "ADMIN"] + CRLF + ;
         [        .cControlSource = "] + PROPER( ALIAS()) + [.] + m.lcProperFld + ["] + CRLF + ;
         [        .cLabel = "ID"] + CRLF + ;
-        [      ENDWITH] + CRLF
+        [      endwith] + CRLF
     CASE m.lcStub == "REV_TIME" 
       lcItem = ;
         [      .AddObject("lbl] + m.lcProperStub + [", "L7Label")] + CRLF + ;
-        [      WITH .lbl] + m.lcProperStub + CRLF + ;
+        [      with .lbl] + m.lcProperStub + CRLF + ;
         [        .cGroupID = "ADMIN"] + CRLF + ;
         [        .cControlSource = "] + PROPER( ALIAS()) + [.] + m.lcProperFld + ["] + CRLF + ;
         [        .cLabel = "Last Revised"] + CRLF + ;
-        [      ENDWITH] + CRLF
+        [      endwith] + CRLF
     CASE m.lcStub == "INACTIVE" 
       lcItem = ;
         [      .AddObject("chk] + m.lcProperStub + [", "L7Checkbox")] + CRLF + ;
-        [      WITH .chk] + m.lcProperStub + CRLF + ;
+        [      with .chk] + m.lcProperStub + CRLF + ;
         [        .cGroupID = "ADMIN"] + CRLF + ;
         [        .cControlSource = "] + PROPER( ALIAS()) + [.] + m.lcProperFld + ["] + CRLF + ;
         [        .cLabel = "Delete?"] + CRLF + ;
         [        .lDisabled = NOT m.poContext.lAdmin] + CRLF + ;
-        [      ENDWITH] + CRLF
+        [      endwith] + CRLF
     CASE m.lcStub == "STATUS" 
       lcItem = ;
         [      .AddObject("opg] + m.lcProperStub + [", "L7RadioButton")] + CRLF + ;
-        [      WITH .opg] + m.lcProperStub + CRLF + ;
+        [      with .opg] + m.lcProperStub + CRLF + ;
         [        .cControlSource = "] + PROPER( ALIAS()) + [.] + m.lcProperFld + ["] + CRLF + ;
         [        .cLabel = "] + STRTRAN(m.lcProperStub, "_", " ") + ["] + CRLF + ;
         [        .nRowSourceType = ] + TRANSFORM( L7_ROWSOURCETYPE_VALUE) + [] + CRLF + ;
         [        .cRowSource = THISAPP_] + m.lcFld + [ES] + CRLF + ;
         [        .nStyle = L7_MULTISTYLE_NONE] + CRLF + ;
         [        .lRequired = .T.] + CRLF + ;
-        [      ENDWITH] + CRLF
+        [      endwith] + CRLF
     CASE m.lcType = "C"
       lcItem = ;
         [      .AddObject("txt] + m.lcProperStub + [", "L7Textbox")] + CRLF + ;
-        [      WITH .txt] + m.lcProperStub + CRLF + ;
+        [      with .txt] + m.lcProperStub + CRLF + ;
         [        .cFieldType = "C"] + CRLF + ;
         [        .cControlSource = "] + PROPER( ALIAS()) + [.] + m.lcProperFld + ["] + CRLF + ;
         [        .cLabel = "] + STRTRAN(m.lcProperStub, "_", " ") + ["] + CRLF + ;
-        [      ENDWITH] + CRLF
+        [      endwith] + CRLF
     CASE m.lcType = "D"
       lcItem = ;
         [      .AddObject("txt] + m.lcProperStub + [", "L7Textbox")] + CRLF + ;
-        [      WITH .txt] + m.lcProperStub + CRLF + ;
+        [      with .txt] + m.lcProperStub + CRLF + ;
         [        .cFieldType = "D"] + CRLF + ;
         [        .cControlSource = "] + PROPER( ALIAS()) + [.] + m.lcProperFld + ["] + CRLF + ;
         [        .cLabel = "] + STRTRAN(m.lcProperStub, "_", " ") + ["] + CRLF + ;
         [        .cInstructions = "MM/DD/YYYY"] + CRLF + ;
-        [      ENDWITH] + CRLF
+        [      endwith] + CRLF
     CASE m.lcType = "N"
       lcItem = ;
         [      .AddObject("txt] + m.lcProperStub + [", "L7Textbox")] + CRLF + ;
-        [      WITH .txt] + m.lcProperStub + CRLF + ;
+        [      with .txt] + m.lcProperStub + CRLF + ;
         [        .cFieldType = "N"] + CRLF + ;
         [        .cControlSource = "] + PROPER( ALIAS()) + [.] + m.lcProperFld + ["] + CRLF + ;
         [        .cLabel = "] + STRTRAN(m.lcProperStub, "_", " ") + ["] + CRLF + ;
-        [      ENDWITH] + CRLF
+        [      endwith] + CRLF
     CASE m.lcType = "Y"
       lcItem = ;
         [      .AddObject("txt] + m.lcProperStub + [", "L7Textbox")] + CRLF + ;
-        [      WITH .txt] + m.lcProperStub + CRLF + ;
+        [      with .txt] + m.lcProperStub + CRLF + ;
         [        .cFieldType = "Y"] + CRLF + ;
         [        .cControlSource = "] + PROPER( ALIAS()) + [.] + m.lcProperFld + ["] + CRLF + ;
         [        .cLabel = "] + STRTRAN(m.lcProperStub, "_", " ") + ["] + CRLF + ;
         [        .cInstructions = "$ US"] + CRLF + ;
-        [      ENDWITH] + CRLF
+        [      endwith] + CRLF
     CASE m.lcType = "M"
       lcItem = ;
         [      .AddObject("edt] + m.lcProperStub + [", "L7Textarea")] + CRLF + ;
-        [      WITH .edt] + m.lcProperStub + CRLF + ;
+        [      with .edt] + m.lcProperStub + CRLF + ;
         [        .cControlSource = "] + PROPER( ALIAS()) + [.] + m.lcProperFld + ["] + CRLF + ;
         [        .cLabel = "] + STRTRAN(m.lcProperStub, "_", " ") + ["] + CRLF + ;
         [        .nRows = 5] + CRLF + ;
-        [      ENDWITH] + CRLF
+        [      endwith] + CRLF
     CASE m.lcType = "L"
       lcItem = ;
         [      .AddObject("chk] + m.lcProperStub + [", "L7Checkbox")] + CRLF + ;
-        [      WITH .chk] + m.lcProperStub + CRLF + ;
+        [      with .chk] + m.lcProperStub + CRLF + ;
         [        .cControlSource = "] + PROPER( ALIAS()) + [.] + m.lcProperFld + ["] + CRLF + ;
         [        .cLabel = "] + STRTRAN(m.lcProperStub, "_", " ") + ["] + CRLF + ;
-        [      ENDWITH] + CRLF
+        [      endwith] + CRLF
     OTHERWISE
       lcItem = ""
     ENDCASE
     lcRet = m.lcRet + m.lcItem
   ENDFOR
-  lcRet = m.lcRet + [    ENDWITH] + CRLF + [  ENDFUNC] + CRLF + [ENDDEFINE  &] + [& ] + m.lcFormCls + CRLF
+  lcRet = m.lcRet + [    endwith] + CRLF + [  endfunc] + CRLF + [enddefine  &] + [& ] + m.lcFormCls + CRLF
   _CLIPTEXT = m.lcRet
   MESSAGEBOX( "Form code placed on clipboard.")
 ENDFUNC
@@ -245,7 +245,7 @@ FUNCTION NewForm_CONSTRUCTOR  && like NewForm, but using ADD OBJECT
   lcRet = m.lcRet + [ENDDEFINE  &] + [& ] + m.lcFormCls + CRLF
   _CLIPTEXT = m.lcRet
   MESSAGEBOX( "Form code placed on clipboard.")
-ENDFUNC
+endfunc  && NewForm_CONSTRUCTOR  
 * ---------------------------------------------------------------- *
 FUNCTION NewTable
 * Put a new table on the clipboard.
