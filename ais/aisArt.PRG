@@ -84,6 +84,10 @@ define class ais_ArtList as aisArtPage
       endif
       this.addMenuItem("main\This", proper(loFlag.root), StuffUrl(this.cUrlB, "flags", loFlag.root))
     next 
+    if poContext.lAdmin
+      this.addMenuItem("main\This", "Process Approvals", StuffUrl(this.cUrlB, 2, "BrowseUnapproved"))
+      
+    endif 
     dodefault()
     return 
   endfunc 
@@ -118,7 +122,8 @@ define class ais_ArtList as aisArtPage
       loCol = .addCursorColumn("Art_Phone", "Phone")
       loCol = .addCursorColumn("Art_Register_Time", "Sign-Up Time", [L7TimeDiff(Art_Register_Time)])
       loCol = .addCursorColumn("Art_KTB_Response", "Respose")
-      loCol = .addCursorColumn("Art_ID")
+      loCol = .addCursorColumn("Art_Approved", "Approved?")
+      loCol = .addCursorColumn("Art_ID", "Artist ID")
       if poContext.lCore
         loCol = .addCursorColumn("Art_PK", "Edit Artist", ;
           'HTLink(StuffUrl(urls.item("ArtForm"), "art", Art_PK), "[Edit Artist...]")')
@@ -564,7 +569,6 @@ define class aisArtistForm AS AisForm
     return 
   endfunc  && addParticipationControls
   * --------------------------------------------------------- *
-  * --------------------------------------------------------- *
   function addSecurityControls()
     with this
 
@@ -655,9 +659,105 @@ define class aisArtistForm AS AisForm
   endfunc  && addTimeStampControls
 enddefine  && ArtistForm
 
+*** ===================================================== ***
+define class Ais_BrowseUnapproved as AisArtPage
+  lArtRequired = .f.
+  * --------------------------------------------------------- *
+  function ProcessRequest
+    this.cCancelUrl = StuffUrl(this.cUrlA, 2, "ArtList")
+    local loForm, lcXml, lcAlias, lcFldState, lcStub
+    lcAlias = "V_Unapproved_Artist_Set"
+    use (m.lcAlias) in select(m.lcAlias)
+    cursorsetprop("Buffering", 5, m.lcAlias)
+    select (m.lcAlias)
+    loForm = this.CreateForm("AisArtBrowseForm")
+    with loForm
+      .cAlias = m.lcAlias
+      .AddControls()
+      .DoEvents()
+      if .Valid()
+        .UpdateControlSources()
+        select (m.lcAlias)
+        scan   
+          if Art_Approved and empty(Art_Id) 
+            lcStub = padr(alltrim(upper(evl(Art_Last_Name, "NLN"))), 5, 'X')
+            replace Art_ID with AisAssignID(m.lcStub)
+          endif
+          lcFldState = getfldstate(-1)
+          if empty( strtran( m.lcFldState, "1"))  && no change
+            loop 
+          endif 
+          StampRec( CurrentUser, THIS.tNow )
+        endscan 
+        lcXml = ''
+        this.AssertTransaction(m.lcAlias, @lcXml)
+        *!* this.oApp.NotifyAdmin("Project Multi-File Update by " + CurrentUser.GetUserName(), HTWrap(m.lcXml, 'pre'))
+        Response.Redirect(this.cCancelUrl)
+        return 
+      endif 
+      Response.Write(.Render())
+    endwith 
+    return   
+  endfunc 
+  
+enddefine  && Ais_BrowseUnapproved 
+
+*** ========================================================= ***
+define class AisArtBrowseForm AS AisForm
+  cTitle = "Artist Form"
+  cAlias = null && client should set 
+  * --------------------------------------------------------- *
+  function AddControls
+    with this
+      .AddObject('grdBrowse', 'L7Grid')
+      with .grdBrowse
+        .cChildAlias = this.cAlias
+        .cChildKeyExpression = this.cAlias + ".Art_PK"
+        .nExtraRows = 0 && don't permit adds 
+        .cGridTableCssClass = "sortable " + .cGridTableCssClass
+      
+        .AddObject("txtLast_Name", "L7Textbox")
+        with .txtLast_Name
+          .cControlSource = this.cAlias + ".Art_Last_Name"
+          .cLabel = "Last Name"
+        endwith
+
+        .AddObject("txtFirst_Name", "L7Textbox")
+        with .txtFirst_Name
+          .cControlSource = this.cAlias + ".Art_First_Name"
+          .cLabel = "First Name"
+        endwith
+
+        .AddObject("edtName_Orig", "L7Textarea")
+        with .edtName_Orig
+          .cControlSource = this.cAlias + ".Art_Name_Orig"
+          .cLabel = "Name Orig (from blog)"
+          .nRows = 2
+        endwith
+
+        .AddObject("chkApproved", "L7Checkbox")
+        with .chkApproved
+          .cControlSource = this.cAlias + ".Art_Approved"
+          .cLabel = "Approved"
+          .cCaption = "Approved"
+          .cCssClass = "FormControlPrivate"
+        endwith
+
+        .AddObject("lblID", "L7Label")
+        with .lblID
+          .cFieldType = "C"
+          .cControlSource = this.cAlias + ".Art_ID"
+          .cLabel = "ID"
+        endwith 
+      endwith
+
+      
+    endwith 
+  endfunc 
+enddefine 
 
 *** ===================================================== ***
-DEFINE CLASS AisArtQuery AS L7Query
+define class AisArtQuery AS L7Query
   cBaseTable = "Artist"
   cDefaultFieldList = ;
     "Art_PK,Art_ID,Art_Approved,Art_Artist,Art_Anonymous,Art_Unknown" + ;

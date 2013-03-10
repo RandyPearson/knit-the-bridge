@@ -3,7 +3,8 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION 1
+#DEFINE THISAPP_DATABASE_REVISION 2
+
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -195,6 +196,12 @@ define class AisApp AS KtbApp
     case m.lnRev = 1
       do CreateTable ;
         with "Unique", this.cDataPath, this.cDataBase
+
+    case m.lnRev = 2
+      alter table Panel add column Pnl_Completed L
+      select Panel
+      index on Pnl_Completed tag Completed
+      use in select("Panel")
 
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
@@ -448,6 +455,7 @@ function CreatePanelTable
       Pnl_PK C(32) primary key default GetGuid32(), ;
       Pnl_Inactive L default .F., ;
       Pnl_ID C(8), ;
+      Pnl_Completed L, ;
       Pnl_Stitcher_Art_FK C(32), ;
       Pnl_Asm_FK C(32), ;
       Pnl_Single_Piece L, ;  
@@ -470,6 +478,7 @@ function CreatePanelTable
   index on Pnl_Stitcher_Art_FK tag Stitcher
   index on Pnl_Asm_FK tag Asm_FK
   * Other Keys:
+  index on Pnl_Completed tag Completed
   index on Pnl_ID tag Pnl_ID
   index on Pnl_Single_Piece tag Single
      
@@ -757,9 +766,11 @@ FUNCTION CreateViews(lcOneTable, lcDataPath, lcDataBase)
   if empty( m.lcOneTable)
 
     do CreateChildView WITH "V_Artist_Piece_Set", "Piece", "Pce_Art_FK", "Artist", [Pce_Inactive=.F.]
+    do CreateChildView WITH "V_Panel_Piece_Set", "Piece", "Pce_Pnl_FK", "Panel", [Pce_Inactive=.F.]
 
     * All-record views (for master "browse" forms):
-    do CreateAllRecordsView WITH "V_All_Users", "Artist", "Art_PK", [!empty(Art_User_ID)]
+    do CreateAllRecordsView WITH "V_Unapproved_Artist_Set", "Artist", "Art_PK", [!Art_Inactive and !Art_Approved]
+    do CreateAllRecordsView WITH "V_All_Users", "Artist", "Art_PK", [!Art_Inactive and !empty(Art_User_ID)]
 
   endif 
   return 
