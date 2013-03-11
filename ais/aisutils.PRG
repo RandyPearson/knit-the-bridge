@@ -1,6 +1,7 @@
 * AisUtils.prg
 
 #INCLUDE L7.H 
+#include ais.h 
 #DEFINE L7_XLS_DRIVER "{Microsoft Excel Driver (*.xls)}"
 * note: cannot use "{Microsoft Excel Driver (*.xls, *.xlsx, *.xlsm, *.xlsb)}" on 64-bit OS, thus cannot import from XLSX 
 * 
@@ -52,14 +53,23 @@ define class AisImport as Custom
   endfunc 
 
   function _transform(toImp, toXfer)    
-    local lcTemp
+    local lcTemp, ltTime 
+    ltTime = datetime()
     
     addproperty(toXfer, "Art_Register_Time", nvl(toImp.timestamp, datetime(2013, 01, 01, 0, 0, 0)))
     addproperty(toXfer, "Art_Name_Orig", nvl(toImp.name, ""))
     if empty(toXfer.Art_Name_Orig)
       return .f.
     endif
-    addproperty(toXfer, "Art_Last_Name", nvl(toImp.lastname, "NLN"))
+    lcTemp = nvl(toImp.lastname, "")
+    addproperty(toXfer, "Art_Last_Name", "")
+    addproperty(toXfer, "Art_First_Name", "")
+    if !"," $ m.lcTemp
+      toXfer.Art_Last_Name = alltrim(m.lcTemp)
+    else
+      toXfer.Art_Last_Name = alltrim(getwordnum(m.lcTemp, 1, ","))
+      toXfer.Art_First_Name = alltrim(getwordnum(m.lcTemp, 2, ","))
+    endif
     
     addproperty(toXfer, "Art_Age_Range", nvl(toImp.age_range, ""))
     addproperty(toXfer, "Art_Bit_Info", nvl(toImp.bit_info, ""))
@@ -110,6 +120,12 @@ define class AisImport as Custom
     addproperty(toXfer, "Art_Received", !isnull(toImp.received) and "Y" $ upper(toImp.received))
     
     addproperty(toXfer, "Art_Storage_Location", nvl(toImp.storage_location, ""))
+
+    addproperty(toXfer, "Art_Orig_Art_FK", THISAPP_ADMIN_PK)
+    addproperty(toXfer, "Art_Orig_Time", m.ltTime)
+    addproperty(toXfer, "Art_Rev_Art_FK", THISAPP_ADMIN_PK)
+    addproperty(toXfer, "Art_Rev_Time", m.ltTime)
+
     return .t. 
   endfunc 
 
