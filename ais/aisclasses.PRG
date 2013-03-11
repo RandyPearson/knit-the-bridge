@@ -389,6 +389,36 @@ define class aisForm AS L7Form
   lResetButton = .F.
   lNewRecord = .F.
   cSubmitCaption = "Save"
+  * customize: 
+  cEntityAlias = null  && e.g., "Artist"
+  cEntityAbbr  = null  && e.g., "Art"
+  * --------------------------------------------------------- *
+  function addTimeStampControls()
+    local lcFld1, lcFld2
+    with this
+      .AddObject("lblRev_Time", "L7Label")
+      with .lblRev_Time
+        .cGroupId = 'timestamp'
+        .cLabel = "Record last updated"
+        lcFld1 = this.cEntityAlias + "." + this.cEntityAbbr + "_Rev_Time"
+        lcFld2 = this.cEntityAlias + "." + this.cEntityAbbr + "_Rev_Art_FK"
+        .cShowExpression = [L7TimeDiff(] + m.lcFld1 + [) + " by " + aisArtistName(] + m.lcFld2 + [)]
+        .cCssClass = "FormControlPrivate"
+      endwith 
+
+      .AddObject("lblOrig_Time", "L7Label")
+      with .lblOrig_Time
+        .cGroupId = 'timestamp'
+        .cLabel = "Record first created"
+        lcFld1 = this.cEntityAlias + "." + this.cEntityAbbr + "_Orig_Time"
+        lcFld2 = this.cEntityAlias + "." + this.cEntityAbbr + "_Orig_Art_FK"
+        .cShowExpression = [L7TimeDiff(] + m.lcFld1 + [) + " by " + aisArtistName(] + m.lcFld2 + [)]
+        .cCssClass = "FormControlPrivate"
+      endwith 
+      
+    endwith
+    return 
+  endfunc  && addTimeStampControls
 enddefine   && aisForm
 
 *** ===================================================== ***

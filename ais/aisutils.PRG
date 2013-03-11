@@ -83,6 +83,7 @@ define class AisImport as Custom
       addproperty(toXfer, "Art_Phone", alltrim(toXfer.Art_Contact_Orig))
     endif 
     
+    addproperty(toXfer, "Art_Approved", .f.)
     addproperty(toXfer, "Art_Artist", .f.)
     addproperty(toXfer, "Art_Panel_Count", 0)
         

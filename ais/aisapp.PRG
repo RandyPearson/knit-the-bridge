@@ -327,7 +327,7 @@ function CreateArtistTable
       Art_PK C(32) primary key default GetGuid32(), ;
       Art_Inactive L default .F., ;
       Art_ID C(8), ;
-      Art_Approved L default .T., ;
+      Art_Approved L default .f., ;
       Art_Admin L default .f., ;
       Art_Core L default .f., ;
       Art_Artist L default .t., ;

@@ -179,7 +179,7 @@ define class ais_ArtHome as aisArtPage
     
     if poContext.lCore
       response.write(HTWrap("Core Info" + this.cSubTitle, 'h3'))
-      response.write(L7ShowObject(this.oArt, this.cSubTitle, [class="record"]))
+      *!* response.write(L7ShowObject(this.oArt, this.cSubTitle, [class="record"]))
     endif 
     return 
   endfunc 
@@ -199,12 +199,11 @@ define class ais_ArtHome as aisArtPage
 
       .AddRow("Last Name", TRIM(loData.ART_LAST_NAME), .F.)
       .AddRow("First Name", TRIM(loData.ART_FIRST_NAME), .F.)
-      .AddRow("Alternative Full Name", TRIM(loData.ART_FULL_NAME), .F.)
-      .AddRow("Original Name (from blog)", loData.ART_NAME_ORIG, .F.)
+      .AddRow("Alternative Full Name", TRIM(loData.ART_FULL_NAME), .t.)
+      .AddRow("Original Name (from blog)", loData.ART_NAME_ORIG, .t., "private")
       .AddRow("Anonymous", loData.ART_ANONYMOUS, .F.)
       .AddRow("Unknown", loData.ART_UNKNOWN, .F.)
 
-      .AddHeading('Key Information')
       .AddRow("Email", HTEmailLink(TRIM(loData.ART_EMAIL), .f., .f., .f., .t.))
       .AddRow("Phone", TRIM(loData.ART_PHONE))
       .AddRow("Original Contact (from blog)", loData.ART_CONTACT_ORIG, .F.)
@@ -361,16 +360,20 @@ enddefine && ais_ArtForm
 *** ========================================================= ***
 define class aisArtistForm AS AisForm
   cTitle = "Artist Form"
+  cEntityAlias = "v_Artist"
+  cEntityAbbr  = "Art"
   * --------------------------------------------------------- *
   function AddControls
     with this
 
       .AddObject("txtId", "L7Textbox")
       with .txtId
+        .lDisabled = .T.
         .cGroupID = "PK"
         .cFieldType = "C"
         .cControlSource = "V_artist.Art_Id"
-        .cLabel = "Id"
+        .cLabel = "Artist ID"
+        .cControlCssStyle = [font-weight: bold; font-size: 16px;]
       endwith
       .AddObject("chkApproved", "L7Checkbox")
       with .chkApproved
@@ -382,7 +385,8 @@ define class aisArtistForm AS AisForm
       with .lblPk
         .cGroupID = "PK"
         .cControlSource = "V_artist.Art_Pk"
-        .cLabel = "ID"
+        .cLabel = "Internal System Key"
+        .cCssClass = "FormControlPrivate"
       endwith
       .AddObject("chkInactive", "L7Checkbox")
       with .chkInactive
@@ -390,59 +394,91 @@ define class aisArtistForm AS AisForm
         .cControlSource = "V_artist.Art_Inactive"
         .cLabel = "Delete?"
         .lDisabled = !m.poContext.lAdmin
+        .cCssClass = "FormControlPrivate"
       endwith
 
       .addTimeStampControls()
 
-      .AddObject("txtFull_Name", "L7Textbox")
-      with .txtFull_Name
-        .cFieldType = "C"
-        .cControlSource = "V_artist.Art_Full_Name"
-        .cLabel = "Full Name"
+      .AddObject("divContact", "L7Divider")
+      with .divContact
+        .cLabel = "Name and Contact Information"
       endwith
-      .AddObject("txtLast_Name", "L7Textbox")
-      with .txtLast_Name
-        .cFieldType = "C"
-        .cControlSource = "V_artist.Art_Last_Name"
-        .cLabel = "Last Name"
-      endwith
+
       .AddObject("txtFirst_Name", "L7Textbox")
       with .txtFirst_Name
+        .cGroupID = "name"
         .cFieldType = "C"
         .cControlSource = "V_artist.Art_First_Name"
         .cLabel = "First Name"
+        .cCssStyle = "width: 20%;"
       endwith
-      .AddObject("edtName_Orig", "L7Textarea")
-      with .edtName_Orig
-        .cControlSource = "V_artist.Art_Name_Orig"
-        .cLabel = "Name Orig"
-        .nRows = 5
+      .AddObject("txtLast_Name", "L7Textbox")
+      with .txtLast_Name
+        .cGroupID = "name"
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_Last_Name"
+        .cLabel = "Last Name"
+        .cCssStyle = "width: 20%;"
       endwith
-
+      .AddObject("chkAnonymous", "L7Checkbox")
+      with .chkAnonymous
+        .cGroupID = "name"
+        .cControlSource = "V_artist.Art_Anonymous"
+        .cLabel = "Anonymous?"
+        .cCaption = "Anonymous"
+      endwith
       .AddObject("chkUnknown", "L7Checkbox")
       with .chkUnknown
+        .cGroupID = "name"
         .cControlSource = "V_artist.Art_Unknown"
-        .cLabel = "Unknown"
+        .cLabel = "Unknown?"
+        .cCaption = "Unknown Person"
+      endwith
+
+      .AddObject("txtFull_Name", "L7Textbox")
+      with .txtFull_Name
+        .cGroupID = "name2"
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_Full_Name"
+        .cLabel = "Alternative Full Name"
+        .cInstructions = "(leave blank unless this entry needs to override First/Last name in listings)"
       endwith
 
       .AddObject("txtEmail", "L7Textbox")
       with .txtEmail
+        .cGroupID = "cont"
         .cFieldType = "C"
         .cControlSource = "V_artist.Art_Email"
         .cLabel = "Email"
+        .cCssStyle = "width: 60%;"
+        .nSize = 60
       endwith
       .AddObject("txtPhone", "L7Textbox")
       with .txtPhone
+        .cGroupID = "cont"
         .cFieldType = "C"
         .cControlSource = "V_artist.Art_Phone"
         .cLabel = "Phone"
+        .cCssStyle = "width: 40%;"
+      endwith
+
+      .AddObject("edtName_Orig", "L7Textarea")
+      with .edtName_Orig
+        .cGroupID = "orig1"
+        .cControlSource = "V_artist.Art_Name_Orig"
+        .nRows = 2
+        .cLabel = "Original Name (e.g., from blog)"
+        .cCssClass = "FormControlPrivate"
       endwith
       .AddObject("edtContact_Orig", "L7Textarea")
       with .edtContact_Orig
+        .cGroupID = "orig1"
         .cControlSource = "V_artist.Art_Contact_Orig"
-        .cLabel = "Contact Orig"
-        .nRows = 5
+        .nRows = 2
+        .cLabel = "Original Contact (e.g., from blog)"
+        .cCssClass = "FormControlPrivate"
       endwith
+
       .AddObject("txtNeighborhood", "L7Textbox")
       with .txtNeighborhood
         .cGroupID  ="addr"
@@ -455,79 +491,76 @@ define class aisArtistForm AS AisForm
         .cGroupID  ="addr"
         .cControlSource = "V_artist.Art_Address"
         .cLabel = "Address"
-        .nRows = 5
+        .nRows = 2
+        .cLabel = "Original Neighborhood (e.g., from blog)"
+        .cCssClass = "FormControlPrivate"
       endwith
-      .AddObject("txtAge_Range", "L7Textbox")
-      with .txtAge_Range
+
+      .AddObject("cboAge_Range", "L7Popup")
+      with .cboAge_Range
+        .cGroupID  ="addr"
         .cFieldType = "C"
         .cControlSource = "V_artist.Art_Age_Range"
         .cLabel = "Age Range"
+        .nStyle = L7_MULTISTYLE_VERTICAL
+        .nRowSourceType = L7_ROWSOURCETYPE_VALUE
+        .cRowSource = THISAPP_AGE_RANGES
       endwith
 
       .AddParticipationControls()
       
-
-      .AddObject("edtBit_Info", "L7Textarea")
-      with .edtBit_Info
-        .cControlSource = "V_artist.Art_Bit_Info"
-        .cLabel = "Bit Info"
-        .nRows = 5
-      endwith
-      .AddObject("edtPanel_Info", "L7Textarea")
-      with .edtPanel_Info
-        .cControlSource = "V_artist.Art_Panel_Info"
-        .cLabel = "Panel Info"
-        .nRows = 5
-      endwith
-      .AddObject("chkReceived", "L7Checkbox")
-      with .chkReceived
-        .cControlSource = "V_artist.Art_Received"
-        .cLabel = "Received"
-      endwith
-      .AddObject("edtStorage_Location", "L7Textarea")
-      with .edtStorage_Location
-        .cControlSource = "V_artist.Art_Storage_Location"
-        .cLabel = "Storage Location"
-        .nRows = 5
-      endwith
-      .AddObject("edtHelp_Other", "L7Textarea")
-      with .edtHelp_Other
-        .cControlSource = "V_artist.Art_Help_Other"
-        .cLabel = "Help Other"
-        .nRows = 5
-      endwith
       .AddObject("edtComments", "L7Textarea")
       with .edtComments
+        .cGroupID = "notes"
         .cControlSource = "V_artist.Art_Comments"
         .cLabel = "Comments"
-        .nRows = 5
-      endwith
-      .AddObject("edtKtb_Response", "L7Textarea")
-      with .edtKtb_Response
-        .cControlSource = "V_artist.Art_Ktb_Response"
-        .cLabel = "Ktb Response"
-        .nRows = 5
+        .nRows = 3
       endwith
 
-      .addSecurityControls()
-      
       .AddObject("edtNotes", "L7Textarea")
       with .edtNotes
+        .cGroupID = "notes"
         .cControlSource = "V_artist.Art_Notes"
-        .cLabel = "Notes"
-        .nRows = 5
+        .cLabel = "KtB Internal Notes"
+        .nRows = 3
+        .cCssClass = "FormControlPrivate"
       endwith
+
+      .addAdditionalControls()
+      
+      .addSecurityControls()
+      
     endwith
   endfunc  && AddControls
       
   * --------------------------------------------------------- *
   function addParticipationControls()
     with this
+
+      .AddObject("divPart", "L7Divider")
+      with .divPart
+        .cLabel = "Participation Information"
+      endwith
+
       .AddObject("colPart", "L7CheckboxCollection")
       with .colPart
         .cGroupId = "part"
       endwith
       
+      .colPart.AddObjectToParent("chkArtist", "L7Checkbox")
+      with .chkArtist
+        .cControlSource = "V_artist.Art_Artist"
+        .cCaption = "Artist"
+      endwith
+
+      .colPart.AddObjectToParent("txtPanel_Count", "L7Textbox")
+      with .txtPanel_Count
+        .cFieldType = "I"
+        .cControlSource = "V_artist.Art_Panel_Count"
+        .cLabel = "Whole Panel Count"
+        .cInstructions = "(whole panel estimate only, if n/a, enter 0)"
+      endwith
+
       .colPart.AddObjectToParent("chkPartial_Panel", "L7Checkbox")
       with .chkPartial_Panel
         .cControlSource = "V_artist.Art_Partial_Panel"
@@ -559,20 +592,87 @@ define class aisArtistForm AS AisForm
         .cCaption = "Help Outreach"
       endwith
 
+      .AddObject("edtHelp_Other", "L7Textarea")
+      with .edtHelp_Other
+        .cGroupId = "part"
+        .cControlSource = "V_artist.Art_Help_Other"
+        .cLabel = "Help Other"
+        .nRows = 3
+      endwith
       .AddObject("edtParticipation", "L7Textarea")
       with .edtParticipation
         .cGroupId = "part"
         .cControlSource = "V_artist.Art_Participation"
-        .cLabel = "Participation"
-        .nRows = 5
+        .cLabel = "Original Participation answers (e.g., from blog)"
+        .nRows = 3
+        .cCssClass = "FormControlPrivate"
       endwith
 
+      .AddObject("edtKtb_Response", "L7Textarea")
+      with .edtKtb_Response
+        .cControlSource = "V_artist.Art_Ktb_Response"
+        .cLabel = "Ktb Response"
+        .nRows = 3
+      endwith
     endwith
     return 
   endfunc  && addParticipationControls
+
+  * --------------------------------------------------------- *
+  function addAdditionalControls()
+    with this
+
+      .AddObject("divSS", "L7Divider")
+      with .divSS
+        .cLabel = "Additional Spreadsheet Columns"
+      endwith
+
+      .AddObject("chkReceived", "L7Checkbox")
+      with .chkReceived
+        .cGroupId = "ss"
+        .cControlSource = "V_artist.Art_Received"
+        .cLabel = "Received"
+        .cCssClass = "FormControlPrivate"
+      endwith
+
+      .AddObject("edtPanel_Info", "L7Textarea")
+      with .edtPanel_Info
+        .cGroupId = "ss"
+        .cControlSource = "V_artist.Art_Panel_Info"
+        .cLabel = "Panel Info"
+        .nRows = 3
+        .cCssClass = "FormControlPrivate"
+      endwith
+
+      .AddObject("edtBit_Info", "L7Textarea")
+      with .edtBit_Info
+        .cGroupId = "ss"
+        .cControlSource = "V_artist.Art_Bit_Info"
+        .cLabel = "Bit Info"
+        .nRows = 3
+        .cCssClass = "FormControlPrivate"
+      endwith
+
+      .AddObject("edtStorage_Location", "L7Textarea")
+      with .edtStorage_Location
+        .cGroupId = "ss"
+        .cControlSource = "V_artist.Art_Storage_Location"
+        .cLabel = "Storage Location"
+        .nRows = 2
+        .cCssClass = "FormControlPrivate"
+      endwith
+    endwith
+    return 
+  endfunc  && addAdditionalControls
+
   * --------------------------------------------------------- *
   function addSecurityControls()
     with this
+
+      .AddObject("divSec", "L7Divider")
+      with .divSec
+        .cLabel = "Administrative Controls"
+      endwith
 
       .AddObject("colSec", "L7CheckboxCollection")
       with .colSec
@@ -588,16 +688,6 @@ define class aisArtistForm AS AisForm
       with .chkCore
         .cControlSource = "V_artist.Art_Core"
         .cCaption = "Core"
-      endwith
-      .colSec.AddObjectToParent("chkArtist", "L7Checkbox")
-      with .chkArtist
-        .cControlSource = "V_artist.Art_Artist"
-        .cCaption = "Artist"
-      endwith
-      .colSec.AddObjectToParent("chkAnonymous", "L7Checkbox")
-      with .chkAnonymous
-        .cControlSource = "V_artist.Art_Anonymous"
-        .cCaption = "Anonymous"
       endwith
       .colSec.AddObjectToParent("chkAccount_Lockout", "L7Checkbox")
       with .chkAccount_Lockout
@@ -629,36 +719,6 @@ define class aisArtistForm AS AisForm
     endwith
     return 
   endfunc  && addSecurityControls
-  * --------------------------------------------------------- *
-  function addTimeStampControls()
-    with this
-      .AddObject("lblOrig_Time", "L7Label")
-      with .lblOrig_Time
-        .cGroupId = 'created'
-        .cControlSource = "V_artist.Art_Orig_Time"
-        .cLabel = "Created"
-      endwith
-      .AddObject("lblOrig_Art_Fk", "L7Label")
-      with .lblOrig_Art_Fk
-        .cGroupId = 'created'
-        .cControlSource = "V_artist.Art_Orig_Art_Fk"
-        .cLabel = "Created By"
-      endwith
-      .AddObject("lblRev_Time", "L7Label")
-      with .lblRev_Time
-        .cGroupId = 'revised'
-        .cControlSource = "V_artist.Art_Rev_Time"
-        .cLabel = "Last Revised"
-      endwith
-      .AddObject("lblRev_Art_Fk", "L7Label")
-      with .lblRev_Art_Fk
-        .cGroupId = 'revised'
-        .cControlSource = "V_artist.Art_Rev_Art_Fk"
-        .cLabel = "Revised By"
-      endwith
-    endwith
-    return 
-  endfunc  && addTimeStampControls
 enddefine  && ArtistForm
 
 *** ===================================================== ***
@@ -721,16 +781,16 @@ define class AisArtBrowseForm AS AisForm
         .nExtraRows = 0 && don't permit adds 
         .cGridTableCssClass = "sortable " + .cGridTableCssClass
       
-        .AddObject("txtLast_Name", "L7Textbox")
-        with .txtLast_Name
-          .cControlSource = this.cAlias + ".Art_Last_Name"
-          .cLabel = "Last Name"
-        endwith
-
         .AddObject("txtFirst_Name", "L7Textbox")
         with .txtFirst_Name
           .cControlSource = this.cAlias + ".Art_First_Name"
           .cLabel = "First Name"
+        endwith
+
+        .AddObject("txtLast_Name", "L7Textbox")
+        with .txtLast_Name
+          .cControlSource = this.cAlias + ".Art_Last_Name"
+          .cLabel = "Last Name"
         endwith
 
         .AddObject("chkApproved", "L7Checkbox")
@@ -763,10 +823,10 @@ define class AisArtBrowseForm AS AisForm
           .lDisabled = !m.poContext.lAdmin
         endwith
       
-      endwith
-    endwith 
-  endfunc 
-enddefine 
+      endwith && grid 
+    endwith && form
+  endfunc  && AddControls
+enddefine && AisArtBrowseForm 
 
 *** ===================================================== ***
 define class AisArtQuery AS L7Query
