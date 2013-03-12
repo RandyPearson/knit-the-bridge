@@ -78,6 +78,7 @@ p.break { margin-bottom: 5em }
 #statusErrors.failure { background-color: red; color: white; cursor: pointer; padding: 1px 8px 1px 8px !important; -moz-border-radius: 8px }
 #statusErrors.success { background-color: green; color: white; cursor: pointer; padding: 1px 8px 1px 8px !important; -moz-border-radius: 8px }
 
+
 /* Data record and tables display */
 table, table th, table td {border: 1px solid #c6c; border-collapse: collapse;}
 
@@ -139,6 +140,7 @@ span.current {padding-right: 5px;}
 #hoverTip { height: 120px !important; overflow-y: hidden }
 #hoverTip h4 {padding:0; margin:0; color: #C00;}
 
-/* Floats */
+.private {background-color: #dfd;}
+
 .hidden {display: none;}
 

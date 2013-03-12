@@ -46,7 +46,27 @@ function aisArtistName(tvArt)
   endif 
   return  
 endfunc  && aisArtistName
-
+* --------------------------------------------------------- *
+function aisFormatParticipation(toData)
+  local loData, lcRet
+  if vartype(m.toData) = 'O'
+    loData = m.toData
+  else
+    scatter memo name loData
+  endif
+  lcRet = ;
+    iif(loData.ART_PANEL_COUNT <= 0, "", ;
+      iif(loData.ART_PANEL_COUNT = 1, "* making a full panel", ;
+      "* making " + transform(loData.ART_PANEL_COUNT) + " full panels") + crlf) + ;
+    iif(!loData.ART_PARTIAL_PANEL, "", "* making a Partial Panel" + crlf) + ;
+    iif(!loData.ART_TOWERS, "", "* helping with Towers" + crlf) + ;
+    iif(!loData.ART_HELP_INSTALL, "", "* helping with *Installation*" + crlf) + ;
+    iif(!loData.ART_HELP_MATERIALS, "", "* helping with Materials" + crlf) + ;
+    iif(!loData.ART_HELP_MEET_UP, "", "* helping with Meet-Ups" + crlf) + ;
+    iif(!loData.ART_HELP_OUTREACH, "", "* helping with Outreach" + crlf) + ;
+    iif(empty(loData.ART_HELP_OTHER), "", "* " + loData.ART_HELP_OTHER)
+  return m.lcRet
+endfunc && aisFormatParticipation
 *** ========================================================= ***
 define class aisArtPage as aisPage 
   cArt = ""
@@ -194,15 +214,17 @@ define class ais_ArtHome as aisArtPage
       .cCaption = AisArtistName(m.loData) + " Data"
       .AddHeading('Key Information')
       
-      .AddRow("Approved", loData.ART_APPROVED)
       .AddRow("ID", loData.ART_ID)
+      .AddRow("Approved", loData.ART_APPROVED)
 
-      .AddRow("Last Name", TRIM(loData.ART_LAST_NAME), .F.)
-      .AddRow("First Name", TRIM(loData.ART_FIRST_NAME), .F.)
+*!*        .AddRow("Last Name", TRIM(loData.ART_LAST_NAME), .F.)
+*!*        .AddRow("First Name", TRIM(loData.ART_FIRST_NAME), .F.)
+*!*        .AddRow("Anonymous", loData.ART_ANONYMOUS, .F.)
+*!*        .AddRow("Unknown", loData.ART_UNKNOWN, .F.)
+
+      .AddRow("Name", AisArtistName(m.loData))
       .AddRow("Alternative Full Name", TRIM(loData.ART_FULL_NAME), .t.)
       .AddRow("Original Name (from blog)", loData.ART_NAME_ORIG, .t., "private")
-      .AddRow("Anonymous", loData.ART_ANONYMOUS, .F.)
-      .AddRow("Unknown", loData.ART_UNKNOWN, .F.)
 
       .AddRow("Email", HTEmailLink(TRIM(loData.ART_EMAIL), .f., .f., .f., .t.))
       .AddRow("Phone", TRIM(loData.ART_PHONE))
@@ -213,17 +235,20 @@ define class ais_ArtHome as aisArtPage
 
       .AddHeading('Participation')
       .AddRow("Artist?", loData.ART_ARTIST)
-      .AddRow("Partial Panel", loData.ART_PARTIAL_PANEL)
-      .AddRow("Panel Info", L7ParseOnView(loData.ART_PANEL_INFO))
-      .AddRow("Panel Count", loData.ART_PANEL_COUNT)
-      .AddRow("Towers", loData.ART_TOWERS)
-      .AddRow("Help Install", loData.ART_HELP_INSTALL)
-      .AddRow("Help Materials", loData.ART_HELP_MATERIALS)
-      .AddRow("Help Meet Up", loData.ART_HELP_MEET_UP)
-      .AddRow("Help Outreach", loData.ART_HELP_OUTREACH)
-      .AddRow("Help Other", L7ParseOnView(loData.ART_HELP_OTHER))
-      .AddRow("Comments", L7ParseOnView(loData.ART_COMMENTS))
+      .AddRow("Participation", L7ParseOnView(aisFormatParticipation(loData)))
+      
+*!*        .AddRow("Partial Panel", loData.ART_PARTIAL_PANEL)
+*!*        .AddRow("Panel Count", loData.ART_PANEL_COUNT)
+*!*        .AddRow("Towers", loData.ART_TOWERS)
+*!*        .AddRow("Help Install", loData.ART_HELP_INSTALL)
+*!*        .AddRow("Help Materials", loData.ART_HELP_MATERIALS)
+*!*        .AddRow("Help Meet Up", loData.ART_HELP_MEET_UP)
+*!*        .AddRow("Help Outreach", loData.ART_HELP_OUTREACH)
+*!*        .AddRow("Help Other", L7ParseOnView(loData.ART_HELP_OTHER))
       .AddRow("Participation (from blog)", L7ParseOnView(loData.ART_PARTICIPATION))
+      .AddRow("Panel Info", L7ParseOnView(loData.ART_PANEL_INFO))
+
+      .AddRow("Comments", L7ParseOnView(loData.ART_COMMENTS))
 
       .AddHeading('Other Info and Characteristics')
       .AddRow("Register Time", loData.ART_REGISTER_TIME, .F.)
@@ -366,7 +391,7 @@ define class aisArtistForm AS AisForm
   function AddControls
     with this
 
-      .AddObject("txtId", "L7Textbox")
+      .AddObject("txtId", "L7Label")
       with .txtId
         .lDisabled = .T.
         .cGroupID = "PK"
