@@ -91,24 +91,39 @@ define class AisApp AS KtbApp
   * --------------------------------------------------------- *
   function _DeployContentFile(tcFile, tcRelPath, tcBasePath)
     if !file(m.tcFile) && should be built into project/EXE
-      this.app_log(L7_SEVERITY_WARNING, "Deployable file missing: " + m.tcFile)
+      this.app_log(L7_SEVERITY_WARNING, "Deployable file missing from project: " + m.tcFile)
       return
     endif
-    local lcContNew, lcContOld, lcPath, lcOldFile, llOld
+    local lcContNew, lcContOld, lcPath, lcOldFile, llOld, lnBytes, loFso as scripting.filesystemobject, loFil, loTxt
     lcContNew = filetostr(m.tcFile)
     lcPath = fullpath(m.tcRelPath, evl(m.tcBasePath, this.oConfig.cHtmlPagePath))
     if !directory(m.lcPath)
       mkdir (m.lcPath)
-      this.app_log(L7_SEVERITY_INFO, "Created deployment folder: " + m.lcPath)
+      this.app_log(L7_SEVERITY_NOTICE, "Created deployment folder: " + m.lcPath)
     endif 
+    loFso = createobject('scripting.filesystemobject')
     lcOldFile = addbs(m.lcPath) + m.tcFile
-    if file(m.lcOldFile)
-      llOld = .t.
-      lcContOld = filetostr(m.lcOldFile)
+    llOld = loFso.FileExists(m.lcOldFile)  && file(m.lcOldFile)--didn't work from EXE
+    if m.llOld
+      * lcContOld = filetostr(m.lcOldFile)
+      loFil = loFso.GetFile(m.lcOldFile)
+      loTxt = loFil.OpenAsTextStream()
+      lcContOld = loTxt.ReadAll() 
+      store null to loFil, loTxt
+      this.app_log(L7_SEVERITY_DEBUG, "File present: " + m.lcOldFile)
+    else
+      this.app_log(L7_SEVERITY_NOTICE, "File NOT present: " + m.lcOldFile)
     endif 
     if !m.llOld or !m.lcContNew == m.lcContOld 
-      strtofile(m.lcContNew, m.lcOldFile)
-      this.app_log(L7_SEVERITY_INFO, "Content file deployed: " + m.lcOldFile)
+      ** lnBytes = strtofile(m.lcContNew, m.lcOldFile)
+      ** this.app_log(L7_SEVERITY_NOTICE, textmerge([Content file deployed: <<m.lcOldFile>>, <<m.lnBytes>> bytes.]))
+      loTxt = loFso.CreateTextFile(m.lcOldFile, .t.)
+      loTxt.Write(m.lcContNew)
+      loTxt.Close()
+      loTxt = null
+      this.app_log(L7_SEVERITY_NOTICE, textmerge([Content file deployed: <<m.lcOldFile>>, <<len(m.lcContNew)>> bytes.]))
+    else
+      *!* this.app_log(L7_SEVERITY_DEBUG, "File matched: " + m.lcOldFile)
     endif 
    
     return .T.

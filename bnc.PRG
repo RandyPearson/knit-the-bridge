@@ -1,9 +1,6 @@
-* IIServer Version
+* KtB  Version
 
-*!*  LPARAMETERS uid, pwd, nobuild, llUseNetwork, llNoInstall, lcFtpPwd
-*!*  * DO bnc WITH ,, .F., .F., .T.  && build and copy to update folder, but don't install
-
-#DEFINE BNC_EXENAME "iiL7"
+#DEFINE BNC_EXENAME "ktbL7"
 
 LPARAMETERS tcLoc, tvAltFile, tlNoBuild, tcFtpPwd, tlInstallAlso, tcHttpPwd
 
@@ -15,7 +12,7 @@ IF m.tlInstallAlso AND EMPTY(m.tcHttpPwd)  && escaped from GetPass dialog
 ENDIF
 
 LOCAL loIp, loFtp, lnResult, lcText, lnBuff, lcMsg, ;
-  llWasSafe, llFailed, loExc, llUseFtp, loLocRec, lcFile, ltStart
+  llWasSafe, llFailed, loExc, llUseFtp, loLocRec, lcFile, ltStart, lnCount
 
 BncOpenTable()
 SELECT BncConfig
@@ -36,39 +33,52 @@ ELSE
 ENDIF 
 lcMsg = ""  
 llWasSafe = SET( "SAFETY") == "ON"
-llUseFTP = .T.  && NOT m.llUseNetwork
+llUseFTP = .T.  
+lnCount = 0
 IF m.llUseFtp AND EMPTY(m.tcFtpPwd)
   tcFtpPwd = GetPass("Enter FTP Password")  && get this right away
 ENDIF 
-if not empty(m.tvAltFile)
+if !empty(m.tvAltFile)
   if vartype(m.tvALtFile) = "L"
-    lcFile = getfile("", "Select file to send", "Send")
+    do while .t. 
+      lcFile = getfile("", "File to send", "Send", 0, iif(m.lnCount = 0, "Select file to send", "Select another file (cancel when done)"))
+      if empty(m.lcFile)
+        exit
+      endif
+      llFailed = !Bnc_SendFile(m.lcFile, m.loLocRec, m.tcFtpPwd)
+      if m.llFailed
+        exit
+      endif
+      lnCount = m.lnCount + 1 
+    enddo 
   else
     lcFile = m.tvALtFile  && nm passed
+    llFailed = !Bnc_SendFile(m.lcFile, m.loLocRec, m.tcFtpPwd)
   endif
 else
   lcFile = (BNC_EXENAME + ".EXE")
-  if NOT m.tlNoBuild
+  if !m.tlNoBuild
     ? "Building EXE..."
-    BUILD EXE (m.lcFile) FROM BNC_EXENAME RECOMPILE 
+    build exe (m.lcFile) from BNC_EXENAME recompile 
   endif 
+  llFailed = !Bnc_SendFile(m.lcFile, m.loLocRec, m.tcFtpPwd)
 endif 
   
-if !empty(m.lcFile) and m.llUseFtp
-  ltStart = datetime()
-  loFtp = CREATEOBJECT( "bncFTP")
-  ? "Copying " + m.lcFile + " via FTP to " + TRIM(loLocRec.Descript) + " at " + TRIM(loLocRec.HostName) + "..."
-  loFtp.FtpConnect(TRIM(loLocRec.HostName), TRIM(loLocRec.FtpUserID), m.tcFtpPwd)
-  lnResult = loFtp.FtpSendFileEx(m.lcFile, TRIM(loLocRec.FtpFolder) + justfname(m.lcFile))
+*!*  if !empty(m.lcFile) and m.llUseFtp
+*!*    ltStart = datetime()
+*!*    loFtp = CREATEOBJECT( "bncFTP")
+*!*    ? "Copying " + m.lcFile + " via FTP to " + TRIM(loLocRec.Descript) + " at " + TRIM(loLocRec.HostName) + "..."
+*!*    loFtp.FtpConnect(TRIM(loLocRec.HostName), TRIM(loLocRec.FtpUserID), m.tcFtpPwd)
+*!*    lnResult = loFtp.FtpSendFileEx(m.lcFile, TRIM(loLocRec.FtpFolder) + justfname(m.lcFile))
 
-  IF m.lnResult <> 0
-    llFailed = .T.
-    lcMsg = "WININET Error Code " + TRANSFORM(m.lnResult) + " on FTP attempt"
-  ELSE 
-    ? "FTP copy complete. Duration:", ltrim(transform(datetime() - m.ltStart)), "sec"
-  ENDIF
-  loFtp.FtpClose()
-ENDIF 
+*!*    IF m.lnResult <> 0
+*!*      llFailed = .T.
+*!*      lcMsg = "WININET Error Code " + TRANSFORM(m.lnResult) + " on FTP attempt"
+*!*    ELSE 
+*!*      ? "FTP copy complete. Duration:", ltrim(transform(datetime() - m.ltStart)), "sec"
+*!*    ENDIF
+*!*    loFtp.FtpClose()
+*!*  ENDIF 
 
 IF m.tlInstallAlso AND NOT m.llFailed
   ERROR "This code section out of date..."
@@ -94,7 +104,27 @@ USE IN SELECT("bncconfig")
 RETURN  && end main BNC routine
 
 * ------------------------------------------ *
-FUNCTION BncOpenTable
+function Bnc_SendFile(lcFile, loLocRec, tcFtpPwd)
+  local ltStart, loFtp, lnResult, llFailed, lcMsg
+  ltStart = datetime()
+  loFtp = CREATEOBJECT( "bncFTP")
+  ? "Copying " + m.lcFile + " via FTP to " + TRIM(loLocRec.Descript) + " at " + TRIM(loLocRec.HostName) + "..."
+  loFtp.FtpConnect(TRIM(loLocRec.HostName), TRIM(loLocRec.FtpUserID), m.tcFtpPwd)
+  lnResult = loFtp.FtpSendFileEx(m.lcFile, TRIM(loLocRec.FtpFolder) + justfname(m.lcFile))
+
+  IF m.lnResult <> 0
+    llFailed = .T.
+    lcMsg = "WININET Error Code " + TRANSFORM(m.lnResult) + " on FTP attempt"
+    ? datetime(), m.lcMsg
+  ELSE 
+    ? "FTP copy complete. Duration:", ltrim(transform(datetime() - m.ltStart)), "sec"
+  ENDIF
+  loFtp.FtpClose()
+  return !m.llFailed
+endfunc 
+
+* ------------------------------------------ *
+function BncOpenTable
   IF NOT FILE('.\bncconfig.dbf')
     CREATE TABLE BncConfig FREE ( ;
       Location C(16), ;

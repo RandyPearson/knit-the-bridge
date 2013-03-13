@@ -140,6 +140,7 @@ span.current {padding-right: 5px;}
 #hoverTip { height: 120px !important; overflow-y: hidden }
 #hoverTip h4 {padding:0; margin:0; color: #C00;}
 
+.id-field {font-weight: bold; font-size: 15px; }
 .private {background-color: #dfd;}
 
 .hidden {display: none;}

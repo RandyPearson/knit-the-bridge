@@ -24,6 +24,8 @@ define class aisPage as L7Page
   cCancelPage   = "InsList"
 
   cCssFile = null
+  cJsFile  = null 
+  
   cBodyElementClass = "aisBody"
 
   cArt = ""
@@ -322,8 +324,8 @@ define class aisPage as L7Page
 
   * --------------------------------------------------------- *
   function SetCss  && defeat parent
-    this.oHead.AddCssLink("./css/ktb-ais.css", "all")
-    this.oHead.AddCssLink("./css/ktb-aisForm.css", "all")
+    this.oHead.AddCssLink("../ktb-content/css/ktb-ais.css", "all")
+    this.oHead.AddCssLink("../ktb-content/css/ktb-aisForm.css", "all")
     return  
   endfunc  
   * --------------------------------------------------------- *
@@ -331,17 +333,17 @@ define class aisPage as L7Page
     * all files listed in cJsFile come before these:
     with this.oHead
 
-      .AddJavaScript("", [./js/prototype-1.7.0.js]) && Prototype (./js/prototype-1.5.1.js)
-      .AddJavaScript("", [./js/jquery-1.7.1.js])    && jQuery (./js/jquery-1.3.1.js)
+      .AddJavaScript("", [../ktb-content/js/prototype-1.7.0.js]) && Prototype (./js/prototype-1.5.1.js)
+      .AddJavaScript("", [../ktb-content/js/jquery-1.7.1.js])    && jQuery (./js/jquery-1.3.1.js)
 
       * jQuery conflict avoidance w/ Prototype; Use $ for Prototype, $j for jQuery
       .AddJavaScript([var $j = jQuery.noConflict();] + CRLF)
        
       * sortable (Prototype):
-      .AddJavaScript("", [./js/sortTable.js]) && needs to come after conflict avoidance
+      .AddJavaScript("", [../ktb-content/js/sortTable.js]) && needs to come after conflict avoidance
       * L7 Core:
-      .AddJavaScript("", [./js/l7CoreP.js]) && L7 Core (Prototype version)
-      .AddJavaScript("", [./js/l7CoreJQ.js]) && L7 Core (jQuery version)
+      .AddJavaScript("", [../ktb-content/js/l7CoreP.js]) && L7 Core (Prototype version)
+      .AddJavaScript("", [../ktb-content/js/l7CoreJQ.js]) && L7 Core (jQuery version)
       
     endwith 
     return 
@@ -359,6 +361,10 @@ define class aisPage as L7Page
     this.AddSubMenu("This", "THIS PAGE")
     this.AddSubMenu("Navigate", "Navigate")
     this.AddSubMenu("Search", "Search")
+    if poContext.lAdmin
+      this.AddSubMenu("Admin", "Admin")
+    endif
+    this.AddSubMenu("User", "User")
     return 
   endfunc 
   * ----------------------------------------------------- *  
@@ -379,13 +385,17 @@ define class aisPage as L7Page
     this.addMenuItem(m.lcMenu, 'Pieces', StuffUrl(this.cUrlA, 2, "PceList"))
     this.addMenuItem(m.lcMenu, 'Panels', StuffUrl(this.cUrlA, 2, "PnlList"))
     this.addMenuItem(m.lcMenu, 'About', StuffUrl(this.cUrlA, 2, "About"), "About")
+    this.addMenuItem(m.lcMenu, 'KtB Webpage', "\")
+    if poContext.lAdmin
+      *!* this.addMenuItem("main\Admin", 'Refresh Content', StuffUrl(this.cUrlA, 2, "RefreshContent"))
+    endif
+
     this.addMenuItem('main\User', 'Sign Out', StuffUrl(this.cUrlA, 2, 'Login', 'l', '0'))
 
     dodefault()  && always chain upward
     return 
   endfunc  && addDefaultMenu
   * --------------------------------------------------------- *
-
 enddefine && AisPage
 
 *** ========================================================= ***
@@ -515,6 +525,21 @@ define class ais_Login as aisPage
   endfunc
 enddefine 
 
+*** ========================================================= ***
+define class aisAdminPage as aisPage 
+  lAdminRequired = .f.
+enddefine 
+
+*** ========================================================= ***
+define class ais_RefreshContent as aisAdminPage 
+  * --------------------------------------------------------- *
+  function processRequest
+    goL7App.DeployContent()
+    response.write("DeployContent was run.")
+    return
+
+  endfunc
+enddefine 
 
 * end: AisPages
 

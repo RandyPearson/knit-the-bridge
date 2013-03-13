@@ -160,7 +160,8 @@ define class ais_ArtList as aisArtPage
       loCol = .addCursorColumn("Art_Register_Time", "Sign-Up Time", [L7TimeDiff(Art_Register_Time)])
       loCol = .addCursorColumn("Art_KTB_Response", "Respose")
       loCol = .addCursorColumn("Art_Approved", "Approved?")
-      loCol = .addCursorColumn("Art_ID", "Artist ID")
+      loCol = .addCursorColumn("Art_ID", "Artist ID",, "id-field")
+      
       if poContext.lCore
         loCol = .addCursorColumn("Art_PK", "Edit Artist", ;
           'HTLink(StuffUrl(urls.item("ArtForm"), "art", Art_PK), "[Edit Artist...]")')
@@ -214,7 +215,7 @@ define class ais_ArtHome as aisArtPage
       .cCaption = AisArtistName(m.loData) + " Data"
       .AddHeading('Key Information')
       
-      .AddRow("ID", loData.ART_ID)
+      .AddRow("ID", loData.ART_ID,, "id-field" )
       .AddRow("Approved", loData.ART_APPROVED)
 
 *!*        .AddRow("Last Name", TRIM(loData.ART_LAST_NAME), .F.)
@@ -299,7 +300,7 @@ define class ais_ArtHome as aisArtPage
     with loTbl
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Pce_ID", "Piece ID", ;
-        [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)])
+        [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)], "id-field")
       loCol = .AddCursorColumn('Pce_Whole_Panel', 'Whole Panel?')
       loCol = .AddCursorColumn('Pce_Dim_1', 'Dim 1')
       loCol = .AddCursorColumn('Pce_Dim_2', 'Dim 2')
@@ -398,7 +399,8 @@ define class aisArtistForm AS AisForm
         .cFieldType = "C"
         .cControlSource = "V_artist.Art_Id"
         .cLabel = "Artist ID"
-        .cControlCssStyle = [font-weight: bold; font-size: 16px;]
+        ** .cControlCssStyle = [font-weight: bold; font-size: 16px;]
+        .cControlCssClass = "id-field" 
       endwith
       .AddObject("chkApproved", "L7Checkbox")
       with .chkApproved
@@ -806,6 +808,13 @@ define class AisArtBrowseForm AS AisForm
         .nExtraRows = 0 && don't permit adds 
         .cGridTableCssClass = "sortable " + .cGridTableCssClass
       
+        .AddObject("edtName_Orig", "L7Textarea")
+        with .edtName_Orig
+          .cControlSource = this.cAlias + ".Art_Name_Orig"
+          .cLabel = "Name Orig (from blog)"
+          .nRows = 2
+        endwith
+
         .AddObject("txtFirst_Name", "L7Textbox")
         with .txtFirst_Name
           .cControlSource = this.cAlias + ".Art_First_Name"
@@ -824,13 +833,6 @@ define class AisArtBrowseForm AS AisForm
           .cLabel = "Approved"
           .cCaption = "Approved"
           .cCssClass = "FormControlPrivate"
-        endwith
-
-        .AddObject("edtName_Orig", "L7Textarea")
-        with .edtName_Orig
-          .cControlSource = this.cAlias + ".Art_Name_Orig"
-          .cLabel = "Name Orig (from blog)"
-          .nRows = 2
         endwith
 
         .AddObject("lblID", "L7Label")
@@ -950,6 +952,44 @@ define class AisArtQuery AS L7Query
     return  
   endfunc   && BuildWhereClause
 enddefine  && AisArtQuery
+
+#if .f.
+  <div class="ss-item ss-item-required ss-text"><div class="ss-form-entry"><label class="ss-q-title" for="entry_0">Name
+  <span class="ss-required-asterisk">*</span></label>
+  <label class="ss-q-help" for="entry_0"></label>
+  <input type="text" name="entry.0.single" value="" class="ss-q-short" id="entry_0"></div></div></div>
+  <br> <div class="errorbox-good">
+  <div class="ss-item ss-item-required ss-text"><div class="ss-form-entry"><label class="ss-q-title" for="entry_1">Contact Information
+  <span class="ss-required-asterisk">*</span></label>
+  <label class="ss-q-help" for="entry_1">Email or Phone</label>
+  <input type="text" name="entry.1.single" value="" class="ss-q-short" id="entry_1"></div></div></div>
+  <br> <div class="errorbox-good">
+  <div class="ss-item ss-item-required ss-checkbox"><div class="ss-form-entry"><label class="ss-q-title" for="entry_3">I want to participate in Knit the Bridge by...
+  <span class="ss-required-asterisk">*</span></label>
+  <label class="ss-q-help" for="entry_3">Choose all that apply</label>
+
+  <ul class="ss-choices"><li class="ss-choice-item"><label class="ss-choice-label"><input type="checkbox" name="entry.3.group" value="Making a Full Panel (34&quot; x72&quot;)" class="ss-q-checkbox" id="group_3_1">
+
+  Making a Full Panel (34&quot; x72&quot;)</label></li> <li class="ss-choice-item"><label class="ss-choice-label"><input type="checkbox" name="entry.3.group" value="Making a Partial Panel (14&quot; x 14&quot;)" class="ss-q-checkbox" id="group_3_2">
+  Making a Partial Panel (14&quot; x 14&quot;)</label></li> <li class="ss-choice-item"><label class="ss-choice-label"><input type="checkbox" name="entry.3.group" value="Machine Knitting for Towers (Template provided)" class="ss-q-checkbox" id="group_3_3">
+  Machine Knitting for Towers (Template provided)</label></li> <li class="ss-choice-item"><label class="ss-choice-label"><input type="checkbox" name="entry.3.group" value="Organizing a Knit and/or Crochet Meet Up" class="ss-q-checkbox" id="group_3_4">
+  Organizing a Knit and/or Crochet Meet Up</label></li> <li class="ss-choice-item"><label class="ss-choice-label"><input type="checkbox" name="entry.3.group" value="Visiting a School, Senior Center, or Other Community Center in my Community" class="ss-q-checkbox" id="group_3_5">
+  Visiting a School, Senior Center, or Other Community Center in my Community</label></li> <li class="ss-choice-item"><label class="ss-choice-label"><input type="checkbox" name="entry.3.group" value="Donating Materials (Knitting Needles, Crochet Hooks, Acrylic Yarn)" class="ss-q-checkbox" id="group_3_6">
+  Donating Materials (Knitting Needles, Crochet Hooks, Acrylic Yarn)</label></li> <li class="ss-choice-item"><label class="ss-choice-label"><input type="checkbox" name="entry.3.group" value="Helping with the Installation" class="ss-q-checkbox" id="group_3_7">
+  Helping with the Installation</label></li>
+
+  <li class="ss-choice-item"><input type="checkbox" name="entry.3.group" value="__option__" class="ss-q-checkbox" id="other_option:3">
+  <label for="other_option:3">Other:</label>
+  <input type="text" name="entry.3.group.other_option_" value="" class="ss-q-other"></li></ul></div></div></div>
+  <br> <div class="errorbox-good">
+  <div class="ss-item ss-item-required ss-text"><div class="ss-form-entry"><label class="ss-q-title" for="entry_4">Neighborhood or Township
+  <span class="ss-required-asterisk">*</span></label>
+  <label class="ss-q-help" for="entry_4"></label>
+  <input type="text" name="entry.4.single" value="" class="ss-q-short" id="entry_4"></div></div></div>
+  <br>
+  <input type="hidden" name="pageNumber" value="0">
+  <input type="hidden" name="backupCache" value="">
+#endif 
 
 
 * end 
