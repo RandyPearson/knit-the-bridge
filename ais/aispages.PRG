@@ -392,6 +392,7 @@ define class aisPage as L7Page
     this.addMenuItem(m.lcMenu, 'KtB Webpage', "/")
     this.addMenuItem(m.lcMenu, 'KtB Blog', "http://knitthebridge.wordpress.com/")
 
+    this.addMenuItem('main\User', 'My Account', StuffUrl(this.cUrlA, 2, 'ArtHome', 'art', CurrentUser.getUserKey()))
     this.addMenuItem('main\User', 'Sign Out', StuffUrl(this.cUrlA, 2, 'Login', 'l', '0'))
 
     dodefault()  && always chain upward
@@ -497,7 +498,7 @@ define class ais_Login as aisPage
           Response.Write( HTWrap(L7JsonSerialize(loOut), 'pre'))
           this.App_Log(L7_SEVERITY_DEBUG, "Redirecting to: " + m.lcUrl)
 
-          THIS.oHead.SetRefresh(5, m.lcUrl )
+          THIS.oHead.SetRefresh(0, m.lcUrl )
           return
 
         else && login failed

@@ -184,6 +184,9 @@ define class ais_ArtHome as aisArtPage
     if this.oArt.Art_Artist
       this.addMenuItem("main\This,page", "New Piece from this artist...", StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt))
     endif   
+    if poContext.lAdmin and !empty(this.oArt.Art_ID)
+      this.addMenuItem("main\This", "Set Password...", StuffUrl(this.cUrlA, 2, "SetPassword", "art", this.cArt))
+    endif 
     dodefault()
     return 
   endfunc 
@@ -198,10 +201,11 @@ define class ais_ArtHome as aisArtPage
 
     response.write(this.page_getMainRecord())
     
-    if poContext.lCore
-      response.write(HTWrap("Core Info" + this.cSubTitle, 'h3'))
-      *!* response.write(L7ShowObject(this.oArt, this.cSubTitle, [class="record"]))
-    endif 
+*!*      if poContext.lCore
+*!*        response.write(HTWrap("Core Info" + this.cSubTitle, 'h3'))
+*!*        *!* response.write(L7ShowObject(this.oArt, this.cSubTitle, [class="record"]))
+*!*      endif 
+
     return 
   endfunc 
   * ----------------------------------------------------- *  

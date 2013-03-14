@@ -75,10 +75,18 @@ define class aisUser as L7User
           llRetVal = .F.
           llFailure = .T.
           lcReason = "User not found."
-        case loUsers.count = 1
+        case loUsers.count = 1 && unique email match 
           loUsr = loUsers.item[1]
-          llFound = .t. && no AUTH object yet...
-          lcIdFmt = upper(loUsr.Usr_LoginName) && needed for hash (not email address)
+          if empty(loUsr.Art_ID) && not an approved user yet--email match premature
+            loAuth = createobject(L7_AUTH_ACCOUNT_INACTIVE)
+            llRetVal = .F.
+            llFailure = .T.
+            lcReason = "Person does not have an approved account."
+            Page.cLoginFailureMessage = m.lcReason  && OK to tell user this one
+          else
+            llFound = .t. && no AUTH object yet...
+            lcIdFmt = loUsr.Art_ID
+          endif 
         otherwise 
           loAuth = createobject(L7_AUTH_AMBIGUOUS_USER)
           llFailure = .T.
@@ -86,7 +94,7 @@ define class aisUser as L7User
           Page.cLoginFailureMessage = m.lcReason  && OK to tell user this one
         endcase 
       otherwise && assume basic UID
-        lcIdFmt = padr(upper(m.tcId), 20)
+        lcIdFmt = padr(upper(m.tcId), THISAPP_LENGTH_ID_FIELDS)
         if !empty(m.lcIdFmt) && and !empty(m.lcPass) 
           loUsr = this.findUserByUserId(m.lcIdFmt, .t.) && 2nd param returns object
           llFound = !isnull(m.loUsr)
@@ -239,7 +247,7 @@ define class aisUser as L7User
   endfunc
   * --------------------------------------------------------- *
   function FindUser(tcId, tlReturnObject)
-    return this.LocateUserWhere([upper(Art_User_ID) = "] + padr(upper(m.tcId), THISAPP_USER_ID_LEN) + ["], m.tlReturnObject)
+    return this.LocateUserWhere([Art_ID = "] + padr(upper(m.tcId), THISAPP_LENGTH_ID_FIELDS) + ["], m.tlReturnObject)
   endfunc 
   * --------------------------------------------------------- *
   function findUserByPK(tcPK, tlReturnObject) 
@@ -267,7 +275,7 @@ define class aisUser as L7User
   endfunc
   * --------------------------------------------------------- *
   function IsAnonymous
-    return isnull(this.oData) or empty(this.oData.Art_User_Id)
+    return isnull(this.oData) or empty(this.oData.Art_Id)
   endfunc
   * --------------------------------------------------------- *
   function IsReadOnly
@@ -285,7 +293,7 @@ define class aisUser as L7User
     if isnull(this.oData)
       return "--no data--"
     endif
-    return this.oData.Art_User_ID 
+    return this.oData.Art_ID 
   endfunc  && GetUserID              
   * --------------------------------------------------------- *
   function getContactInfo
@@ -302,15 +310,6 @@ define class aisUser as L7User
     if isnull(this.oData)
       return "--no data--"
     endif
-    *!*      if empty(this.oData.Art_Last_Name )
-    *!*        return trim(this.oData.Art_User_ID )
-    *!*      else 
-    *!*        if empty(this.oData.Art_First_Name )
-    *!*          return trim(this.oData.Art_Last_Name )
-    *!*        else 
-    *!*          return trim(this.oData.Art_First_Name ) + [ ] + trim(this.oData.Art_Last_Name )
-    *!*        endif 
-    *!*      endif 
     return aisArtistName(this.oData)
   endfunc  && GetUserName                  
   * --------------------------------------------------------- *
@@ -348,7 +347,7 @@ enddefine && AisUser
 
 *** ========================================================= ***
 function AisPasswordHash(lcPW, lcUser)  && salted hash of PW
-  return HashMD5([KnitTheBridge] + padr(m.lcPW, 24) + upper(padr(m.lcUser, 20)))
+  return HashMD5([KnitTheBridge] + padr(m.lcPW, 24) + upper(padr(m.lcUser, THISAPP_LENGTH_ID_FIELDS)))
 endfunc  
 
 * end

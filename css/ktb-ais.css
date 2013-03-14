@@ -1,4 +1,4 @@
-body { margin: 0; font-family: Tahoma; cursor: default; overflow: hidden /* for status bar, WHY NOT 17?! */ }
+body { margin: 0; font-family: Tahoma, Arial; cursor: default; overflow: hidden /* for status bar, WHY NOT 17?! */ }
 
 /* Header */
 a { text-decoration: underline }
@@ -29,7 +29,7 @@ a { text-decoration: underline }
 
 /* Sidebar subtract 17px for scrollbar*/
 #sidebar { position: absolute; right: 16px; top: 62px; width: 238px !important; bottom: 23px; background-color: #eee; padding: 0 !important; margin: 0 !important; overflow-x: hidden; overflow-y: auto; white-space: nowrap; padding-top: 15px; z-index: 0; box-shadow: inset 0 5px 5px #ccc }
-#sidebar h1 { color: #C00; font-family:cursive; font-weight: 900; font-size: 17px; margin: 20px 0 5px 10px; line-height: 14px; padding:0px; }
+#sidebar h1 { color: #C00; font-family: Tahoma, Arial; ; font-weight: 900; font-size: 17px; margin: 20px 0 5px 10px; line-height: 14px; padding:0px; }
 #sidebar h1.first { margin-top: 0px }
 #sidebar ul { margin-left: 0px; padding-left: 0; list-style-type: none; margin-top: 0; margin-bottom: 5px; padding-top: 0 }
 #sidebar ul.noncontext li { color: #bbb }

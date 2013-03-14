@@ -11,6 +11,7 @@ set procedure to AisDQ      additive  && Data and Query classes
 
 * Page Classes:
 set procedure to AisPages   additive   
+set procedure to AisAdm     additive  && ADMIN pages  
 set procedure to AisArt     additive  && Artist pages  
 set procedure to AisPce     additive  && Piece pages  
 set procedure to AisPnl     additive  && Panel pages  

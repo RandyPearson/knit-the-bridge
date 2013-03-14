@@ -347,12 +347,13 @@ DEFINE CLASS L7User AS SESSION
     local lnSelect, lcSql, loRet, loRec
     lnSelect = select()
     loRet = createobject("Collection")
-    lcSql = textmerge([select * from <<this.cAlias>> where <<m.tcCond>> into cursor _<<program()>>])
+    lcSql = textmerge([select * from <<this.cAlias>> where <<m.tcCond>> into cursor _getUsersWhere])
+    &lcSql 
     scan
       scatter memo name loRec
       loRet.add(m.loRec)  && this could be keyed, but that would fail with integer PKs
     endscan
-    use in select("_" + program())      
+    use in select("getUsersWhere")      
     select (m.lnSelect)
     return m.loRet
   endfunc  && getUsersWhere
