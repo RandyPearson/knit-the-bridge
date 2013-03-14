@@ -384,11 +384,13 @@ define class aisPage as L7Page
 
     this.addMenuItem(m.lcMenu, 'Pieces', StuffUrl(this.cUrlA, 2, "PceList"))
     this.addMenuItem(m.lcMenu, 'Panels', StuffUrl(this.cUrlA, 2, "PnlList"))
-    this.addMenuItem(m.lcMenu, 'About', StuffUrl(this.cUrlA, 2, "About"), "About")
-    this.addMenuItem(m.lcMenu, 'KtB Webpage', "\")
+    ** this.addMenuItem(m.lcMenu, 'About', StuffUrl(this.cUrlA, 2, "About"), "About")
     if poContext.lAdmin
       *!* this.addMenuItem("main\Admin", 'Refresh Content', StuffUrl(this.cUrlA, 2, "RefreshContent"))
     endif
+
+    this.addMenuItem(m.lcMenu, 'KtB Webpage', "/")
+    this.addMenuItem(m.lcMenu, 'KtB Blog', "http://knitthebridge.wordpress.com/")
 
     this.addMenuItem('main\User', 'Sign Out', StuffUrl(this.cUrlA, 2, 'Login', 'l', '0'))
 
@@ -525,21 +527,6 @@ define class ais_Login as aisPage
   endfunc
 enddefine 
 
-*** ========================================================= ***
-define class aisAdminPage as aisPage 
-  lAdminRequired = .f.
-enddefine 
-
-*** ========================================================= ***
-define class ais_RefreshContent as aisAdminPage 
-  * --------------------------------------------------------- *
-  function processRequest
-    goL7App.DeployContent()
-    response.write("DeployContent was run.")
-    return
-
-  endfunc
-enddefine 
 
 * end: AisPages
 
