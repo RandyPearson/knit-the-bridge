@@ -416,7 +416,7 @@ define class AisPceQuery as L7Query
         .cWhereClause = .cWhereClause + [ and Pce_Pnl_FK = '] + .cPnl + [']
       endif 
       if !isnull(.lOrphans)
-        .cWhereClause = .cWhereClause + [ and ] + iif(.lOrphans, [!], []) + [empty(Pce_Pnl_FK)]
+        .cWhereClause = .cWhereClause + [ and ] + iif(.lOrphans, [], [!]) + [empty(Pce_Pnl_FK)]
       endif 
       if !isnull(.lWholePanel)
         .cWhereClause = .cWhereClause + [ and ] + iif(.lWholePanel, [], [!]) + [Pce_Whole_Panel]
@@ -425,7 +425,7 @@ define class AisPceQuery as L7Query
         .cWhereClause = .cWhereClause + [ and Pce_Shipped = ] + iif(.lShipped, [.t.], [.f.])
       endif 
       if !isnull(.lReceived)
-        .cWhereClause = .cWhereClause + [ and Pce_lReceived = ] + iif(.lReceived, [.t.], [.f.])
+        .cWhereClause = .cWhereClause + [ and Pce_Received = ] + iif(.lReceived, [.t.], [.f.])
       endif 
     endwith   
     return  

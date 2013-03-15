@@ -70,6 +70,10 @@ define class AisImport as Custom
       toXfer.Art_Last_Name = alltrim(getwordnum(m.lcTemp, 1, ","))
       toXfer.Art_First_Name = alltrim(getwordnum(m.lcTemp, 2, ","))
     endif
+    * desperate guess at first name: 
+    if empty(toXfer.Art_First_Name) and getwordcount(toXfer.Art_Name_Orig) > 1
+      toXfer.Art_First_Name = getwordnum(toXfer.Art_Name_Orig, 1)
+    endif
     
     addproperty(toXfer, "Art_Age_Range", nvl(toImp.age_range, ""))
     addproperty(toXfer, "Art_Bit_Info", nvl(toImp.bit_info, ""))

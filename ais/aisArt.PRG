@@ -56,14 +56,14 @@ function aisFormatParticipation(toData)
   endif
   lcRet = ;
     iif(loData.ART_PANEL_COUNT <= 0, "", ;
-      iif(loData.ART_PANEL_COUNT = 1, "* making a full panel", ;
+      iif(loData.ART_PANEL_COUNT = 1, "* Making a Full Panel", ;
       "* making " + transform(loData.ART_PANEL_COUNT) + " full panels") + crlf) + ;
-    iif(!loData.ART_PARTIAL_PANEL, "", "* making a Partial Panel" + crlf) + ;
-    iif(!loData.ART_TOWERS, "", "* helping with Towers" + crlf) + ;
-    iif(!loData.ART_HELP_INSTALL, "", "* helping with *Installation*" + crlf) + ;
-    iif(!loData.ART_HELP_MATERIALS, "", "* helping with Materials" + crlf) + ;
-    iif(!loData.ART_HELP_MEET_UP, "", "* helping with Meet-Ups" + crlf) + ;
-    iif(!loData.ART_HELP_OUTREACH, "", "* helping with Outreach" + crlf) + ;
+    iif(!loData.ART_PARTIAL_PANEL, "", "* Making Partial Panel(s)" + crlf) + ;
+    iif(!loData.ART_TOWERS, "", "* Machine Knitting for Towers" + crlf) + ;
+    iif(!loData.ART_HELP_INSTALL, "", "* Helping with *Installation*" + crlf) + ;
+    iif(!loData.ART_HELP_MATERIALS, "", "* Donating Materials" + crlf) + ;
+    iif(!loData.ART_HELP_MEET_UP, "", "* Organizing a Meet-Up" + crlf) + ;
+    iif(!loData.ART_HELP_OUTREACH, "", "* Helping with Outreach" + crlf) + ;
     iif(empty(loData.ART_HELP_OTHER), "", "* " + loData.ART_HELP_OTHER)
   return m.lcRet
 endfunc && aisFormatParticipation
@@ -153,14 +153,14 @@ define class ais_ArtList as aisArtPage
     loTbl = createobject("AisTable")
     with loTbl
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
+      loCol = .addCursorColumn("Art_ID", "Artist ID",, "id-field")
       loCol = .addCursorColumn("Art_Last_Name", "Name", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), trim(Art_Last_Name) + ", " + trim(Art_First_Name))])
       loCol = .addCursorColumn("Art_Email", "Email")
       loCol = .addCursorColumn("Art_Phone", "Phone")
       loCol = .addCursorColumn("Art_Register_Time", "Sign-Up Time", [L7TimeDiff(Art_Register_Time)])
-      loCol = .addCursorColumn("Art_KTB_Response", "Respose")
+      loCol = .addCursorColumn("Art_KTB_Response", "Response")
       loCol = .addCursorColumn("Art_Approved", "Approved?")
-      loCol = .addCursorColumn("Art_ID", "Artist ID",, "id-field")
       
       if poContext.lCore
         loCol = .addCursorColumn("Art_PK", "Edit Artist", ;
@@ -595,32 +595,32 @@ define class aisArtistForm AS AisForm
       .colPart.AddObjectToParent("chkPartial_Panel", "L7Checkbox")
       with .chkPartial_Panel
         .cControlSource = "V_artist.Art_Partial_Panel"
-        .cCaption = "Partial Panel"
+        .cCaption = "Making Partial Panel(s)"
       endwith
       .colPart.AddObjectToParent("chkTowers", "L7Checkbox")
       with .chkTowers
         .cControlSource = "V_artist.Art_Towers"
-        .cCaption = "Towers"
+        .cCaption = "Machine Knitting for Towers"
       endwith
       .colPart.AddObjectToParent("chkHelp_Install", "L7Checkbox")
       with .chkHelp_Install
         .cControlSource = "V_artist.Art_Help_Install"
-        .cCaption = "Help Install"
+        .cCaption = "Help with Installation"
       endwith
       .colPart.AddObjectToParent("chkHelp_Materials", "L7Checkbox")
       with .chkHelp_Materials
         .cControlSource = "V_artist.Art_Help_Materials"
-        .cCaption = "Help Materials"
+        .cCaption = "Donating Materials"
       endwith
       .colPart.AddObjectToParent("chkHelp_Meet_Up", "L7Checkbox")
       with .chkHelp_Meet_Up
         .cControlSource = "V_artist.Art_Help_Meet_Up"
-        .cCaption = "Help Meet Up"
+        .cCaption = "Organizing a Meet-Up"
       endwith
       .colPart.AddObjectToParent("chkHelp_Outreach", "L7Checkbox")
       with .chkHelp_Outreach
         .cControlSource = "V_artist.Art_Help_Outreach"
-        .cCaption = "Help Outreach"
+        .cCaption = "Help with Outreach"
       endwith
 
       .AddObject("edtHelp_Other", "L7Textarea")
