@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION 2
+#DEFINE THISAPP_DATABASE_REVISION 3
 
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
@@ -218,6 +218,15 @@ define class AisApp AS KtbApp
       index on Pnl_Completed tag Completed
       use in select("Panel")
 
+    case m.lnRev = 3
+      this.removeColumn("Panel", "Pnl_Type") && no error if d.n.e. 
+
+      alter table Artist add Art_Railing_1_Count I
+      alter table Artist add Art_Railing_2_Count I
+      alter table Artist add Art_Railing_3_Count I
+      use in select("Artist")
+
+
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
@@ -225,6 +234,15 @@ define class AisApp AS KtbApp
     
     endcase 
   endfunc && ApplyRevision
+  * --------------------------------------------------------- *
+  function RemoveColumn(tcTable, tcCol)
+    if indbc(m.tcTable + "." + m.tcCol, "FIELD")
+      alter table (m.tcTable) drop column (m.tcCol)
+      use in select(m.tcTable)
+    endif
+    return 
+  endfunc 
+  * --------------------------------------------------------- *
 enddefine && AisApp
 
 *** ===================================================== ***
@@ -363,6 +381,9 @@ function CreateArtistTable
       Art_Bit_Info M, ;
       Art_Panel_Info M, ;
       Art_Panel_Count I, ;
+      Art_Railing_1_Count I, ; && Rev 3
+      Art_Railing_2_Count I, ; && Rev 3
+      Art_Railing_3_Count I, ; && Rev 3
       Art_Received L, ;
       Art_Storage_Location M, ;
       Art_Towers L, ; 
@@ -476,7 +497,6 @@ function CreatePanelTable
       Pnl_Single_Piece L, ;  
       Pnl_Dim_1 C(12), ;
       Pnl_Dim_2 C(12), ;
-      Pnl_Type C(THISAPP_LENGTH_PIECE_TYPE), ;
       Pnl_Comments M, ;
       Pnl_Notes M, ;
       Pnl_Orig_Art_FK C(32), ;
@@ -582,12 +602,12 @@ FUNCTION InsertSeedRecords
   insert into Artist ( ;
       Art_PK, Art_Inactive, Art_Admin, Art_Artist, Art_Anonymous, ;
       Art_Full_Name, Art_First_Name, Art_Last_Name, ;
-      Art_User_ID, ;
+      Art_ID, Art_Password_Hash, ;
       Art_Orig_Art_FK, Art_Orig_Time, Art_Rev_Art_FK, Art_Rev_Time ;
     ) VALUES ( ;
       THISAPP_DEV_PK, .f., .t., .f., .f., ;
       "SYSTEM DEVELOPER", "SYSTEM", "DEVELOPER", ;
-      THISAPP_USER_DEV, ;
+      THISAPP_USER_DEV, AisPasswordHash(THISAPP_USER_DEV, THISAPP_USER_DEV), ;
       THISAPP_ADMIN_PK, m.poEnv.tTime, THISAPP_ADMIN_PK, m.poEnv.tTime )
 
   * "Anonymous User"

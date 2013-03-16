@@ -6,10 +6,10 @@
 function AisArtQueryFlags()
   return L7JsonParse( ;
     '[' + ;
-    '{"root": "core", "prompt": "Team"}' + ;
-    ',{"root": "install", "field": "Art_Help_Install"}' + ;
+    '{"root": "core", "prompt": "Core Team"}' + ;
+    ',{"root": "install", "field": "Art_Help_Install", "prompt": "Help Install"}' + ;
     ',{"root": "outreach", "field": "Art_Help_Outreach"}' + ;
-    ',{"root": "towers"}' + ;
+    ',{"root": "towers", "prompt": "Machine Knit for Towers"}' + ;
     ',{"root": "artist"}' + ;
     ',{"root": "admin", "menu": false}' + ;
     ']' )
@@ -104,15 +104,19 @@ define class ais_ArtList as aisArtPage
   endfunc  
   * ----------------------------------------------------- *  
   function AddDefaultMenu
-    local loFlags, lnFlag, loFlag 
+    local loFlags, lnFlag, loFlag, lcPrompt
     with this
+
+      .AddSubMenu("This", "PEOPLE")
+
       loFlags = .oArtQueryFlags
       for lnFlag = 1 to loFlags.count
         loFlag = loFlags.item[m.lnFlag]
         if pemstatus(loFlag, "menu", 5) and !loFlag.menu
           loop
         endif
-        .addMenuItem("main\This", proper(loFlag.root), StuffUrl(.cUrlB, "flags", loFlag.root))
+        lcPrompt = iif(pemstatus(m.loFlag, "prompt", 5), m.loFlag.prompt, proper(m.loFlag.root))
+        .addMenuItem("main\This", m.lcPrompt, StuffUrl(.cUrlB, "flags", loFlag.root))
       next 
       if poContext.lAdmin
         .addMenuItem("main\This", "Approved", StuffUrl(.cUrlB, "Approved", "1"),, !isnull(.lPage_Approved) and .lPage_Approved)
@@ -392,6 +396,7 @@ define class aisArtistForm AS AisForm
   cTitle = "Artist Form"
   cEntityAlias = "v_Artist"
   cEntityAbbr  = "Art"
+  cCssStyle = "width: 100%;"
   * --------------------------------------------------------- *
   function AddControls
     with this
@@ -573,29 +578,66 @@ define class aisArtistForm AS AisForm
         .cLabel = "Participation Information"
       endwith
 
-      .AddObject("colPart", "L7CheckboxCollection")
-      with .colPart
+      .AddObject("colArt", "L7CollectionControl")  && L7CheckboxCollection
+      with .colArt
         .cGroupId = "part"
+        .cCssStyle = "width: 40%;"
+        .lAutoRender = .T.
+        .cDefaultControlPattern = [(%l%s)%c(%s%i)(%b%v)]
+        .cLabel = "Submission Estimates"
+        .cInterControlText = L7BR  && CHR(38) + 'nbsp;'       && &nbsp
       endwith
       
-      .colPart.AddObjectToParent("chkArtist", "L7Checkbox")
+      .colArt.AddObjectToParent("chkArtist", "L7Checkbox")
       with .chkArtist
         .cControlSource = "V_artist.Art_Artist"
-        .cCaption = "Artist"
+        .cCaption = "Contributing Artist"
+        .cLabel = "Artist"
+        .cInstructions = "(Check this for anyone who may submit pieces.)"
       endwith
 
-      .colPart.AddObjectToParent("txtPanel_Count", "L7Textbox")
+      .colArt.AddObjectToParent("txtPanel_Count", "L7Textbox")
       with .txtPanel_Count
         .cFieldType = "I"
         .cControlSource = "V_artist.Art_Panel_Count"
-        .cLabel = "Whole Panel Count"
-        .cInstructions = "(whole panel estimate only, if n/a, enter 0)"
+        .nSize = 3
+        .cLabel = "# of Whole Panels"
+        .cInstructions = "(estimate only, if n/a, enter 0)"
       endwith
 
-      .colPart.AddObjectToParent("chkPartial_Panel", "L7Checkbox")
+      .colArt.AddObjectToParent("chkPartial_Panel", "L7Checkbox")
       with .chkPartial_Panel
         .cControlSource = "V_artist.Art_Partial_Panel"
         .cCaption = "Making Partial Panel(s)"
+        .cLabel = "Partial Panels"
+      endwith
+
+      .colArt.AddObjectToParent("txtRailing_1_Count", "L7Textbox")
+      with .txtRailing_1_Count
+        .cFieldType = "I"
+        .cControlSource = "V_artist.Art_Railing_1_Count"
+        .nSize = 3
+        .cLabel = "# of 9x105 Railings"
+        .cInstructions = "(if none, enter 0)"
+      endwith
+
+      .colArt.AddObjectToParent("txtRailing_2_Count", "L7Textbox")
+      with .txtRailing_2_Count
+        .cFieldType = "I"
+        .cControlSource = "V_artist.Art_Railing_2_Count"
+        .nSize = 3
+        .cLabel = "# of 15x80 Railings"
+        .cInstructions = "(if none, enter 0)"
+      endwith
+
+      .AddObject("colPart", "L7CollectionControl")  && L7CheckboxCollection
+      with .colPart
+        .cGroupId = "part"
+        .cCssStyle = "width: 30%;"
+        .lAutoRender = .T.
+        .cDefaultControlPattern = "%c(%s%i)"
+        .cInterControlText = L7BR  && CHR(38) + 'nbsp;'       && &nbsp
+        .cLabel = "Additional Participation"
       endwith
       .colPart.AddObjectToParent("chkTowers", "L7Checkbox")
       with .chkTowers
@@ -623,12 +665,12 @@ define class aisArtistForm AS AisForm
         .cCaption = "Help with Outreach"
       endwith
 
-      .AddObject("edtHelp_Other", "L7Textarea")
+      .colPart.AddObjectToParent("edtHelp_Other", "L7Textarea")
       with .edtHelp_Other
         .cGroupId = "part"
         .cControlSource = "V_artist.Art_Help_Other"
         .cLabel = "Help Other"
-        .nRows = 3
+        .nRows = 2
       endwith
       .AddObject("edtParticipation", "L7Textarea")
       with .edtParticipation
@@ -639,11 +681,20 @@ define class aisArtistForm AS AisForm
         .cCssClass = "FormControlPrivate"
       endwith
 
+      .AddObject("lblRegister_Time", "L7Label")
+      with .lblRegister_Time
+        .cGroupID = "Register"
+        .cControlSource = "V_artist.Art_Register_Time"
+        .cLabel = "Registered"
+        .cShowExpression = [L7TimeDiff(V_artist.Art_Register_Time)]
+      endwith
+
       .AddObject("edtKtb_Response", "L7Textarea")
       with .edtKtb_Response
+        .cGroupID = "Register"
         .cControlSource = "V_artist.Art_Ktb_Response"
         .cLabel = "Ktb Response"
-        .nRows = 3
+        .nRows = 2
       endwith
     endwith
     return 
@@ -671,7 +722,7 @@ define class aisArtistForm AS AisForm
         .cGroupId = "ss"
         .cControlSource = "V_artist.Art_Panel_Info"
         .cLabel = "Panel Info"
-        .nRows = 3
+        .nRows = 2
         .cCssClass = "FormControlPrivate"
       endwith
 
@@ -680,7 +731,7 @@ define class aisArtistForm AS AisForm
         .cGroupId = "ss"
         .cControlSource = "V_artist.Art_Bit_Info"
         .cLabel = "Bit Info"
-        .nRows = 3
+        .nRows = 2
         .cCssClass = "FormControlPrivate"
       endwith
 

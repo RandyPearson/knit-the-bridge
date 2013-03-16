@@ -18,7 +18,6 @@ function aisCreatePanel(toPce)
     Pnl_Single_Piece with toPce.Pce_Whole_Panel ;
     Pnl_Dim_1 with toPce.Pce_Dim_1 ; && initial approx, can free-wheel 
     Pnl_Dim_2 with toPce.Pce_Dim_2 ; &&  ''
-    Pnl_Type with toPce.Pce_Type ; 
     Pnl_ID with AisAssignID("PNL")
 
   select V_Panel  && UpdateControlSources can alter work area
@@ -325,7 +324,7 @@ define class AisPnlQuery as L7Query
   cBaseTable = "Panel"
   cDefaultFieldList = ;
     "Pnl_PK,Pnl_ID,Pnl_Stitcher_Art_FK,Pnl_Asm_FK,Pnl_Single_Piece" + ;  
-    ",Pnl_Dim_1,Pnl_Dim_2,Pnl_Type" 
+    ",Pnl_Dim_1,Pnl_Dim_2" 
 
   nOrderBy = 1
   dimension aOrderBy[ 1, 2]

@@ -403,7 +403,7 @@ enddefine && AisPage
 
 *** ========================================================= ***
 define class ais_Home as aisPage 
-  nMinLoginLevel = L7_NONE  && users always need access to login form
+  ** nMinLoginLevel = L7_NONE  && users always need access to login form
   cSubTitle = "Home"
   * ----------------------------------------------------- *  
   function ProcessRequest
@@ -413,7 +413,7 @@ enddefine
 
 *** ========================================================= ***
 define class ais_About as aisPage 
-  nMinLoginLevel = L7_NONE  && users always need access to login form
+  ** nMinLoginLevel = L7_NONE  && users always need access to login form
   cSubTitle = "About"
   * ----------------------------------------------------- *  
   function ProcessRequest
