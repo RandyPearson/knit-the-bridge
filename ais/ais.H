@@ -19,7 +19,7 @@
 #DEFINE THISAPP_AGE_RANGES        "n/a   , 0- 5 , 6-12 ,13-17 ,18-29 ,30-39 ,40-49 ,50-69 ,70+   "
 
 #DEFINE THISAPP_LENGTH_PIECE_TYPE 8
-#DEFINE THISAPP_PIECE_TYPES       "Panel   ,Railing ,Unknown ,Other   "
+#DEFINE THISAPP_PIECE_TYPES       "Panels  ,Railings,Unknown ,Other   "
 ; #DEFINE THISAPP_PIECE_TYPES       "Knit    ,Crochet ,Both    ,Other   "
 
 #DEFINE THISAPP_USER_ID_LEN       20

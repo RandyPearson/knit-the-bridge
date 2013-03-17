@@ -184,9 +184,14 @@ enddefine
 define class ais_ArtHome as aisArtPage 
   * ----------------------------------------------------- *  
   function AddDefaultMenu
+    this.AddSubMenu("This", AisArtistName(this.oArt))
+
     this.addMenuItem("main\This,page", "Modify Artist...", StuffUrl(this.cUrlA, 2, "ArtForm", "art", this.cArt))
     if this.oArt.Art_Artist
-      this.addMenuItem("main\This,page", "New Piece from this artist...", StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt))
+      this.addMenuItem("main\This,page", "Submit Panel Piece...", ;
+        StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Panels"))
+      this.addMenuItem("main\This,page", "Submit Railing Piece...", ;
+        StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Railings"))
     endif   
     if poContext.lAdmin and !empty(this.oArt.Art_ID)
       this.addMenuItem("main\This", "Set Password...", StuffUrl(this.cUrlA, 2, "SetPassword", "art", this.cArt))
@@ -309,6 +314,7 @@ define class ais_ArtHome as aisArtPage
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Pce_ID", "Piece ID", ;
         [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)], "id-field")
+      loCol = .addCursorColumn("Pce_Type", "Type")
       loCol = .AddCursorColumn('Pce_Whole_Panel', 'Whole Panel?')
       loCol = .AddCursorColumn('Pce_Dim_1', 'Dim 1')
       loCol = .AddCursorColumn('Pce_Dim_2', 'Dim 2')

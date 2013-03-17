@@ -115,6 +115,7 @@ define class ais_PceList as aisPcePage
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Pce_ID", "Piece ID", ;
         [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)])
+      loCol = .addCursorColumn("Pce_Type", "Type")
       loCol = .addCursorColumn("Art_ID", "Artist ID", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), Art_ID)])
       loCol = .addCursorColumn("Art_Last_Name", "Last Name", ;
@@ -357,8 +358,8 @@ enddefine  && PieceForm
 define class AisPceQuery as L7Query
   cBaseTable = "Piece"
   cDefaultFieldList = ;
-    "Pce_PK,Pce_ID,Pce_Art_FK,Pce_Pnl_FK,Pce_Whole_Panel" + ;  
-    ",Pce_Dim_1,Pce_Dim_2,Pce_Type,Pce_Shipped,Pce_Ship_Date,Pce_Received" 
+    "Pce_PK, Pce_ID, Pce_Art_FK, Pce_Pnl_FK, Pce_Whole_Panel" + ;  
+    ", Pce_Dim_1, Pce_Dim_2, Pce_Type, Pce_Shipped, Pce_Ship_Date, Pce_Received" 
 
   nOrderBy = 1
   dimension aOrderBy[ 1, 2]
@@ -367,11 +368,13 @@ define class AisPceQuery as L7Query
   cArt = null
   cPnl = null
   
+  cType = null
+
   lOrphans    = null
   lWholePanel = null
   lShipped    = null
   lReceived   = null
-
+  
   lJoinArtist = .f. 
   * --------------------------------------------------------- *
   function GetCaption 
@@ -410,6 +413,10 @@ define class AisPceQuery as L7Query
 
       if !isnull(.cArt)
         .cWhereClause = .cWhereClause + [ and Pce_Art_FK = '] + .cArt + [']
+      endif 
+
+      if !isnull(.cType)
+        .cWhereClause = .cWhereClause + [ and Pce_Type = '] + padr(.cType, THISAPP_LENGTH_PIECE_TYPE) + [']
       endif 
 
       if !isnull(.cPnl)
