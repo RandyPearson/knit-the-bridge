@@ -159,12 +159,23 @@ enddefine
 define class ais_PceNew as ais_PceForm
   lAdding = .t.
   lPceRequired = .f.
+  * --------------------------------------------------------- *
+  function BeforeProcessRequest
+    local lcStr
+    
+    lcStr = this.ReadQueryString("type", .t., .t.)
+    this.cPage_Type = m.lcStr
+    
+    dodefault()  && required bubble-up
+    return    
+  endfunc  
 enddefine 
 
 *** ========================================================= ***
 define class ais_PceForm as aisPcePage 
   lAdding = .f.
   lArtRequired = .t.
+  cPage_Type = null
   * ----------------------------------------------------- *  
   function ProcessRequest
 
@@ -177,11 +188,14 @@ define class ais_PceForm as aisPcePage
     use V_Piece in select("V_Piece")
     if !this.lAdding
       select V_Piece
+      this.cPage_Type = trim(Pce_Type)
       scatter memo name loOldRec
     endif 
+    this.assert(inlist(this.cPage_Type, "Railings", "Panels"), "Unknown piece type: " + this.cPage_Type)
     cursorsetprop("Buffering", 5, "V_Piece")
-    loForm = this.createForm('aisPieceForm')
+    loForm = this.createForm('aisPieceForm', this.cUrlC)
     with loForm
+      .cCustom_Type = this.cPage_Type
       .lNewRecord = THIS.lAdding
       .AddControls()
       .DoEvents() 
@@ -190,7 +204,8 @@ define class ais_PceForm as aisPcePage
         select V_Piece
         if this.lAdding
           append blank
-          replace Pce_Art_FK with this.cArt
+          replace Pce_Art_FK with this.cArt ;
+            Pce_Type with this.cPage_Type 
         endif 
         if empty(Pce_Id)
           replace Pce_ID with AisAssignID("PCE")
@@ -234,6 +249,7 @@ enddefine && ais_PceForm
 *** ========================================================= ***
 define class aisPieceForm as AisForm
   cTitle = "Piece Form"
+  cCustom_Type = null 
   * --------------------------------------------------------- *
   function  AddControls
     with this
@@ -273,35 +289,37 @@ define class aisPieceForm as AisForm
         .lDisabled = !m.poContext.lAdmin
       endwith 
 
-      .AddObject("chkWhole_Panel", "L7Checkbox")
-      with .chkWhole_Panel
-        .cGroupID = "PANEL"
-        .cControlSource = "V_piece.Pce_Whole_Panel"
-        .cLabel = "Does the piece comprose a whole panel?"
-        .nMode = L7_MULTI_RADIOBUTTON
-        .nStyle = L7_MULTISTYLE_VERTICAL  && only applies to radio-button transforms
-        .cCaption = "Yes - whole panel"
-        .cFalseCaption = "No - partial panel" 
-        .lFalseBeforeTrue = .T.
-        .cInterControlText = NULL 
-      endwith 
+      if this.cCustom_Type = "Panels"
+        .AddObject("chkWhole_Panel", "L7Checkbox")
+        with .chkWhole_Panel
+          .cGroupID = "PANEL"
+          .cControlSource = "V_piece.Pce_Whole_Panel"
+          .cLabel = "Does the piece comprose a whole panel?"
+          .nMode = L7_MULTI_RADIOBUTTON
+          .nStyle = L7_MULTISTYLE_VERTICAL  && only applies to radio-button transforms
+          .cCaption = "Yes - whole panel"
+          .cFalseCaption = "No - partial panel" 
+          .lFalseBeforeTrue = .T.
+          .cInterControlText = NULL 
+        endwith 
+        
+        .AddObject("txtPnl_Fk", "L7Textbox")
+        with .txtPnl_Fk
+          .cGroupID = "PANEL"
+          .cFieldType = "C"
+          .cControlSource = "V_piece.Pce_Pnl_Fk"
+          .cLabel = "Panel Internal Key"
+          .lDisabled = .t. 
+        endwith 
+      endif
       
-      .AddObject("txtPnl_Fk", "L7Textbox")
-      with .txtPnl_Fk
-        .cGroupID = "PANEL"
-        .cFieldType = "C"
-        .cControlSource = "V_piece.Pce_Pnl_Fk"
-        .cLabel = "Panel Internal Key"
-        .lDisabled = .t. 
-      endwith 
-
       .AddObject("txtDim_1", "L7Textbox")
       with .txtDim_1
         .cGroupID = "DIM"
         .cFieldType = "C"
         .cControlSource = "V_piece.Pce_Dim_1"
         .cLabel = "Dimension 1 (inches)"
-        .cInstructions = "If not same, please enter larger dimension here!"
+        .cInstructions = "If not equal, please enter larger dimension first!"
       endwith
        
       .AddObject("txtDim_2", "L7Textbox")
