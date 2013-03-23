@@ -24,7 +24,7 @@ define class aisPcePage as aisPage
     endif 
     dodefault()  && required bubble-up
     return    
-  endfunc  
+  endfunc  && BeforeProcessRequest
   * --------------------------------------------------------- *
   function VerifyPiece(tcKey)
     local loData
@@ -38,8 +38,8 @@ define class aisPcePage as aisPage
       this.NotFound()
     endif 
     return  
-  endfunc   
-enddefine 
+  endfunc  && VerifyPiece 
+enddefine && aisPcePage 
 
 *** ========================================================= ***
 define class ais_PceList as aisPcePage 
@@ -134,31 +134,88 @@ define class ais_PceList as aisPcePage
       response.write(.render())
       
       if poContext.lCore
-        Response.Write(HTWrap(loQry.cSqlStatement, 'div,p', 'admin,debug'))
+        Response.Write(HTWrap(loQry.cSqlStatement, 'div,p',, 'admin,debug'))
       endif
     endwith 
     return 
   endfunc 
-enddefine 
+enddefine && ais_PceList 
 
 *** ========================================================= ***
 define class ais_PceHome as aisPcePage 
+  lArtRequired = .t.
   * ----------------------------------------------------- *  
   function AddDefaultMenu
+    this.AddSubMenu("This", "This Piece")
     this.addMenuItem("main\This,page", "Edit Piece...", StuffUrl(this.cUrlA, 2, "PceForm", "pce", this.cPce))
+    this.addMenuItem("main\This,page", "Artist's Page", StuffUrl(this.cUrlA, 2, "ArtHome", "art", this.cArt))
     dodefault()
     return 
   endfunc 
   * ----------------------------------------------------- *  
   function ProcessRequest
-    response.write(L7ShowObject(this.oPce, , [class="record"]))
+    this.cSubTitle = "Piece " + this.oPce.Pce_ID + " from " + AisArtistName(Page.oArt.Art_PK) 
+    response.write(this.page_getMainRecord())
+
+    if poContext.lAdmin
+      response.write(HTWrap(L7ShowObject(this.oPce, , [class="record"]),'div','admin'))
+    endif
   endfunc 
+  * ----------------------------------------------------- *  
+  function page_getMainRecord()
+    local loElem, loRow, lcRet, loData
+    lcRet = ""
+    loData = this.oPce
+    loElem = createobject("aisRecordElement")
+    with loElem
+      loRow = .getRowObject()
+      .cCaption = this.cSubTitle
+      .AddHeading('Key Information')
+      
+      .AddRow("Piece ID", loData.Pce_ID,, "id-field" )
+      .AddRow("Artist ID", this.oArt.ART_ID,, "id-field" )
+      .AddRow("Artist's Name", HtLink(StuffUrl(this.cUrlA, 2, "ArtHome", "art", this.oArt.ART_PK), AisArtistName(this.oArt.ART_PK)))
+      .AddRow("Type", loData.Pce_Type)
+      .AddRow("Dimension 1", loData.Pce_Dim_1)
+      .AddRow("Dimension 2", loData.Pce_Dim_2)
+      if m.loData.Pce_Type = "Panels"
+        .AddRow("Whole-Panel Piece?", loData.Pce_Whole_Panel)
+        .AddRow("Assigned to Panel?", iif(empty(m.loData.Pce_Pnl_FK), ;
+          "No. " + "(assign now function goes here...)", ;
+          "Yes. " + HTLink(StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", loData.Pce_Pnl_FK), "View Panel Page...")))
+      endif
+      .AddRow("Comments", L7ParseOnView(loData.Pce_COMMENTS))
+
+      .AddHeading('Logistical Information')
+      .AddRow("Shipped/Delivered", loData.Pce_Shipped)
+      .AddRow("Ship/Delivery Date", loData.Pce_Ship_Date)
+      .AddRow("Received", loData.Pce_RECEIVED)
+      if poContext.lCore
+        .AddRow("Notes", L7ParseOnView(loData.Pce_NOTES), .F., "private")
+      endif
+
+      if poContext.lCore
+        .AddHeading('Administrative Information')
+        .AddRow("Pk", TRIM(loData.Pce_PK), .F., "private")
+        .AddRow("Deleted", loData.Pce_INACTIVE, .F., "private")
+        .AddRow("Created", TRANSFORM(loData.Pce_ORIG_TIME) + [ by ] + AisArtistName(loData.Pce_Orig_Art_FK), .F., "private")
+        .AddRow("Last Modified", TRANSFORM(loData.Pce_REV_TIME) + [ by ] + AisArtistName(loData.Pce_Rev_Art_FK), .F., "private")
+      endif
+
+      lcRet = lcRet + .Render()
+
+    endwith 
+    return m.lcRet
+  endfunc && page_getMainRecord
 enddefine 
 
 *** ========================================================= ***
 define class ais_PceNew as ais_PceForm
   lAdding = .t.
   lPceRequired = .f.
+  cPage_Dim_1 = null
+  cPage_Dim_2 = null
+  lPage_Whole = null
   * --------------------------------------------------------- *
   function BeforeProcessRequest
     local lcStr
@@ -166,6 +223,10 @@ define class ais_PceNew as ais_PceForm
     lcStr = this.ReadQueryString("type", .t., .t.)
     this.cPage_Type = m.lcStr
     
+    this.cPage_Dim_1 = this.ReadQueryString("dim_1", .t., .t.)
+    this.cPage_Dim_2 = this.ReadQueryString("dim_2", .t., .t.)
+    this.lPage_Whole = this.ReadQueryString("whole", .t., .t.) == "1" && ignored for Railings
+
     dodefault()  && required bubble-up
     return    
   endfunc  
@@ -208,7 +269,7 @@ define class ais_PceForm as aisPcePage
             Pce_Type with this.cPage_Type 
         endif 
         if empty(Pce_Id)
-          replace Pce_ID with AisAssignID("PCE")
+          replace Pce_ID with AisAssignID(icase(Pce_Type = "Railings", "RLG", "PCE"))
         endif
         .UpdateControlSources()
         select V_Piece  && UpdateControlSources can alter work area
@@ -253,19 +314,6 @@ define class aisPieceForm as AisForm
   * --------------------------------------------------------- *
   function  AddControls
     with this
-      .AddObject("lblPk", "L7Label")
-      with .lblPk
-        .cGroupID = "ADMIN"
-        .cControlSource = "V_piece.Pce_Pk"
-        .cLabel = "Internal Key"
-      endwith 
-      .AddObject("chkInactive", "L7Checkbox")
-      with .chkInactive
-        .cGroupID = "ADMIN"
-        .cControlSource = "V_piece.Pce_Inactive"
-        .cLabel = "Delete?"
-        .lDisabled = NOT m.poContext.lAdmin
-      endwith
       if !this.lNewRecord
         .AddObject("txtId", "L7Textbox")
         with .txtId
@@ -277,7 +325,7 @@ define class aisPieceForm as AisForm
         endwith
       endif 
       
-      .AddObject("txtArt_Fk", "L7Textbox")
+      .AddObject("txtArt_Fk", "L7Label")
       with .txtArt_Fk
         .cGroupID = "ID"
         .cFieldType = "C"
@@ -286,14 +334,35 @@ define class aisPieceForm as AisForm
         if this.lNewRecord
           .SetValue(Page.cArt)
         endif 
-        .lDisabled = !m.poContext.lAdmin
+        .lDisabled = .t.  && !m.poContext.lAdmin
+        .cShowExpression = [aisArtistName(Page.cArt)]
       endwith 
+
+      .AddObject("lblPk", "L7Label")
+      with .lblPk
+        .cGroupID = "ID"
+        .cControlSource = "V_piece.Pce_Pk"
+        .cLabel = "Internal Key"
+        .cCssClass = "FormControlPrivate"
+      endwith 
+
+      .AddObject("chkInactive", "L7Checkbox")
+      with .chkInactive
+        .cGroupID = "ID"
+        .cControlSource = "V_piece.Pce_Inactive"
+        .cLabel = "Delete?"
+        .lDisabled = !m.poContext.lAdmin
+        .cCssClass = "FormControlPrivate"
+      endwith
 
       if this.cCustom_Type = "Panels"
         .AddObject("chkWhole_Panel", "L7Checkbox")
         with .chkWhole_Panel
           .cGroupID = "PANEL"
           .cControlSource = "V_piece.Pce_Whole_Panel"
+          if this.lNewRecord
+            .SetValue(Page.lPage_Whole)
+          endif 
           .cLabel = "Does the piece comprose a whole panel?"
           .nMode = L7_MULTI_RADIOBUTTON
           .nStyle = L7_MULTISTYLE_VERTICAL  && only applies to radio-button transforms
@@ -310,6 +379,7 @@ define class aisPieceForm as AisForm
           .cControlSource = "V_piece.Pce_Pnl_Fk"
           .cLabel = "Panel Internal Key"
           .lDisabled = .t. 
+          .cCssClass = "FormControlPrivate"
         endwith 
       endif
       
@@ -318,8 +388,11 @@ define class aisPieceForm as AisForm
         .cGroupID = "DIM"
         .cFieldType = "C"
         .cControlSource = "V_piece.Pce_Dim_1"
+        if this.lNewRecord
+          .SetValue(Page.cPage_Dim_1)
+        endif 
         .cLabel = "Dimension 1 (inches)"
-        .cInstructions = "If not equal, please enter larger dimension first!"
+        .cInstructions = "If not equal, please enter SMALLER dimension first!"
       endwith
        
       .AddObject("txtDim_2", "L7Textbox")
@@ -327,14 +400,18 @@ define class aisPieceForm as AisForm
         .cGroupID = "DIM"
         .cFieldType = "C"
         .cControlSource = "V_piece.Pce_Dim_2"
+        if this.lNewRecord
+          .SetValue(Page.cPage_Dim_2)
+        endif 
         .cLabel = "Dimension 2 (inches)"
+        .cInstructions = "If not equal, please enter LARGER dimension first!"
       endwith 
 
       .AddObject("chkShipped", "L7Checkbox")
       with .chkShipped
         .cGroupID = "STATUS"
         .cControlSource = "V_piece.Pce_Shipped"
-        .cLabel = "Shipped?"
+        .cLabel = "Shipped/Delivered?"
       endwith 
 
       .AddObject("txtShip_Date", "L7Textbox")
@@ -342,7 +419,7 @@ define class aisPieceForm as AisForm
         .cGroupID = "STATUS"
         .cFieldType = "D"
         .cControlSource = "V_piece.Pce_Ship_Date"
-        .cLabel = "Ship date (expected or actual)"
+        .cLabel = "Ship/delivery date (expected or actual)"
         .cInstructions = "MM/DD/YYYY"
       endwith 
 
@@ -351,6 +428,7 @@ define class aisPieceForm as AisForm
         .cGroupID = "STATUS"
         .cControlSource = "V_piece.Pce_Received"
         .cLabel = "Received?"
+        .cCssClass = "FormControlPrivate"
       endwith 
 
       .AddObject("edtComments", "L7Textarea")
@@ -358,7 +436,7 @@ define class aisPieceForm as AisForm
         .cGroupID = "NOTES"
         .cControlSource = "V_piece.Pce_Comments"
         .cLabel = "Comments about Piece"
-        .nRows = 5
+        .nRows = 3
       endwith 
 
       .AddObject("edtNotes", "L7Textarea")
@@ -366,10 +444,12 @@ define class aisPieceForm as AisForm
         .cGroupID = "NOTES"
         .cControlSource = "V_piece.Pce_Notes"
         .cLabel = "Internal KtB Notes"
-        .nRows = 5
+        .nRows = 3
+        .cCssClass = "FormControlPrivate"
       endwith
     endwith
-  endfunc
+    return 
+  endfunc && AddControls 
 enddefine  && PieceForm
 
 *** ===================================================== ***

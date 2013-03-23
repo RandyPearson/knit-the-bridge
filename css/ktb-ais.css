@@ -84,6 +84,8 @@ p.break { margin-bottom: 5em }
 table, table th, table td {border: 1px solid #c6c; border-collapse: collapse;}
 
 table.display thead th, .record tbody th{font-weight: normal;}
+tr.record-heading th{font-weight: bold; text-align: center; }
+.record th{text-align: right; color: brown; background-color: #eee; }
 
 table.display tfoot th {
 	padding: 3px 10px 0 1px;
@@ -130,7 +132,7 @@ span.current {padding-right: 5px;}
 #hoverTip h4 {padding:0; margin:0; color: #C00;}
 
 .id-field {font-weight: bold; font-size: 14px; }
-.private {background-color: #dfd;}
-
+.private td {background-color: #eef;}
+.admin td {color: brown; background-color: #fee;}
 .hidden {display: none;}
 

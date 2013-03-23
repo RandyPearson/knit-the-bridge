@@ -84,7 +84,7 @@ define class AisApp AS KtbApp
     this._deployContentFile("l7CoreP.js",         ".\js\")
     this._deployContentFile("l7CoreJQ.js",        ".\js\")
 
-    this._deployContentFile("Server_Override_Trapezoid.png", ".\icons\")
+    *!* this._deployContentFile("Server_Override_Trapezoid.png", ".\icons\")
 
     return .T.
   endfunc  && DeployContent
@@ -296,6 +296,8 @@ function CreateEmptyDatabase( lcPath)
     PCE = Piece
     PNL = Panel
     RCP = Recipient
+    
+    RLG = [Reserved for Railing sub-type of Piece table]
      
     SYS = System
   #ENDIF

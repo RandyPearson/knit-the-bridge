@@ -189,10 +189,15 @@ define class ais_ArtHome as aisArtPage
 
     this.addMenuItem("main\This,page", "Modify Artist...", StuffUrl(this.cUrlA, 2, "ArtForm", "art", this.cArt))
     if this.oArt.Art_Artist
-      this.addMenuItem("main\This,page", "Submit Panel Piece...", ;
-        StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Panels"))
-      this.addMenuItem("main\This,page", "Submit Railing Piece...", ;
-        StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Railings"))
+      this.addMenuItem("main\This,page", "Submit WHOLE PANEL Piece...", ;
+        StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Panels", "dim_1", "34", "dim_2", "72", "whole", "1"))
+      this.addMenuItem("main\This,page", "Submit Partial Panel Piece...", ;
+        StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Panels", "dim_1", "14", "dim_2", "14"))
+
+      this.addMenuItem("main\This,page", "Submit 15x80 Railing Piece...", ;
+        StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Railings", "dim_1", "15", "dim_2", "80"))
+      this.addMenuItem("main\This,page", "Submit 9x105 Railing Piece...", ;
+        StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Railings", "dim_1", "9", "dim_2", "105"))
     endif   
     if poContext.lAdmin and !empty(this.oArt.Art_ID)
       this.addMenuItem("main\This", "Set Password...", StuffUrl(this.cUrlA, 2, "SetPassword", "art", this.cArt))
@@ -256,7 +261,10 @@ define class ais_ArtHome as aisArtPage
       .AddRow("Panel Info", L7ParseOnView(loData.ART_PANEL_INFO))
 
       .AddRow("Comments", L7ParseOnView(loData.ART_COMMENTS))
-
+      if poContext.lCore
+        .AddRow("Notes", L7ParseOnView(loData.ART_NOTES), .F., "private")
+      endif
+      
       .AddHeading('Other Info and Characteristics')
       .AddRow("Register Time", loData.ART_REGISTER_TIME, .F.)
       .AddRow("Ktb Response", L7ParseOnView(loData.ART_KTB_RESPONSE))
@@ -266,20 +274,18 @@ define class ais_ArtHome as aisArtPage
 
       if poContext.lCore
         .AddHeading('Administrative Information')
-        .AddRow("Pk", TRIM(loData.ART_PK), .F., "Private")
-        .AddRow("Admin", loData.ART_ADMIN, .F.)
+        .AddRow("Pk", TRIM(loData.ART_PK), .F., "private")
+        .AddRow("Admin", loData.ART_ADMIN, .F., "admin")
         .AddRow("Core", loData.ART_CORE, .F.)
-        .AddRow("Inactive", loData.ART_INACTIVE, .F., "Private")
-        .AddRow("Access Token", TRIM(loData.ART_ACCESS_TOKEN), .F.)
-        .AddRow("User Id", TRIM(loData.ART_USER_ID), .F.)
-        .AddRow("Password Count", loData.ART_PASSWORD_COUNT, .F.)
-        .AddRow("Password Time", loData.ART_PASSWORD_TIME, .F.)
-        .AddRow("Password Expiry Time", loData.ART_PASSWORD_EXPIRY_TIME, .F.)
-        .AddRow("Account Lockout", loData.ART_ACCOUNT_LOCKOUT, .F.)
-        .AddRow("Account Revoked", loData.ART_ACCOUNT_REVOKED, .F.)
-        .AddRow("Notes", L7ParseOnView(loData.ART_NOTES), .F., "Private")
-        .AddRow("Created", TRANSFORM(loData.ART_ORIG_TIME) + [ by ] + AisArtistName(loData.ART_Orig_Art_FK), .F., "Private")
-        .AddRow("Last Modified", TRANSFORM(loData.ART_REV_TIME) + [ by ] + AisArtistName(loData.ART_Rev_Art_FK), .F., "Private")
+        .AddRow("Inactive", loData.ART_INACTIVE, .F., "private")
+        .AddRow("Access Token", TRIM(loData.ART_ACCESS_TOKEN), .F., "private")
+        .AddRow("Password Count", loData.ART_PASSWORD_COUNT, .F., "admin")
+        .AddRow("Password Time", loData.ART_PASSWORD_TIME, .F., "admin")
+        .AddRow("Password Expiry Time", loData.ART_PASSWORD_EXPIRY_TIME, .F., "admin")
+        .AddRow("Account Lockout", loData.ART_ACCOUNT_LOCKOUT, .F., "admin")
+        .AddRow("Account Revoked", loData.ART_ACCOUNT_REVOKED, .F., "admin")
+        .AddRow("Created", TRANSFORM(loData.ART_ORIG_TIME) + [ by ] + AisArtistName(loData.ART_Orig_Art_FK), .F., "private")
+        .AddRow("Last Modified", TRANSFORM(loData.ART_REV_TIME) + [ by ] + AisArtistName(loData.ART_Rev_Art_FK), .F., "private")
       endif
       
       lcRet = lcRet + .Render()
@@ -764,6 +770,7 @@ define class aisArtistForm AS AisForm
       with .chkAdmin
         .cControlSource = "V_artist.Art_Admin"
         .cCaption = "Admin"
+        .cCssClass = "FormControlPrivate"
       endwith
       .colSec.AddObjectToParent("chkCore", "L7Checkbox")
       with .chkCore
@@ -774,11 +781,13 @@ define class aisArtistForm AS AisForm
       with .chkAccount_Lockout
         .cControlSource = "V_artist.Art_Account_Lockout"
         .cCaption = "Account Lockout"
+        .cCssClass = "FormControlPrivate"
       endwith
       .colSec.AddObjectToParent("chkAccount_Revoked", "L7Checkbox")
       with .chkAccount_Revoked
         .cControlSource = "V_artist.Art_Account_Revoked"
         .cCaption = "Account Revoked"
+        .cCssClass = "FormControlPrivate"
       endwith
 
       .AddObject("txtAccess_Token", "L7Textbox")
@@ -789,14 +798,14 @@ define class aisArtistForm AS AisForm
         .cControlSource = "V_artist.Art_Access_Token"
         .cLabel = "Access Token"
       endwith
-      .AddObject("txtUser_Id", "L7Textbox")
-      with .txtUser_Id
-        .cGroupId = "sec"
-        .lDISABLED = .t. 
-        .cFieldType = "C"
-        .cControlSource = "V_artist.Art_User_Id"
-        .cLabel = "User Id"
-      endwith
+      *!*        .AddObject("txtUser_Id", "L7Textbox")
+      *!*        with .txtUser_Id
+      *!*          .cGroupId = "sec"
+      *!*          .lDISABLED = .t. 
+      *!*          .cFieldType = "C"
+      *!*          .cControlSource = "V_artist.Art_User_Id"
+      *!*          .cLabel = "User Id"
+      *!*        endwith
     endwith
     return 
   endfunc  && addSecurityControls

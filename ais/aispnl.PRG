@@ -289,7 +289,7 @@ define class aisPanelForm as AisForm
         .cFieldType = "C"
         .cControlSource = "V_Panel.Pnl_Dim_1"
         .cLabel = "Dimension 1 (inches)"
-        .cInstructions = "If not same, please enter larger dimension here!"
+        .cInstructions = "If not equal, please enter SMALLER dimension first!"
       endwith
        
       .AddObject("txtDim_2", "L7Textbox")
@@ -298,6 +298,7 @@ define class aisPanelForm as AisForm
         .cFieldType = "C"
         .cControlSource = "V_Panel.Pnl_Dim_2"
         .cLabel = "Dimension 2 (inches)"
+        .cInstructions = "If not equal, please enter LARGER dimension second!"
       endwith 
 
       .AddObject("edtComments", "L7Textarea")
