@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION 3
+#DEFINE THISAPP_DATABASE_REVISION 4
 
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
@@ -111,12 +111,22 @@ define class AisApp AS KtbApp
       lcContOld = loTxt.ReadAll() 
       store null to loFil, loTxt
       this.app_log(L7_SEVERITY_DEBUG, "File present: " + m.lcOldFile)
+      if !m.lcContNew == m.lcContOld 
+        this.app_log(L7_SEVERITY_DEBUG, textmerge([Content file sizes: <<len(m.lcContOld)>>, <<len(m.lcContNew)>> bytes.]))
+        do case
+        case m.lcContNew = m.lcContOld 
+          this.app_log(L7_SEVERITY_DEBUG, textmerge([m.lcContNew = m.lcContOld]))
+        case m.lcContOld = m.lcContNew 
+          this.app_log(L7_SEVERITY_DEBUG, textmerge([m.lcContOld = m.lcContNew]))
+        otherwise
+          this.app_log(L7_SEVERITY_DEBUG, textmerge([m.lcContOld <> m.lcContNew, even without exact matching]))
+        endcase
+      endif 
     else
       this.app_log(L7_SEVERITY_NOTICE, "File NOT present: " + m.lcOldFile)
     endif 
+
     if !m.llOld or !m.lcContNew == m.lcContOld 
-      ** lnBytes = strtofile(m.lcContNew, m.lcOldFile)
-      ** this.app_log(L7_SEVERITY_NOTICE, textmerge([Content file deployed: <<m.lcOldFile>>, <<m.lnBytes>> bytes.]))
       loTxt = loFso.CreateTextFile(m.lcOldFile, .t.)
       loTxt.Write(m.lcContNew)
       loTxt.Close()
@@ -221,11 +231,18 @@ define class AisApp AS KtbApp
     case m.lnRev = 3
       this.removeColumn("Panel", "Pnl_Type") && no error if d.n.e. 
 
-      alter table Artist add Art_Railing_1_Count I
-      alter table Artist add Art_Railing_2_Count I
-      alter table Artist add Art_Railing_3_Count I
+      alter table Artist add column Art_Railing_1_Count I
+      alter table Artist add column Art_Railing_2_Count I
+      alter table Artist add column Art_Railing_3_Count I
       use in select("Artist")
 
+    case m.lnRev = 4
+      alter table Artist add column Art_Hidden L
+      alter table Artist add column Art_Organizer L
+      select Artist
+      index on Art_Hidden tag Hidden
+      replace all Art_Organizer with Art_Help_Meet_Up
+      this.removeColumn("Artist", "Art_Help_Meet_Up") && no error if d.n.e. 
 
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
@@ -236,12 +253,32 @@ define class AisApp AS KtbApp
   endfunc && ApplyRevision
   * --------------------------------------------------------- *
   function RemoveColumn(tcTable, tcCol)
+    local loExc, laTags[1], lnTag
     if indbc(m.tcTable + "." + m.tcCol, "FIELD")
-      alter table (m.tcTable) drop column (m.tcCol)
-      use in select(m.tcTable)
+      try 
+        * gain EXCLUSIVE use: 
+        use (m.tcTable) exclusive in select(m.tcTable)
+        select (m.tcTable)
+        * see if any index tags need to be dropped (avoid error 1531):
+        ataginfo(laTags)
+        for lnTag = 1 to alen(laTags, 1)
+          if laTags[m.lnTag, 3] == upper(m.tcCol) && expression matches field (more complex indexes must be explicitly deleted)
+            delete tag (laTags[m.lnTag, 1])
+            goL7App.App_Log(L7_SEVERITY_NOTICE, textmerge('Deleted Index Tag <<laTags[m.lnTag, 1]>> of <<m.tcTable>> Table'))
+            
+          endif
+        next 
+        * Drop the column:
+        alter table (m.tcTable) drop column (m.tcCol)
+        goL7App.App_Log(L7_SEVERITY_NOTICE, textmerge('Dropped column <<m.tcCol>> of <<m.tcTable>> Table'))
+      catch to loExc
+        goL7App.App_Log(L7_SEVERITY_WARNING, textmerge('DROP COLUMN failed for <<m.tcTable>>.<<m.tcCol>>: <<loExc.Message>>'))
+      finally
+        use in select(m.tcTable)
+      endtry 
     endif
     return 
-  endfunc 
+  endfunc && RemoveColumn
   * --------------------------------------------------------- *
 enddefine && AisApp
 
@@ -363,6 +400,7 @@ function CreateArtistTable
       Art_Approved L default .f., ;
       Art_Admin L default .f., ;
       Art_Core L default .f., ;
+      Art_Hidden L default .f., ; && Rev 4
       Art_Artist L default .t., ;
       Art_Anonymous L, ;
       Art_Unknown L, ;
@@ -389,7 +427,7 @@ function CreateArtistTable
       Art_Towers L, ; 
       Art_Help_Install L, ;
       Art_Help_Materials L, ;
-      Art_Help_Meet_Up L, ;
+      Art_Organizer L, ; && Rev 4 renamed from Art_Help_Meet_Up
       Art_Help_Outreach L, ;
       Art_Help_Other M, ;
       Art_Comments M, ;
@@ -423,6 +461,7 @@ function CreateArtistTable
   * Foreign Keys:
   * Other Keys:
   index on Art_Approved tag Approved
+  index on Art_Hidden tag Hidden
   index on upper(Art_User_ID) tag User_ID
   index on Art_ID tag Art_ID
   index on Art_Access_Token tag token 
@@ -590,33 +629,33 @@ FUNCTION InsertSeedRecords
   ** DEFAULT USERS:
   * "System Administrator"
   insert into Artist ( ;
-      Art_PK, Art_Inactive, Art_Admin, Art_Artist, Art_Anonymous, ;
+      Art_PK, Art_Inactive, Art_Admin, Art_Hidden, Art_Artist, Art_Anonymous, ;
       Art_Full_Name, Art_First_Name, Art_Last_Name, ;
       Art_Orig_Art_FK, Art_Orig_Time, Art_Rev_Art_FK, Art_Rev_Time ;
     ) VALUES ( ;
-      THISAPP_ADMIN_PK, .T., .t., .f., .f., ;
+      THISAPP_ADMIN_PK, .T., .t., .t., .f., .f., ;
       "SYSTEM ADMINISTRATOR", "SYSTEM", "ADMINISTRATOR", ;
       THISAPP_ADMIN_PK, m.poEnv.tTime, THISAPP_ADMIN_PK, m.poEnv.tTime )
 
   * "Developer"
   insert into Artist ( ;
-      Art_PK, Art_Inactive, Art_Admin, Art_Artist, Art_Anonymous, ;
+      Art_PK, Art_Inactive, Art_Admin, Art_Hidden, Art_Artist, Art_Anonymous, ;
       Art_Full_Name, Art_First_Name, Art_Last_Name, ;
       Art_ID, Art_Password_Hash, ;
       Art_Orig_Art_FK, Art_Orig_Time, Art_Rev_Art_FK, Art_Rev_Time ;
     ) VALUES ( ;
-      THISAPP_DEV_PK, .f., .t., .f., .f., ;
+      THISAPP_DEV_PK, .f., .t., .t., .f., .f., ;
       "SYSTEM DEVELOPER", "SYSTEM", "DEVELOPER", ;
       THISAPP_USER_DEV, AisPasswordHash(THISAPP_USER_DEV, THISAPP_USER_DEV), ;
       THISAPP_ADMIN_PK, m.poEnv.tTime, THISAPP_ADMIN_PK, m.poEnv.tTime )
 
   * "Anonymous User"
   insert into Artist ( ;
-      Art_PK, Art_Inactive, Art_Admin, Art_Artist, Art_Anonymous, ;
+      Art_PK, Art_Inactive, Art_Admin, Art_Hidden, Art_Artist, Art_Anonymous, ;
       Art_Full_Name, Art_First_Name, Art_Last_Name, ;
       Art_Orig_Art_FK, Art_Orig_Time, Art_Rev_Art_FK, Art_Rev_Time ;
     ) VALUES ( ;
-      THISAPP_ANON_PK, .T., .f., .f., .t., ;
+      THISAPP_ANON_PK, .T., .f., .t., .f., .t., ;
       "ANONYMOUS USER", "ANONYMOUS", "USER", ;
       THISAPP_ADMIN_PK, m.poEnv.tTime, THISAPP_ADMIN_PK, m.poEnv.tTime )
 

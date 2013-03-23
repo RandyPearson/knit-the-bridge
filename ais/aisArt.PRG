@@ -9,6 +9,7 @@ function AisArtQueryFlags()
     '{"root": "core", "prompt": "Core Team"}' + ;
     ',{"root": "install", "field": "Art_Help_Install", "prompt": "Help Install"}' + ;
     ',{"root": "outreach", "field": "Art_Help_Outreach"}' + ;
+    ',{"root": "organizer", "prompt": "Community Organizer"}' + ;
     ',{"root": "towers", "prompt": "Machine Knit for Towers"}' + ;
     ',{"root": "artist"}' + ;
     ',{"root": "admin", "menu": false}' + ;
@@ -62,7 +63,7 @@ function aisFormatParticipation(toData)
     iif(!loData.ART_TOWERS, "", "* Machine Knitting for Towers" + crlf) + ;
     iif(!loData.ART_HELP_INSTALL, "", "* Helping with *Installation*" + crlf) + ;
     iif(!loData.ART_HELP_MATERIALS, "", "* Donating Materials" + crlf) + ;
-    iif(!loData.ART_HELP_MEET_UP, "", "* Organizing a Meet-Up" + crlf) + ;
+    iif(!loData.ART_Organizer, "", "* Community Organizer" + crlf) + ;
     iif(!loData.ART_HELP_OUTREACH, "", "* Helping with Outreach" + crlf) + ;
     iif(empty(loData.ART_HELP_OTHER), "", "* " + loData.ART_HELP_OTHER)
   return m.lcRet
@@ -160,7 +161,7 @@ define class ais_ArtList as aisArtPage
       loCol = .addCursorColumn("Art_ID", "Artist ID",, "id-field")
       loCol = .addCursorColumn("Art_Last_Name", "Name", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), trim(Art_Last_Name) + ", " + trim(Art_First_Name))])
-      loCol = .addCursorColumn("Art_Email", "Email")
+      loCol = .addCursorColumn("Art_Email", "Email", [HTEmailLink(trim(Art_Email))])
       loCol = .addCursorColumn("Art_Phone", "Phone")
       loCol = .addCursorColumn("Art_Register_Time", "Sign-Up Time", [L7TimeDiff(Art_Register_Time)])
       loCol = .addCursorColumn("Art_KTB_Response", "Response")
@@ -251,14 +252,6 @@ define class ais_ArtHome as aisArtPage
       .AddRow("Artist?", loData.ART_ARTIST)
       .AddRow("Participation", L7ParseOnView(aisFormatParticipation(loData)))
       
-*!*        .AddRow("Partial Panel", loData.ART_PARTIAL_PANEL)
-*!*        .AddRow("Panel Count", loData.ART_PANEL_COUNT)
-*!*        .AddRow("Towers", loData.ART_TOWERS)
-*!*        .AddRow("Help Install", loData.ART_HELP_INSTALL)
-*!*        .AddRow("Help Materials", loData.ART_HELP_MATERIALS)
-*!*        .AddRow("Help Meet Up", loData.ART_HELP_MEET_UP)
-*!*        .AddRow("Help Outreach", loData.ART_HELP_OUTREACH)
-*!*        .AddRow("Help Other", L7ParseOnView(loData.ART_HELP_OTHER))
       .AddRow("Participation (from blog)", L7ParseOnView(loData.ART_PARTICIPATION))
       .AddRow("Panel Info", L7ParseOnView(loData.ART_PANEL_INFO))
 
@@ -660,10 +653,10 @@ define class aisArtistForm AS AisForm
         .cControlSource = "V_artist.Art_Help_Materials"
         .cCaption = "Donating Materials"
       endwith
-      .colPart.AddObjectToParent("chkHelp_Meet_Up", "L7Checkbox")
-      with .chkHelp_Meet_Up
-        .cControlSource = "V_artist.Art_Help_Meet_Up"
-        .cCaption = "Organizing a Meet-Up"
+      .colPart.AddObjectToParent("chkOrganizer", "L7Checkbox")
+      with .chkOrganizer
+        .cControlSource = "V_artist.Art_Organizer"
+        .cCaption = "Community Organizer"
       endwith
       .colPart.AddObjectToParent("chkHelp_Outreach", "L7Checkbox")
       with .chkHelp_Outreach
@@ -920,11 +913,11 @@ enddefine && AisArtBrowseForm
 define class AisArtQuery AS L7Query
   cBaseTable = "Artist"
   cDefaultFieldList = ;
-    "Art_PK,Art_ID,Art_Approved,Art_Artist,Art_Anonymous,Art_Unknown" + ;
+    "Art_PK,Art_ID,Art_Approved,Art_Artist,Art_Anonymous,Art_Unknown,Art_Hidden" + ;
     ",Art_Full_Name,Art_Last_Name,Art_First_Name,Art_Name_Orig" + ; 
     ",Art_Email,Art_Phone,Art_Contact_Orig,Art_Address,Art_Neighborhood" + ;
     ",Art_Age_Range,Art_Participation,Art_Partial_Panel,Art_Panel_Info,Art_Panel_Count" + ;
-    ",Art_Towers,Art_Help_Install,Art_Help_Materials,Art_Help_Meet_Up,Art_Help_Outreach,Art_Help_Other" + ;
+    ",Art_Towers,Art_Help_Install,Art_Help_Materials,Art_Organizer,Art_Help_Outreach,Art_Help_Other" + ;
     ",Art_Comments,Art_Register_Time,Art_KTB_Response" + ;
     ",Art_Access_Token,Art_User_ID" 
 
@@ -935,11 +928,12 @@ define class AisArtQuery AS L7Query
   * Types of people:
   lAdmin = .F.
   lCore = .F.
+  lHidden = .F. 
   lArtist = .F.
   lInstall = .F.
+  lOrganizer = .F.
   lTowers = .F.
   lOutreach = .F.
-
 
   * Name Search
   cName = ""
@@ -977,8 +971,13 @@ define class AisArtQuery AS L7Query
       if !isnull( .lUser)
         .cWhereClause = .cWhereClause + [ AND Art_User_Id ] + IIF(.lUser, [<> ' '], [= ' '])
       endif 
+
       if !isnull( .lAccountInactive)
         .cWhereClause = .cWhereClause + [ AND Art_Approved = ] + IIF(.lAccountInactive, [.T.], [.F.])
+      endif 
+
+      if !isnull( .lHidden)
+        .cWhereClause = .cWhereClause + [ AND Art_Hidden = ] + IIF(.lHidden, [.T.], [.F.])
       endif 
 
 *!*        * Build "inner" WHERE clause that is used to control security, etc.

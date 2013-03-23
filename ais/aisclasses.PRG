@@ -6,6 +6,7 @@
 * App Classes:
 set procedure to AisApp     additive  && Application Object
 set procedure to AisClasses additive  && THIS file
+set procedure to AisUtils   additive  && special tools (import...)
 set procedure to AisUser    additive  && User class
 set procedure to AisDQ      additive  && Data and Query classes 
 

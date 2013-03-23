@@ -239,20 +239,23 @@ FUNCTION HTFileName(tcFN)
   RETURN STRTRAN(TRIM(m.tcFN),'_', '_<wbr />')
 ENDFUNC 
 * --------------------------------------------------------- *
-FUNCTION HTEmailLink(tcEmail, tcText, tcOptions, tlNoValidate, tlNoMunge)
-  LOCAL lcRet
-  tcEmail = ALLTRIM(m.tcEmail)
-  IF NOT m.tlNoValidate AND NOT IsValidEmail(m.tcEmail)
+function HTEmailLink(tcEmail, tcText, tcOptions, tlNoValidate, tlNoMunge)
+  if isnull(m.tcEmail) or empty(m.tcEmail)
+    return ""
+  endif
+  local lcRet
+  tcEmail = alltrim(m.tcEmail)
+  if !m.tlNoValidate and !IsValidEmail(m.tcEmail)
     lcRet = m.tcEmail  && don't create a link that won't function
-  ELSE
+  else 
     lcRet = "mailto:" + m.tcEmail
-    lcRet = HTLink(m.lcRet, EVL(m.tcText, m.tcEmail), m.tcOptions)
-    IF NOT m.tlNoMunge
+    lcRet = HTLink(m.lcRet, evl(m.tcText, m.tcEmail), m.tcOptions)
+    if !m.tlNoMunge
       lcRet = HTMunge(m.lcRet)  && munge parts of "mailto:" in addition to the address
-    ENDIF
-  ENDIF
-  RETURN m.lcRet
-ENDFUNC  && HTEmailLink
+    endif 
+  endif 
+  return  m.lcRet
+endfunc   && HTEmailLink
 * --------------------------------------------------------- *
 FUNCTION HTMunge(tcEmail)
   *[[ replace this with 2 #DEFINE's instead to allow some tweaking

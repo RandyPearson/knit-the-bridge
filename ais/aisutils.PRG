@@ -107,7 +107,7 @@ define class AisImport as Custom
       addproperty(toXfer, "Art_Towers", .t.)
     endif 
     if "meet up" $ lower(toXfer.Art_Participation)
-      addproperty(toXfer, "Art_Help_Meet_Up", .t.)
+      addproperty(toXfer, "Art_Organizer", .t.)
     endif 
     if "install" $ lower(toXfer.Art_Participation)
       addproperty(toXfer, "Art_Help_Install", .t.)
