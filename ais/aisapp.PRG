@@ -641,12 +641,12 @@ FUNCTION InsertSeedRecords
 
   * "Developer"
   insert into Artist ( ;
-      Art_PK, Art_Inactive, Art_Admin, Art_Hidden, Art_Artist, Art_Anonymous, ;
+      Art_PK, Art_Inactive, Art_Admin, Art_Hidden, Art_Approved, Art_Artist, Art_Anonymous, ;
       Art_Full_Name, Art_First_Name, Art_Last_Name, ;
       Art_ID, Art_Password_Hash, ;
       Art_Orig_Art_FK, Art_Orig_Time, Art_Rev_Art_FK, Art_Rev_Time ;
     ) VALUES ( ;
-      THISAPP_DEV_PK, .f., .t., .t., .f., .f., ;
+      THISAPP_DEV_PK, .f., .t., .t., .t., .f., .f., ;
       "SYSTEM DEVELOPER", "SYSTEM", "DEVELOPER", ;
       THISAPP_USER_DEV, AisPasswordHash(THISAPP_USER_DEV, THISAPP_USER_DEV), ;
       THISAPP_ADMIN_PK, m.poEnv.tTime, THISAPP_ADMIN_PK, m.poEnv.tTime )

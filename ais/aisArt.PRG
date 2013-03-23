@@ -366,7 +366,7 @@ define class ais_ArtForm as aisArtPage
           lcStub = padr(alltrim(upper(evl(Art_Last_Name, "NLN"))), 5, 'X')
           replace Art_ID with AisAssignID(m.lcStub)
         endif
-        if Art_Approved and empty(Art_Id) 
+        if Art_Approved and empty(Art_Access_Token) 
           replace Art_Access_Token with GetGuidString(32)
         endif
         StampRec( CurrentUser, THIS.tNow )
@@ -421,6 +421,7 @@ define class aisArtistForm AS AisForm
         .cGroupID = "PK"
         .cControlSource = "V_artist.Art_Approved"
         .cLabel = "Approved?"
+        .cCssClass = "FormControlPrivate"
       endwith
       .AddObject("lblPk", "L7Label")
       with .lblPk
@@ -437,8 +438,6 @@ define class aisArtistForm AS AisForm
         .lDisabled = !m.poContext.lAdmin
         .cCssClass = "FormControlPrivate"
       endwith
-
-      .addTimeStampControls()
 
       .AddObject("divContact", "L7Divider")
       with .divContact
@@ -468,14 +467,16 @@ define class aisArtistForm AS AisForm
         .cLabel = "Anonymous?"
         .cCaption = "Anonymous"
       endwith
-      .AddObject("chkUnknown", "L7Checkbox")
-      with .chkUnknown
-        .cGroupID = "name"
-        .cControlSource = "V_artist.Art_Unknown"
-        .cLabel = "Unknown?"
-        .cCaption = "Unknown Person"
-      endwith
-
+      if poContext.lDeveloper
+        .AddObject("chkUnknown", "L7Checkbox")
+        with .chkUnknown
+          .cGroupID = "name"
+          .cControlSource = "V_artist.Art_Unknown"
+          .cLabel = "Unknown?"
+          .cCaption = "Unknown Person"
+        endwith
+      endif
+      
       .AddObject("txtFull_Name", "L7Textbox")
       with .txtFull_Name
         .cGroupID = "name2"
@@ -798,14 +799,9 @@ define class aisArtistForm AS AisForm
         .cControlSource = "V_artist.Art_Access_Token"
         .cLabel = "Access Token"
       endwith
-      *!*        .AddObject("txtUser_Id", "L7Textbox")
-      *!*        with .txtUser_Id
-      *!*          .cGroupId = "sec"
-      *!*          .lDISABLED = .t. 
-      *!*          .cFieldType = "C"
-      *!*          .cControlSource = "V_artist.Art_User_Id"
-      *!*          .cLabel = "User Id"
-      *!*        endwith
+
+      .addTimeStampControls()
+
     endwith
     return 
   endfunc  && addSecurityControls

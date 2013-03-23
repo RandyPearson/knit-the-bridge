@@ -11,6 +11,7 @@ define class aisPage as L7Page
   nIdentificationActual    = L7_NONE
 
   * security model props:
+  lDeveloperRequired = .f.
   lAdminRequired = .f.
   lCoreOK = .t.
   lArtistOK = .t.
@@ -211,6 +212,12 @@ define class aisPage as L7Page
       if vartype(CurrentUser.oData) = 'O'
         lcStr = THIS.FullUrl(StuffUrl(this.cUrlA, 'artHome', 'art', CurrentUser.oData.Art_PK))
         this.App_Log(L7_SEVERITY_INFO, textmerge("User is [<<trim(CurrentUser.getUserName())>>, <<m.lcStr>>]"))
+      endif 
+
+      if this.lDeveloperRequired AND !poContext.lDeveloper
+        this.App_Log(L7_SEVERITY_WARNING, "Non-developer hitting developer-only link")
+        this.Forbidden("Function not available")  
+        return .f.
       endif 
 
       if this.lAdminRequired AND !poContext.lAdmin

@@ -64,16 +64,27 @@ define class AisImport as Custom
     lcTemp = nvl(toImp.lastname, "")
     addproperty(toXfer, "Art_Last_Name", "")
     addproperty(toXfer, "Art_First_Name", "")
-    if !"," $ m.lcTemp
-      toXfer.Art_Last_Name = alltrim(m.lcTemp)
-    else
-      toXfer.Art_Last_Name = alltrim(getwordnum(m.lcTemp, 1, ","))
-      toXfer.Art_First_Name = alltrim(getwordnum(m.lcTemp, 2, ","))
-    endif
-    * desperate guess at first name: 
-    if empty(toXfer.Art_First_Name) and getwordcount(toXfer.Art_Name_Orig) > 1
+    toXfer.Art_Last_Name = alltrim(getwordnum(m.lcTemp, 1, ","))
+    * try to parse First Name:
+    do case
+    case getwordcount(toXfer.Art_Name_Orig) > 1 && 2+ words in original name
       toXfer.Art_First_Name = getwordnum(toXfer.Art_Name_Orig, 1)
-    endif
+    case "," $ m.lcTemp
+      toXfer.Art_First_Name = alltrim(getwordnum(m.lcTemp, 2, ","))
+    otherwise
+      = .f. && leave name blank
+    endcase
+    
+    *!*      if !"," $ m.lcTemp
+    *!*        toXfer.Art_Last_Name = alltrim(m.lcTemp)
+    *!*      else
+    *!*        toXfer.Art_Last_Name = alltrim(getwordnum(m.lcTemp, 1, ","))
+    *!*        toXfer.Art_First_Name = alltrim(getwordnum(m.lcTemp, 2, ","))
+    *!*      endif
+    *!*      * desperate guess at first name: 
+    *!*      if empty(toXfer.Art_First_Name) and getwordcount(toXfer.Art_Name_Orig) > 1
+    *!*        toXfer.Art_First_Name = getwordnum(toXfer.Art_Name_Orig, 1)
+    *!*      endif
     
     addproperty(toXfer, "Art_Age_Range", nvl(toImp.age_range, ""))
     addproperty(toXfer, "Art_Bit_Info", nvl(toImp.bit_info, ""))

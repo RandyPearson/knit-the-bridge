@@ -80,24 +80,27 @@ p.break { margin-bottom: 5em }
 #statusErrors.failure { background-color: red; color: white; cursor: pointer; padding: 1px 8px 1px 8px !important; -moz-border-radius: 8px }
 #statusErrors.success { background-color: green; color: white; cursor: pointer; padding: 1px 8px 1px 8px !important; -moz-border-radius: 8px }
 
+/* Ubiquitous */
+.id-field {font-weight: bold; font-size: 14px; }
+.private td {background-color: #eef;}
+.admin td {color: brown; background-color: #fee;}
+.hidden {display: none;}
+
 /* Data record and tables display */
 table, table th, table td {border: 1px solid #c6c; border-collapse: collapse;}
 
-table.display thead th, .record tbody th{font-weight: normal;}
+table thead th, .record tbody th{font-weight: normal;}
 tr.record-heading th{font-weight: bold; text-align: center; }
 .record th{text-align: right; color: brown; background-color: #eee; }
 
-table.display tfoot th {
-	padding: 3px 10px 0 1px;
-	border-top: 1px solid black;
-}
+table tfoot th {padding: 3px 10px 0 1px;border-top: 1px solid black;}
 
-table.display td {padding: 3px 10px 0 1px;}
-table.display td.center {	text-align: center;}
+table td {padding: 3px 10px 0 1px;}
+table td.center {	text-align: center;}
 
 /* First para, subsequent para margins in table cells */
-table.display td p{ margin: 0;}
-table.display td p+p{margin: 10px 0 0 0;}
+table td p{ margin: 0;}
+table td p+p{margin: 10px 0 0 0;}
 
 /* Ledger row classes */
 table tr.oddX { background-color: #ddffdd;}
@@ -131,8 +134,4 @@ span.current {padding-right: 5px;}
 #hoverTip { height: 120px !important; overflow-y: hidden }
 #hoverTip h4 {padding:0; margin:0; color: #C00;}
 
-.id-field {font-weight: bold; font-size: 14px; }
-.private td {background-color: #eef;}
-.admin td {color: brown; background-color: #fee;}
-.hidden {display: none;}
 
