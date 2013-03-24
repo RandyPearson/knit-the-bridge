@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION 4
+#DEFINE THISAPP_DATABASE_REVISION 6
 
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
@@ -244,6 +244,15 @@ define class AisApp AS KtbApp
       replace all Art_Organizer with Art_Help_Meet_Up
       this.removeColumn("Artist", "Art_Help_Meet_Up") && no error if d.n.e. 
 
+    case m.lnRev = 5
+      * no changes--force view creation 
+
+    case m.lnRev = 6
+      alter table Artist add column Art_Title C(60)
+      select Artist
+      index on Art_Neighborhood tag Neighbor
+      use in select("Artist")
+      
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
@@ -409,6 +418,7 @@ function CreateArtistTable
       Art_Full_Name C(60), ;
       Art_Last_Name C(20), ;
       Art_First_Name C(24), ;
+      Art_Title C(60), ;  && Rev 6
       Art_Name_Orig M, ; 
       Art_Email C(THISAPP_USER_EMAIL_LEN), ;  && 80
       Art_Phone C(24), ;
@@ -469,6 +479,7 @@ function CreateArtistTable
   index on Art_Access_Token tag token 
   index on upper(Art_Last_Name) tag U_last
   index on Art_Artist tag artist 
+  index on Art_Neighborhood tag Neighbor  && Rev 6
    
   * Comment:
   dbsetprop("Artist", "Table", "Comment", ;
@@ -846,6 +857,7 @@ FUNCTION CreateViews(lcOneTable, lcDataPath, lcDataBase)
 
     * All-record views (for master "browse" forms):
     do CreateAllRecordsView WITH "V_Unapproved_Artist_Set", "Artist", "Art_PK", [!Art_Inactive and !Art_Approved]
+    do CreateAllRecordsView WITH "V_Approved_Artist_Set", "Artist", "Art_PK", [!Art_Inactive and Art_Approved], [Art_Last_Name, Art_First_Name]
     do CreateAllRecordsView WITH "V_All_Users", "Artist", "Art_PK", [!Art_Inactive and !empty(Art_User_ID)]
 
   endif 

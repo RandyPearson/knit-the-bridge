@@ -37,7 +37,7 @@ function aisArtistName(tvArt)
   endif 
     
   if empty(loData.Art_Last_Name )
-    return trim(loData.Art_User_ID )
+    return trim(loData.Art_User_ID ) + iif(loData.Art_Anonymous, " (ANONYMOUS)", "")
   else 
     if empty(loData.Art_First_Name )
       return trim(loData.Art_Last_Name )
@@ -60,6 +60,10 @@ function aisFormatParticipation(toData)
       iif(loData.ART_PANEL_COUNT = 1, "* Making a Full Panel", ;
       "* making " + transform(loData.ART_PANEL_COUNT) + " full panels") + crlf) + ;
     iif(!loData.ART_PARTIAL_PANEL, "", "* Making Partial Panel(s)" + crlf) + ;
+    iif(loData.Art_Railing_1_Count <= 0, "", ;
+      "* 9 x 105 Railing pieces: " + transform(loData.Art_Railing_1_Count) + crlf) + ;
+    iif(loData.Art_Railing_2_Count <= 0, "", ;
+      "* 15 x 80 Railing pieces: " + transform(loData.Art_Railing_2_Count) + crlf) + ;
     iif(!loData.ART_TOWERS, "", "* Machine Knitting for Towers" + crlf) + ;
     iif(!loData.ART_HELP_INSTALL, "", "* Helping with *Installation*" + crlf) + ;
     iif(!loData.ART_HELP_MATERIALS, "", "* Donating Materials" + crlf) + ;
@@ -85,7 +89,11 @@ enddefine
 
 *** ========================================================= ***
 define class ais_ArtList as aisArtPage 
+  lCoreRequired = .t.
+
   lArtRequired = .f.
+  cPage_Fields = null
+  cPage_Order = null
   cPage_Flags = null
   lPage_Approved = null
   cSubTitle = "Artists N'At"
@@ -95,7 +103,11 @@ define class ais_ArtList as aisArtPage
     local lcStr
 
     this.cPage_Srch1 = this.ReadQueryString("srch1", .t., .t., .t.)
+    this.ReadQueryString("btn", .t., .t., .t.) && clear search button from URL
+    
+    this.cPage_Order = this.ReadQueryString("order", .t., .t.)
     this.cPage_Flags = this.ReadQueryString("flags", .t., .t.)
+    this.cPage_Fields = this.ReadQueryString("fields", .t., .t.)
 
     lcStr = this.ReadQueryString("approved", .t., .t.)
     this.lPage_Approved = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
@@ -133,21 +145,40 @@ define class ais_ArtList as aisArtPage
   endfunc 
   * ----------------------------------------------------- *  
   function ProcessRequest
-    local loQry, loFlags, lnFlag, loFlag, lcProp, ;
-       loTbl, loCol, loGrp
+    local loQry, loFlags, lnIdx, loItem, lcWord, lcProp, loFields, ;
+      loTbl, loCol, loGrp
        
+    loFields = createobject("Collection")
+    for lnIdx = 1 to getwordcount(this.cPage_Fields, ",")
+      lcWord = alltrim(getwordnum(this.cPage_Fields, m.lnIdx, ","))
+      if !empty(m.lcWord)
+        loFields.add(m.lcWord, m.lcWord)
+      endif
+    next 
+    
     loQry = createobject("AisArtQuery")
     with loQry
       loFlags = this.oArtQueryFlags
-      for lnFlag = 1 to loFlags.count
-        loFlag = loFlags.item[m.lnFlag]
-        if "," + loFlag.root + "," $ "," + this.cPage_Flags + ","
-          lcProp = "l" + loFlag.root
+      for lnIdx = 1 to loFlags.count
+        loItem = loFlags.item[m.lnIdx]
+        if "," + loItem.root + "," $ "," + this.cPage_Flags + ","
+          lcProp = "l" + loItem.root
           store .t. to loQry.&lcProp
         endif 
       next 
       .lAccountInactive = this.lPage_Approved
       .cSrch1 = this.cPage_Srch1
+      
+      if loFields.getkey("location") > 0
+        .addFields("Art_Neighborhood, Art_Address")
+      endif 
+      
+      do case
+      case this.cPage_Order = "location"
+        .AddOrderBy("Art_Neighborhood")
+      otherwise
+        .AddOrderBy("Art_Last_Name")
+      endcase
       
       .execute()
     endwith 
@@ -157,12 +188,24 @@ define class ais_ArtList as aisArtPage
 
     loTbl = createobject("AisTable")
     with loTbl
+      do case
+      case this.cPage_Order = "location"
+        loGrp = .AddGroup("Art_Neighborhood",,.t.,["Neighborhood: " + trim(Art_Neighborhood)])
+      otherwise
+      endcase
+
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Art_ID", "Artist ID",, "id-field")
       loCol = .addCursorColumn("Art_Last_Name", "Name", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), trim(Art_Last_Name) + ", " + trim(Art_First_Name))])
       loCol = .addCursorColumn("Art_Email", "Email", [HTEmailLink(trim(Art_Email))])
       loCol = .addCursorColumn("Art_Phone", "Phone")
+
+      if loFields.getkey("location") > 0
+        loCol = .addCursorColumn("Art_Neighborhood", "Neighborhood")
+        loCol = .addCursorColumn("Art_Address", "Address")
+      endif 
+
       loCol = .addCursorColumn("Art_Register_Time", "Sign-Up Time", [L7TimeDiff(Art_Register_Time)])
       loCol = .addCursorColumn("Art_KTB_Response", "Response")
       loCol = .addCursorColumn("Art_Approved", "Approved?")
@@ -187,7 +230,7 @@ define class ais_ArtHome as aisArtPage
   function AddDefaultMenu
     this.AddSubMenu("This", AisArtistName(this.oArt))
 
-    this.addMenuItem("main\This,page", "Modify Artist...", StuffUrl(this.cUrlA, 2, "ArtForm", "art", this.cArt))
+    this.addMenuItem("main\This,page", "Edit Artist...", StuffUrl(this.cUrlA, 2, "ArtForm", "art", this.cArt))
     if this.oArt.Art_Artist
       this.addMenuItem("main\This,page", "Submit WHOLE PANEL Piece...", ;
         StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Panels", "dim_1", "34", "dim_2", "72", "whole", "1"))
@@ -215,12 +258,6 @@ define class ais_ArtHome as aisArtPage
     endif
 
     response.write(this.page_getMainRecord())
-    
-*!*      if poContext.lCore
-*!*        response.write(HTWrap("Core Info" + this.cSubTitle, 'h3'))
-*!*        *!* response.write(L7ShowObject(this.oArt, this.cSubTitle, [class="record"]))
-*!*      endif 
-
     return 
   endfunc 
   * ----------------------------------------------------- *  
@@ -244,40 +281,44 @@ define class ais_ArtHome as aisArtPage
 
       .AddRow("Name", AisArtistName(m.loData))
       .AddRow("Alternative Full Name", TRIM(loData.ART_FULL_NAME), .t.)
+      if loData.ART_Anonymous
+        .AddRow("Anonymous", "ANONYMOUS", .F., "private")
+      endif 
       .AddRow("Original Name (from blog)", loData.ART_NAME_ORIG, .t., "private")
 
       .AddRow("Email", HTEmailLink(TRIM(loData.ART_EMAIL), .f., .f., .f., .t.))
-      .AddRow("Phone", TRIM(loData.ART_PHONE))
-      .AddRow("Original Contact (from blog)", loData.ART_CONTACT_ORIG, .F.)
+      .AddRow("Phone", TRIM(loData.ART_PHONE), .t.)
+      .AddRow("Original Contact (from blog)", loData.ART_CONTACT_ORIG, .t., "private")
       .AddRow("Neighborhood", TRIM(loData.ART_NEIGHBORHOOD), .F.)
-      .AddRow("Address (from blog)", L7ParseOnView(loData.ART_ADDRESS), .F.)
-      .AddRow("Age Range", TRIM(loData.ART_AGE_RANGE), .F.)
+      .AddRow("Address (from blog)", L7ParseOnView(loData.ART_ADDRESS), .t., "private")
+      .AddRow("Age Range", TRIM(loData.ART_AGE_RANGE))
 
       .AddHeading('Participation')
       .AddRow("Artist?", loData.ART_ARTIST)
-      .AddRow("Participation", L7ParseOnView(aisFormatParticipation(loData)))
+      .AddRow("Participation", L7ParseOnView(aisFormatParticipation(loData)), .t.)
       
-      .AddRow("Participation (from blog)", L7ParseOnView(loData.ART_PARTICIPATION))
-      .AddRow("Panel Info", L7ParseOnView(loData.ART_PANEL_INFO))
+      .AddRow("Participation (from blog)", L7ParseOnView(loData.ART_PARTICIPATION), .t., "private")
+      .AddRow("Panel Info", L7ParseOnView(loData.ART_PANEL_INFO), .t.)
 
       .AddRow("Comments", L7ParseOnView(loData.ART_COMMENTS))
       if poContext.lCore
-        .AddRow("Notes", L7ParseOnView(loData.ART_NOTES), .F., "private")
+        .AddRow("Notes", L7ParseOnView(loData.ART_NOTES), .t., "private")
       endif
-      
-      .AddHeading('Other Info and Characteristics')
       .AddRow("Register Time", loData.ART_REGISTER_TIME, .F.)
       .AddRow("Ktb Response", L7ParseOnView(loData.ART_KTB_RESPONSE))
-      .AddRow("Bit Info", L7ParseOnView(loData.ART_BIT_INFO), .F.)
-      .AddRow("Received", loData.ART_RECEIVED, .F.)
-      .AddRow("Storage Location", L7ParseOnView(loData.ART_STORAGE_LOCATION), .F.)
+      
+      .AddHeading('Other Info')
+      .AddRow("Bit Info", L7ParseOnView(loData.ART_BIT_INFO), .t.)
+      .AddRow("Received", loData.ART_RECEIVED, .t.)
+      .AddRow("Storage Location", L7ParseOnView(loData.ART_STORAGE_LOCATION), .t.)
 
-      if poContext.lCore
+      if poContext.lAdmin
         .AddHeading('Administrative Information')
         .AddRow("Pk", TRIM(loData.ART_PK), .F., "private")
         .AddRow("Admin", loData.ART_ADMIN, .F., "admin")
         .AddRow("Core", loData.ART_CORE, .F.)
-        .AddRow("Inactive", loData.ART_INACTIVE, .F., "private")
+        .AddRow("Unknown", loData.ART_Unknown, .F., "private")
+        .AddRow("DELETED", loData.ART_INACTIVE, .F., "private")
         .AddRow("Access Token", TRIM(loData.ART_ACCESS_TOKEN), .F., "private")
         .AddRow("Password Count", loData.ART_PASSWORD_COUNT, .F., "admin")
         .AddRow("Password Time", loData.ART_PASSWORD_TIME, .F., "admin")
@@ -338,6 +379,7 @@ enddefine
 *** ========================================================= ***
 define class ais_ArtForm as aisArtPage 
   lAdding = .f.
+  lAdminRequired = .t.
   * ----------------------------------------------------- *  
   function ProcessRequest
 
@@ -894,6 +936,12 @@ define class AisArtBrowseForm AS AisForm
           .cCssClass = "FormControlPrivate"
         endwith
 
+        .AddObject("txtFull_Name", "L7Textbox")
+        with .txtFull_Name
+          .cControlSource = this.cAlias + ".Art_Full_Name"
+          .cLabel = "Alternative Full Name"
+        endwith
+
         .AddObject("lblID", "L7Label")
         with .lblID
           .cFieldType = "C"
@@ -918,13 +966,13 @@ enddefine && AisArtBrowseForm
 define class AisArtQuery AS L7Query
   cBaseTable = "Artist"
   cDefaultFieldList = ;
-    "Art_PK,Art_ID,Art_Approved,Art_Artist,Art_Anonymous,Art_Unknown,Art_Hidden" + ;
-    ",Art_Full_Name,Art_Last_Name,Art_First_Name,Art_Name_Orig" + ; 
-    ",Art_Email,Art_Phone,Art_Contact_Orig,Art_Address,Art_Neighborhood" + ;
-    ",Art_Age_Range,Art_Participation,Art_Partial_Panel,Art_Panel_Info,Art_Panel_Count" + ;
-    ",Art_Towers,Art_Help_Install,Art_Help_Materials,Art_Organizer,Art_Help_Outreach,Art_Help_Other" + ;
-    ",Art_Comments,Art_Register_Time,Art_KTB_Response" + ;
-    ",Art_Access_Token,Art_User_ID" 
+    "Art_PK, Art_ID, Art_Approved, Art_Artist, Art_Anonymous, Art_Unknown, Art_Hidden" + ;
+    ", Art_Full_Name, Art_Last_Name, Art_First_Name, Art_Title, Art_Name_Orig" + ; 
+    ", Art_Email, Art_Phone, Art_Contact_Orig, Art_Neighborhood" + ;
+    ", Art_Age_Range, Art_Partial_Panel, Art_Panel_Info, Art_Panel_Count" + ;
+    ", Art_Towers, Art_Help_Install, Art_Help_Materials, Art_Organizer, Art_Help_Outreach" + ;
+    ", Art_Register_Time, Art_KTB_Response" + ;
+    ", Art_Access_Token" 
 
   * Account-based params:
   lUser = NULL
@@ -965,7 +1013,7 @@ define class AisArtQuery AS L7Query
 
       if !empty(.cSrch1)
         lcStr = lower(.cSrch1)
-        .cWhereClause = .cWhereClause + [ AND '] + m.lcStr + [' $ lower(Art_Last_Name + Art_First_Name + Art_User_Id + Art_Email + Art_Access_Token + Art_PK + Art_ID)]
+        .cWhereClause = .cWhereClause + [ AND '] + m.lcStr + [' $ lower(Art_Last_Name + Art_First_Name + Art_User_Id + Art_Email + Art_Access_Token + Art_PK + Art_ID + Art_Notes + Art_Participation)]
       endif 
       if !empty(.cUser_Id)
         .cWhereClause = .cWhereClause + ;
@@ -984,20 +1032,6 @@ define class AisArtQuery AS L7Query
       if !isnull( .lHidden)
         .cWhereClause = .cWhereClause + [ AND Art_Hidden = ] + IIF(.lHidden, [.T.], [.F.])
       endif 
-
-*!*        * Build "inner" WHERE clause that is used to control security, etc.
-*!*        if !( .lCore or .lArtist OR .lAdmin ;
-*!*          or .lInstall or .lTowers or .lOutreach )
-*!*          * If none checked, assume no people should be listed.
-*!*        else 
-*!*          lcInnerWhere = m.lcInnerWhere + ;
-*!*            iif( .lCore, [ OR Art_Core = .T.], []) + ;
-*!*            iif( .lArtist, [ OR Art_Artist = .T.], []) + ;
-*!*            iif( .lAdmin, [ OR Art_Admin = .T.], [])
-*!*            iif( .lInstall, [ OR Art_Help_Install = .T.], [])
-*!*            iif( .lTowers, [ OR Art_Towers = .T.], [])
-*!*            iif( .lOutreach, [ OR Art_Help_Outreach = .T.], [])
-*!*        endif 
 
       loFlags = AisArtQueryFlags()
       for lnFlag = 1 to loFlags.count
