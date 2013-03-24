@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION 6
+#DEFINE THISAPP_DATABASE_REVISION 7
 
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
@@ -252,6 +252,16 @@ define class AisApp AS KtbApp
       select Artist
       index on Art_Neighborhood tag Neighbor
       use in select("Artist")
+
+    case m.lnRev = 7
+      * also force view creation 
+      use Artist exclusive in select("Artist")
+      select Artist
+      index on Art_Last_Name tag Last_Name
+      if indbc('artist.user_id',"INDEX")
+        delete tag User_Id
+      endif 
+      use in select("Artist")
       
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
@@ -474,9 +484,10 @@ function CreateArtistTable
   * Other Keys:
   index on Art_Approved tag Approved
   index on Art_Hidden tag Hidden
-  index on upper(Art_User_ID) tag User_ID
+  ** index on upper(Art_User_ID) tag User_ID
   index on Art_ID tag Art_ID
   index on Art_Access_Token tag token 
+  index on Art_Last_Name tag Last_Name
   index on upper(Art_Last_Name) tag U_last
   index on Art_Artist tag artist 
   index on Art_Neighborhood tag Neighbor  && Rev 6
@@ -856,9 +867,9 @@ FUNCTION CreateViews(lcOneTable, lcDataPath, lcDataBase)
     do CreateChildView WITH "V_Panel_Piece_Set", "Piece", "Pce_Pnl_FK", "Panel", [Pce_Inactive=.F.]
 
     * All-record views (for master "browse" forms):
-    do CreateAllRecordsView WITH "V_Unapproved_Artist_Set", "Artist", "Art_PK", [!Art_Inactive and !Art_Approved]
-    do CreateAllRecordsView WITH "V_Approved_Artist_Set", "Artist", "Art_PK", [!Art_Inactive and Art_Approved], [Art_Last_Name, Art_First_Name]
-    do CreateAllRecordsView WITH "V_All_Users", "Artist", "Art_PK", [!Art_Inactive and !empty(Art_User_ID)]
+    do CreateAllRecordsView WITH "V_Unapproved_Artists",  "Artist", "Art_PK", [!Art_Inactive and !Art_Approved]
+    do CreateAllRecordsView WITH "V_Artists_by_Name",     "Artist", "Art_PK", [!Art_Inactive and !empty(Art_ID) and !Art_Hidden], [Art_Last_Name, Art_First_Name]
+    do CreateAllRecordsView WITH "V_Artists_by_Location", "Artist", "Art_PK", [!Art_Inactive and !empty(Art_ID) and !Art_Hidden], [Art_Neighborhood]
 
   endif 
   return 

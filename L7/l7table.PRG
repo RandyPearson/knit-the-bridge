@@ -846,6 +846,8 @@ DEFINE CLASS L7AbstractHtmlTable AS CUSTOM
       DO WHILE NOT .oDataBehavior.EOF
         if .oDataBehavior.lObjectBased
           THISRECORD = .oDataBehavior.getRecord()
+        else  && balance to allow expressions to pass THISRECORD
+          scatter memo name THISRECORD 
         endif 
 
         .nRowCount = .nRowCount + 1

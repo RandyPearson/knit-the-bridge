@@ -37,7 +37,7 @@ function aisArtistName(tvArt)
   endif 
     
   if empty(loData.Art_Last_Name )
-    return trim(loData.Art_User_ID ) + iif(loData.Art_Anonymous, " (ANONYMOUS)", "")
+    return trim(loData.Art_ID ) + iif(loData.Art_Anonymous, " (ANONYMOUS)", "")
   else 
     if empty(loData.Art_First_Name )
       return trim(loData.Art_Last_Name )
@@ -88,12 +88,34 @@ define class aisArtPage as aisPage
 enddefine 
 
 *** ========================================================= ***
-define class ais_ArtList as aisArtPage 
-  lCoreRequired = .t.
-
+define class aisMultiArtPage as aisArtPage 
   lArtRequired = .f.
   cPage_Fields = null
+  oPage_Fields = null
   cPage_Order = null
+  * --------------------------------------------------------- *
+  function BeforeProcessRequest
+    local lcStr, lbIdx, lcWord
+
+    this.cPage_Order = this.ReadQueryString("order", .t., .t.)
+    this.cPage_Fields = this.ReadQueryString("fields", .t., .t.)
+    this.oPage_Fields = createobject("Collection")
+    for lnIdx = 1 to getwordcount(this.cPage_Fields, ",")
+      lcWord = alltrim(getwordnum(this.cPage_Fields, m.lnIdx, ","))
+      if !empty(m.lcWord)
+        this.oPage_Fields.add(m.lcWord, m.lcWord)
+      endif
+    next 
+   
+    dodefault()  && required bubble-up
+    return    
+  endfunc  
+enddefine 
+
+*** ========================================================= ***
+define class ais_ArtList as aisMultiArtPage 
+  lCoreRequired = .t.
+
   cPage_Flags = null
   lPage_Approved = null
   cSubTitle = "Artists N'At"
@@ -105,9 +127,7 @@ define class ais_ArtList as aisArtPage
     this.cPage_Srch1 = this.ReadQueryString("srch1", .t., .t., .t.)
     this.ReadQueryString("btn", .t., .t., .t.) && clear search button from URL
     
-    this.cPage_Order = this.ReadQueryString("order", .t., .t.)
     this.cPage_Flags = this.ReadQueryString("flags", .t., .t.)
-    this.cPage_Fields = this.ReadQueryString("fields", .t., .t.)
 
     lcStr = this.ReadQueryString("approved", .t., .t.)
     this.lPage_Approved = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
@@ -148,13 +168,6 @@ define class ais_ArtList as aisArtPage
     local loQry, loFlags, lnIdx, loItem, lcWord, lcProp, loFields, ;
       loTbl, loCol, loGrp
        
-    loFields = createobject("Collection")
-    for lnIdx = 1 to getwordcount(this.cPage_Fields, ",")
-      lcWord = alltrim(getwordnum(this.cPage_Fields, m.lnIdx, ","))
-      if !empty(m.lcWord)
-        loFields.add(m.lcWord, m.lcWord)
-      endif
-    next 
     
     loQry = createobject("AisArtQuery")
     with loQry
@@ -169,8 +182,17 @@ define class ais_ArtList as aisArtPage
       .lAccountInactive = this.lPage_Approved
       .cSrch1 = this.cPage_Srch1
       
-      if loFields.getkey("location") > 0
+      if this.oPage_Fields.getkey("location") > 0
         .addFields("Art_Neighborhood, Art_Address")
+      endif 
+      if this.oPage_Fields.getkey("part") > 0
+        .addParticipationFields()
+      endif 
+      if this.oPage_Fields.getkey("registry") > 0
+        .addFields("Art_Register_Time, Art_KTB_Response")
+      endif 
+      if this.oPage_Fields.getkey("contact") > 0
+        .addFields("Art_Email, Art_Phone, Art_Contact_Orig")
       endif 
       
       do case
@@ -197,19 +219,28 @@ define class ais_ArtList as aisArtPage
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Art_ID", "Artist ID",, "id-field")
       loCol = .addCursorColumn("Art_Last_Name", "Name", ;
-        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), trim(Art_Last_Name) + ", " + trim(Art_First_Name))])
-      loCol = .addCursorColumn("Art_Email", "Email", [HTEmailLink(trim(Art_Email))])
-      loCol = .addCursorColumn("Art_Phone", "Phone")
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), aisArtistName(THISRECORD))])
 
-      if loFields.getkey("location") > 0
+      if this.oPage_Fields.getkey("contact") > 0
+        loCol = .addCursorColumn("Art_Email", "Email", [HTEmailLink(trim(Art_Email))])
+        loCol = .addCursorColumn("Art_Phone", "Phone")
+      endif 
+
+      if this.oPage_Fields.getkey("location") > 0
         loCol = .addCursorColumn("Art_Neighborhood", "Neighborhood")
         loCol = .addCursorColumn("Art_Address", "Address")
       endif 
 
-      loCol = .addCursorColumn("Art_Register_Time", "Sign-Up Time", [L7TimeDiff(Art_Register_Time)])
-      loCol = .addCursorColumn("Art_KTB_Response", "Response")
-      loCol = .addCursorColumn("Art_Approved", "Approved?")
-      
+      if this.oPage_Fields.getkey("part") > 0
+        loCol = .addCursorColumn("Art_Help_Other", "Participation", [aisFormatParticipation(THISRECORD)])
+      endif
+
+      if this.oPage_Fields.getkey("registry") > 0
+        loCol = .addCursorColumn("Art_Register_Time", "Sign-Up Time", [L7TimeDiff(Art_Register_Time)])
+        loCol = .addCursorColumn("Art_KTB_Response", "Response")
+        loCol = .addCursorColumn("Art_Approved", "Approved?")
+      endif
+
       if poContext.lCore
         loCol = .addCursorColumn("Art_PK", "Edit Artist", ;
           'HTLink(StuffUrl(urls.item("ArtForm"), "art", Art_PK), "[Edit Artist...]")')
@@ -856,12 +887,15 @@ define class Ais_BrowseUnapproved as AisArtPage
   function ProcessRequest
     this.cCancelUrl = StuffUrl(this.cUrlA, 2, "ArtList")
     local loForm, lcXml, lcAlias, lcFldState, lcStub
-    lcAlias = "V_Unapproved_Artist_Set"
+    lcAlias = "V_Unapproved_Artists"
+    *lcAlias = "V_Artists_by_Location"
     use (m.lcAlias) in select(m.lcAlias)
     cursorsetprop("Buffering", 5, m.lcAlias)
     select (m.lcAlias)
     loForm = this.CreateForm("AisArtBrowseForm")
     with loForm
+      .lCustom_Location = .f. 
+      .lCustom_Names = .t. 
       .cAlias = m.lcAlias
       .AddControls()
       .DoEvents()
@@ -899,6 +933,9 @@ enddefine  && Ais_BrowseUnapproved
 define class AisArtBrowseForm AS AisForm
   cTitle = "Artist Form"
   cAlias = null && client should set 
+  cCssStyle = "width: 100%;"
+  lCustom_Names = .t.
+  lCustom_Location = .f.
   * --------------------------------------------------------- *
   function AddControls
     with this
@@ -909,39 +946,6 @@ define class AisArtBrowseForm AS AisForm
         .nExtraRows = 0 && don't permit adds 
         .cGridTableCssClass = "sortable " + .cGridTableCssClass
       
-        .AddObject("edtName_Orig", "L7Textarea")
-        with .edtName_Orig
-          .cControlSource = this.cAlias + ".Art_Name_Orig"
-          .cLabel = "Name Orig (from blog)"
-          .nRows = 2
-        endwith
-
-        .AddObject("txtFirst_Name", "L7Textbox")
-        with .txtFirst_Name
-          .cControlSource = this.cAlias + ".Art_First_Name"
-          .cLabel = "First Name"
-        endwith
-
-        .AddObject("txtLast_Name", "L7Textbox")
-        with .txtLast_Name
-          .cControlSource = this.cAlias + ".Art_Last_Name"
-          .cLabel = "Last Name"
-        endwith
-
-        .AddObject("chkApproved", "L7Checkbox")
-        with .chkApproved
-          .cControlSource = this.cAlias + ".Art_Approved"
-          .cLabel = "Approved"
-          .cCaption = "Approved"
-          .cCssClass = "FormControlPrivate"
-        endwith
-
-        .AddObject("txtFull_Name", "L7Textbox")
-        with .txtFull_Name
-          .cControlSource = this.cAlias + ".Art_Full_Name"
-          .cLabel = "Alternative Full Name"
-        endwith
-
         .AddObject("lblID", "L7Label")
         with .lblID
           .cFieldType = "C"
@@ -949,13 +953,72 @@ define class AisArtBrowseForm AS AisForm
           .cLabel = "ID"
         endwith 
 
-        .AddObject("chkInactive", "L7Checkbox")
-        with .chkInactive
-          .cGroupID = "PK"
-          .cControlSource = this.cAlias + ".Art_Inactive"
-          .cLabel = "Delete?"
-          .lDisabled = !m.poContext.lAdmin
-        endwith
+        if !this.lCustom_Names
+          .AddObject("lblName_", "L7Label")
+          with .lblName_
+            .cFieldType = "C"
+            .cControlSource = this.cAlias + ".Art_PK"
+            .cLabel = "Name"
+            .cShowExpression = [aisArtistName(] + this.cAlias + [.Art_PK)]
+          endwith 
+        else
+          .AddObject("edtName_Orig", "L7Textarea")
+          with .edtName_Orig
+            .cControlSource = this.cAlias + ".Art_Name_Orig"
+            .cLabel = "Name Orig (from blog)"
+            .nRows = 2
+          endwith
+
+          .AddObject("txtFirst_Name", "L7Textbox")
+          with .txtFirst_Name
+            .cControlSource = this.cAlias + ".Art_First_Name"
+            .cLabel = "First Name"
+          endwith
+
+          .AddObject("txtLast_Name", "L7Textbox")
+          with .txtLast_Name
+            .cControlSource = this.cAlias + ".Art_Last_Name"
+            .cLabel = "Last Name"
+          endwith
+
+          .AddObject("chkApproved", "L7Checkbox")
+          with .chkApproved
+            .cControlSource = this.cAlias + ".Art_Approved"
+            .cLabel = "Approved"
+            .cCaption = "Approved"
+            .cCssClass = "FormControlPrivate"
+          endwith
+
+          .AddObject("txtFull_Name", "L7Textbox")
+          with .txtFull_Name
+            .cControlSource = this.cAlias + ".Art_Full_Name"
+            .cLabel = "Alternative Full Name"
+          endwith
+
+          .AddObject("chkInactive", "L7Checkbox")
+          with .chkInactive
+            .cGroupID = "PK"
+            .cControlSource = this.cAlias + ".Art_Inactive"
+            .cLabel = "Delete?"
+            .lDisabled = !m.poContext.lAdmin
+            .cCaption = "DELETE"
+            .cCssClass = "FormControlPrivate"
+          endwith
+        endif 
+        
+        if this.lCustom_Location 
+          .AddObject("txtNeighborhood", "L7Textbox")
+          with .txtNeighborhood
+            .cControlSource = this.cAlias + ".Art_Neighborhood"
+            .cLabel = "Neighborhood"
+          endwith
+          .AddObject("lblAddress", "L7Label")
+          with .lblAddress
+            .cFieldType = "C"
+            .cControlSource = this.cAlias + ".Art_Address"
+            .cLabel = "Original Neighborhood (e.g., froom blog)"
+          endwith 
+        endif
       
       endwith && grid 
     endwith && form
@@ -966,13 +1029,10 @@ enddefine && AisArtBrowseForm
 define class AisArtQuery AS L7Query
   cBaseTable = "Artist"
   cDefaultFieldList = ;
-    "Art_PK, Art_ID, Art_Approved, Art_Artist, Art_Anonymous, Art_Unknown, Art_Hidden" + ;
+    "Art_PK, Art_ID, Art_Access_Token, Art_Approved, Art_Artist, Art_Anonymous, Art_Unknown, Art_Hidden" + ;
     ", Art_Full_Name, Art_Last_Name, Art_First_Name, Art_Title, Art_Name_Orig" + ; 
-    ", Art_Email, Art_Phone, Art_Contact_Orig, Art_Neighborhood" + ;
-    ", Art_Age_Range, Art_Partial_Panel, Art_Panel_Info, Art_Panel_Count" + ;
-    ", Art_Towers, Art_Help_Install, Art_Help_Materials, Art_Organizer, Art_Help_Outreach" + ;
-    ", Art_Register_Time, Art_KTB_Response" + ;
-    ", Art_Access_Token" 
+    ", Art_Email, Art_Phone, Art_Neighborhood, Art_Age_Range" + ;
+    ", Art_Register_Time, Art_KTB_Response" 
 
   * Account-based params:
   lUser = NULL
@@ -998,6 +1058,12 @@ define class AisArtQuery AS L7Query
   *aOrderBy[ 1, 1] = "UPPER(Par_Name)"
   aOrderBy[ 1, 1] = "Art_Last_Name"
 
+  * --------------------------------------------------------- *
+  function addParticipationFields
+    this.addFields("Art_Towers, Art_Help_Install, Art_Help_Materials, Art_Organizer, Art_Help_Outreach, Art_Help_Other" + ;
+      ", Art_Partial_Panel, Art_Panel_Info, Art_Panel_Count, Art_Railing_1_Count, Art_Railing_2_Count, Art_Railing_3_Count")
+    return 
+  endfunc
   * --------------------------------------------------------- *
   function BuildWhereClause
     local lcStr, lcInnerWhere, loFlags, lnFlag, loFlag, lcField
