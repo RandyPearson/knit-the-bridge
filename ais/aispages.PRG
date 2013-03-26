@@ -366,6 +366,7 @@ define class aisPage as L7Page
   * ----------------------------------------------------- *  
   function AddMenuHeadings
     this.AddSubMenu("This", "THIS PAGE")
+    this.AddSubMenu("Reports", "REPORTS")
     this.AddSubMenu("Navigate", "Navigate")
     this.AddSubMenu("Search", "Search")
     if poContext.lAdmin
@@ -382,7 +383,7 @@ define class aisPage as L7Page
 
     lcLpInfo = THIS.GetBaseHiddenFormvars() && sustains license plate, etc. for GET form
     
-    lcForm = [<form style="margin:0;" method="get" action="] + StuffUrl(THIS.cUrlA, 2, "ArtList") + ;
+    lcForm = [<form style="margin:0;" method="get" action="] + StuffUrl(THIS.cUrlA, 2, "ArtList", "fields", "contact") + ;
       ["><input id="srch1" alt="Search string" type="text" name="srch1" size="16" maxlen="40" value="" onchange="this.form.submit();">] + ;
       m.lcLpInfo + ;
       [<br><input style="margin: 1px 0px 0px 0px;" name="btn" type="submit" value="Search People">] + ;

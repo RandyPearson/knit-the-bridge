@@ -70,6 +70,8 @@ define class ais_PceList as aisPcePage
   * --------------------------------------------------------- *
   function AddDefaultMenu
     with this
+      .AddSubMenu("This", "PIECES")
+
       .addMenuItem("main\This", "Available", StuffUrl(.cUrlC, "orphans", "1"),, !isnull(.lPage_Orphans) and .lPage_Orphans)
       .addMenuItem("main\This", "Assigned", StuffUrl(.cUrlC, "orphans", "0"),, !isnull(.lPage_Orphans) and !.lPage_Orphans)
       .addMenuItem("main\This", "Available and Assigned", StuffUrl(.cUrlC, "orphans", .f.),, isnull(.lPage_Orphans))

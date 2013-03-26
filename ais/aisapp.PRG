@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION 7
+#DEFINE THISAPP_DATABASE_REVISION 9
 
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
@@ -262,6 +262,19 @@ define class AisApp AS KtbApp
         delete tag User_Id
       endif 
       use in select("Artist")
+
+    case m.lnRev = 8
+      * also force view creation 
+      use Artist exclusive in select("Artist")
+      select Artist
+      index on Art_Register_Time tag reg_time 
+      use in select("Artist")
+
+    case m.lnRev = 9
+      alter table Artist add column Art_Developer L 
+      select Artist
+      replace Art_Developer with .t. for Art_PK = THISAPP_DEV_PK           
+      use in select("Artist")
       
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
@@ -419,6 +432,7 @@ function CreateArtistTable
       Art_Inactive L default .F., ;
       Art_ID C(8), ;
       Art_Approved L default .f., ;
+      Art_Developer L default .f., ;
       Art_Admin L default .f., ;
       Art_Core L default .f., ;
       Art_Hidden L default .f., ; && Rev 4
@@ -491,6 +505,7 @@ function CreateArtistTable
   index on upper(Art_Last_Name) tag U_last
   index on Art_Artist tag artist 
   index on Art_Neighborhood tag Neighbor  && Rev 6
+  index on Art_Register_Time tag reg_time && Rev 8
    
   * Comment:
   dbsetprop("Artist", "Table", "Comment", ;
@@ -870,6 +885,7 @@ FUNCTION CreateViews(lcOneTable, lcDataPath, lcDataBase)
     do CreateAllRecordsView WITH "V_Unapproved_Artists",  "Artist", "Art_PK", [!Art_Inactive and !Art_Approved]
     do CreateAllRecordsView WITH "V_Artists_by_Name",     "Artist", "Art_PK", [!Art_Inactive and !empty(Art_ID) and !Art_Hidden], [Art_Last_Name, Art_First_Name]
     do CreateAllRecordsView WITH "V_Artists_by_Location", "Artist", "Art_PK", [!Art_Inactive and !empty(Art_ID) and !Art_Hidden], [Art_Neighborhood]
+    do CreateAllRecordsView WITH "V_Artists_by_Reg_Time", "Artist", "Art_PK", [!Art_Inactive and !empty(Art_ID) and !Art_Hidden], [Art_Register_Time]
 
   endif 
   return 

@@ -259,7 +259,7 @@ define class aisUser as L7User
   endfunc   && IsActive
   * --------------------------------------------------------- *
   function IsDeveloper
-    return this.isActive() and this.oData.Art_Admin && nothing separate 
+    return this.isActive() and this.oData.Art_Developer
   endfunc
   * --------------------------------------------------------- *
   function IsAdministrator

@@ -22,9 +22,12 @@ function ts_makeSortable(table) {
     var coltrack = 0;
     $A(table.rows[0].cells).each(function(cell)
     {
-        cell.innerHTML = '<a href="#" class="sortheader" onclick="ts_resortTable(this, ' + coltrack + ');return false;">' + ts_getInnerText(cell) +'</a>';
-         // Track the colspan issue so the index is correct for spanned cols -- we will only sort on the first col of a spanned set of columns
-         coltrack = coltrack + (cell.getAttribute('colspan') > 0 ? parseInt(cell.getAttribute('colspan'), 10) : 1);
+        if (!cell.hasClassName("nosort"))
+        {
+            cell.innerHTML = '<a href="#" class="sortheader" onclick="ts_resortTable(this, ' + coltrack + ');return false;">' + ts_getInnerText(cell) +'</a>';
+        }
+        // Track the colspan issue so the index is correct for spanned cols -- we will only sort on the first col of a spanned set of columns
+        coltrack = coltrack + (cell.getAttribute('colspan') > 0 ? parseInt(cell.getAttribute('colspan'), 10) : 1);
     });
 }
 

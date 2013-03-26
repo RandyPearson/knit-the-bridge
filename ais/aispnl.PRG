@@ -83,6 +83,9 @@ define class ais_PnlList as aisPnlPage
   cSubTitle = "Panels"
   * ----------------------------------------------------- *  
   function AddDefaultMenu
+    with this
+      .AddSubMenu("This", "PANELS")
+    endwith 
     dodefault()
     return 
   endfunc 
