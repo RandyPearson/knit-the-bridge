@@ -126,6 +126,12 @@ define class AisImport as Custom
     if "school" $ lower(toXfer.Art_Participation)
       addproperty(toXfer, "Art_Help_Outreach", .t.)
     endif 
+    if "material" $ lower(toXfer.Art_Participation)
+      addproperty(toXfer, "Art_Help_Materials", .t.)
+    endif 
+    if "money" $ lower(toXfer.Art_Participation)
+      addproperty(toXfer, "Art_Help_Money", .t.)
+    endif 
     
     addproperty(toXfer, "Art_KTB_Response", nvl(toImp.KTB_email_response, ""))
     

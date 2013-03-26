@@ -3,8 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION 9
-
+#DEFINE THISAPP_DATABASE_REVISION     10
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -275,6 +274,15 @@ define class AisApp AS KtbApp
       select Artist
       replace Art_Developer with .t. for Art_PK = THISAPP_DEV_PK           
       use in select("Artist")
+
+    case m.lnRev = 10
+      alter table Artist add column Art_Help_Money L 
+      alter table Artist add column Art_Starred L 
+      select Artist
+      index on Art_Starred tag Starred
+      replace Art_Help_Money with .t. for [money] $ lower(art_participation)
+      replace Art_Help_Materials with .t. for [materials] $ lower(art_participation)
+      use in select("Artist")
       
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
@@ -437,6 +445,7 @@ function CreateArtistTable
       Art_Core L default .f., ;
       Art_Hidden L default .f., ; && Rev 4
       Art_Artist L default .t., ;
+      Art_Starred L, ;  && Rev 10
       Art_Anonymous L, ;
       Art_Unknown L, ;
       Art_Full_Name C(60), ;
@@ -463,6 +472,7 @@ function CreateArtistTable
       Art_Towers L, ; 
       Art_Help_Install L, ;
       Art_Help_Materials L, ;
+      Art_Help_Money L, ;  && Rev 10
       Art_Organizer L, ; && Rev 4 renamed from Art_Help_Meet_Up
       Art_Help_Outreach L, ;
       Art_Help_Other M, ;
@@ -496,6 +506,7 @@ function CreateArtistTable
   index on Art_Inactive tag Inactive
   * Foreign Keys:
   * Other Keys:
+  index on Art_Starred tag Starred  && Rev 10
   index on Art_Approved tag Approved
   index on Art_Hidden tag Hidden
   ** index on upper(Art_User_ID) tag User_ID

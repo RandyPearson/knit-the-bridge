@@ -7,10 +7,13 @@ function AisArtQueryFlags()
   return L7JsonParse( ;
     '[' + ;
     '{"root": "core", "prompt": "Core Team"}' + ;
+    ',{"root": "starred", "prompt": "Starred for KtB Follow-Up"}' + ;
     ',{"root": "install", "field": "Art_Help_Install", "prompt": "Help Install"}' + ;
     ',{"root": "outreach", "field": "Art_Help_Outreach"}' + ;
     ',{"root": "organizer", "prompt": "Community Organizer"}' + ;
     ',{"root": "towers", "prompt": "Machine Knit for Towers"}' + ;
+    ',{"root": "money", "field": "Art_Help_Money", "prompt": "Donate Money"}' + ;
+    ',{"root": "materials", "field": "Art_Help_Materials", "prompt": "Donate Materials"}' + ;
     ',{"root": "artist"}' + ;
     ',{"root": "admin", "menu": false}' + ;
     ']' )
@@ -80,6 +83,7 @@ function aisFormatParticipation(toData)
     iif(!loData.ART_TOWERS, "", "* Machine Knitting for Towers" + crlf) + ;
     iif(!loData.ART_HELP_INSTALL, "", "* Helping with *Installation*" + crlf) + ;
     iif(!loData.ART_HELP_MATERIALS, "", "* Donating Materials" + crlf) + ;
+    iif(!loData.ART_HELP_Money, "", "* Donating Money" + crlf) + ;
     iif(!loData.ART_Organizer, "", "* Community Organizer" + crlf) + ;
     iif(!loData.ART_HELP_OUTREACH, "", "* Helping with Outreach" + crlf) + ;
     iif(empty(loData.ART_HELP_OTHER), "", "* " + loData.ART_HELP_OTHER)
@@ -170,12 +174,13 @@ define class ais_ArtList as aisMultiArtPage
         .addMenuItem("main\This", "Approved and Not Approved", StuffUrl(.cUrlB, "Approved", .f.),, isnull(.lPage_Approved))
 
         .addMenuItem("main\This", "Process Approvals", StuffUrl(.cUrlB, 2, "BrowseUnapproved"))
+        .addMenuItem("main\This", "New Sign-Up...", StuffUrl(.cUrlA, 2, "ArtNew"))
       endif 
       .addMenuItem("main\Reports", "Contact Listing", StuffUrl(.cUrlB, "order", "name", "fields", "names,contact"))
       .addMenuItem("main\Reports", "Neighborhood Listing", StuffUrl(.cUrlB, "order", "location", "fields", "contact,location"))
       .addMenuItem("main\Reports", "Sign-Up Listing", StuffUrl(.cUrlB, "order", "reg_time", "fields", "names,contact,registry"))
       
-      if poContext.lAdmin and empty(this.cPage_Flags) && not a special query
+      if poContext.lAdmin and empty(this.cPage_Flags) and empty(this.cPage_Srch1) && not a special query
         .addMenuItem("main\Reports", "Edit All...", StuffUrl(.cUrlB, 2, "ArtBrowse", "order", this.cPage_Order, "fields", this.cPage_Fields))
       endif       
     endwith
@@ -334,7 +339,7 @@ define class ais_ArtHome as aisArtPage
   function AddDefaultMenu
     this.AddSubMenu("This", AisArtistName(this.oArt))
 
-    this.addMenuItem("main\This,page", "Edit Artist...", StuffUrl(this.cUrlA, 2, "ArtForm", "art", this.cArt))
+    this.addMenuItem("main\This,page", "Edit This Person...", StuffUrl(this.cUrlA, 2, "ArtForm", "art", this.cArt))
     if this.oArt.Art_Artist
       this.addMenuItem("main\This,page", "Submit WHOLE PANEL Piece...", ;
         StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Panels", "dim_1", "34", "dim_2", "72", "whole", "1"))
@@ -505,7 +510,7 @@ define class ais_ArtForm as aisArtPage
     this.assert(!V_Artist.Art_Developer or poContext.lDeveloper, "Cannot edit developer record.")
     
     cursorsetprop("Buffering", 5, "V_Artist")
-    loForm = this.createForm('aisArtistForm')
+    loForm = this.createForm(iif(this.lAdding, 'aisRegisterForm', 'aisArtistForm'))
     with loForm
       .lNewRecord = THIS.lAdding
       .AddControls()
@@ -515,9 +520,17 @@ define class ais_ArtForm as aisArtPage
         select V_Artist
         if this.lAdding
           append blank
+          replace Art_Artist with .f. && compensate for default .T. in structure...
+          replace Art_Register_Time with this.tNow
+          if poContext.lAdmin
+            replace Art_Approved with .t. && if admin is adding, approve immediately
+          endif
         endif 
         .UpdateControlSources()
         select V_Artist && UpdateControlSources can alter work area
+        if !Art_Artist and (Art_Partial_Panel = .t. or Art_Panel_Count > 0 or Art_Railing_1_Count > 0 or Art_Railing_2_Count > 0 or Art_Railing_3_Count > 0)
+          replace Art_Artist with .t.
+        endif 
         if Art_Approved and empty(Art_Id)
           lcStub = padr(alltrim(upper(evl(Art_Last_Name, "NLN"))), 5, 'X')
           replace Art_ID with AisAssignID(m.lcStub)
@@ -534,9 +547,14 @@ define class ais_ArtForm as aisArtPage
         loTrans.AddCursor("V_Artist")
 
         if loTrans.Save()  
-          
           select V_Artist
-        
+          if this.lAdding
+            if poContext.lAnonymous
+              this.cCancelUrl = StuffURL(THIS.cUrlA, 2, "ThankYou")
+            else
+              this.cCancelUrl = StuffURL(THIS.cUrlA, 2, "ArtHome", "art", V_Artist.Art_PK)
+            endif 
+          endif
           Response.Redirect(THIS.cCancelUrl)
           return 
         else 
@@ -544,7 +562,6 @@ define class ais_ArtForm as aisArtPage
             "Error " + TRANSFORM( loTrans.aFailures[1, 1]) + [ :] + ;
             loTrans.aFailures[1, 2] )
         endif  && Save()
-        
       endif && Valid
 
     endwith 
@@ -553,10 +570,228 @@ define class ais_ArtForm as aisArtPage
 enddefine && ais_ArtForm
 
 *** ========================================================= ***
-define class aisArtistForm AS AisForm
-  cTitle = "Artist Form"
+define class aisArtistForms AS AisForm
   cEntityAlias = "v_Artist"
   cEntityAbbr  = "Art"
+  * --------------------------------------------------------- *
+  function addParticipationControls()
+    with this
+
+      .AddObject("divPart", "L7Divider")
+      with .divPart
+        .cLabel = "Participation Information"
+      endwith
+
+      .AddObject("colArt", "L7CollectionControl")  && L7CheckboxCollection
+      with .colArt
+        .cGroupId = "part"
+        .cCssStyle = "width: 40%;"
+        .lAutoRender = .T.
+        .cDefaultControlPattern = [(%l%s)%c(%s%i)(%b%v)]
+        .cLabel = "Piece Submission Estimates (for planning purposes only)"
+        .cInterControlText = L7BR  && CHR(38) + 'nbsp;'       && &nbsp
+      endwith
+      
+      if !this.lNewRecord
+        .colArt.AddObjectToParent("chkArtist", "L7Checkbox")
+        with .chkArtist
+          .cControlSource = "V_artist.Art_Artist"
+          .cCaption = "Contributing Artist"
+          .cLabel = "Artist"
+          .cInstructions = "(Check this for anyone who may submit pieces.)"
+        endwith
+      endif 
+
+      .colArt.AddObjectToParent("txtPanel_Count", "L7Textbox")
+      with .txtPanel_Count
+        .cFieldType = "I"
+        .cControlSource = "V_artist.Art_Panel_Count"
+        .nSize = 3
+        .cLabel = "# of Whole Panels"
+        .cInstructions = "(estimate only, if n/a, enter 0)"
+      endwith
+
+      .colArt.AddObjectToParent("chkPartial_Panel", "L7Checkbox")
+      with .chkPartial_Panel
+        .cControlSource = "V_artist.Art_Partial_Panel"
+        .cCaption = "Making Partial Panel(s)"
+        .cLabel = "Partial Panels"
+      endwith
+
+      .colArt.AddObjectToParent("txtRailing_1_Count", "L7Textbox")
+      with .txtRailing_1_Count
+        .cFieldType = "I"
+        .cControlSource = "V_artist.Art_Railing_1_Count"
+        .nSize = 3
+        .cLabel = "# of 9x105 Railing pieces"
+        .cInstructions = "(if none, enter 0)"
+      endwith
+
+      .colArt.AddObjectToParent("txtRailing_2_Count", "L7Textbox")
+      with .txtRailing_2_Count
+        .cFieldType = "I"
+        .cControlSource = "V_artist.Art_Railing_2_Count"
+        .nSize = 3
+        .cLabel = "# of 15x80 Railing pieces"
+        .cInstructions = "(if none, enter 0)"
+      endwith
+
+      .AddObject("colPart", "L7CollectionControl")  && L7CheckboxCollection
+      with .colPart
+        .cGroupId = "part"
+        .cCssStyle = "width: 30%;"
+        .lAutoRender = .T.
+        .cDefaultControlPattern = "%c(%s%i)"
+        .cInterControlText = L7BR  && CHR(38) + 'nbsp;'       && &nbsp
+        .cLabel = "Additional Participation"
+      endwith
+      
+      .colPart.AddObjectToParent("chkTowers", "L7Checkbox")
+      with .chkTowers
+        .cControlSource = "V_artist.Art_Towers"
+        .cCaption = "Machine Knitting for Towers"
+      endwith
+      
+      .colPart.AddObjectToParent("chkHelp_Install", "L7Checkbox")
+      with .chkHelp_Install
+        .cControlSource = "V_artist.Art_Help_Install"
+        .cCaption = "Help with Installation"
+      endwith
+      
+      .colPart.AddObjectToParent("chkHelp_Materials", "L7Checkbox")
+      with .chkHelp_Materials
+        .cControlSource = "V_artist.Art_Help_Materials"
+        .cCaption = "Donating Materials"
+      endwith
+      
+      .colPart.AddObjectToParent("chkHelp_Money", "L7Checkbox")
+      with .chkHelp_Money
+        .cControlSource = "V_artist.Art_Help_Money"
+        .cCaption = "Donating Money to the Project"
+      endwith
+      
+      .colPart.AddObjectToParent("chkOrganizer", "L7Checkbox")
+      with .chkOrganizer
+        .cControlSource = "V_artist.Art_Organizer"
+        .cCaption = "Community Organizer"
+      endwith
+      
+      .colPart.AddObjectToParent("chkHelp_Outreach", "L7Checkbox")
+      with .chkHelp_Outreach
+        .cControlSource = "V_artist.Art_Help_Outreach"
+        .cCaption = "Help with Outreach"
+      endwith
+
+      .colPart.AddObjectToParent("edtHelp_Other", "L7Textarea")
+      with .edtHelp_Other
+        .cGroupId = "part"
+        .cControlSource = "V_artist.Art_Help_Other"
+        .cLabel = "Other ways you want to help"
+        .cPattern = [(%l%s)%c(%s%i)(%b%v)]
+        .nRows = 3
+      endwith
+
+      if poContext.lAdmin and !this.lNewRecord
+        .AddObject("edtParticipation", "L7Textarea")
+        with .edtParticipation
+          .cGroupId = "part"
+          .cControlSource = "V_artist.Art_Participation"
+          .cLabel = "Original Participation answers (e.g., from blog)"
+          .nRows = 3
+          .cCssClass = "FormControlPrivate"
+        endwith
+
+        .AddObject("lblRegister_Time", "L7Label")
+        with .lblRegister_Time
+          .cGroupID = "Register"
+          .cControlSource = "V_artist.Art_Register_Time"
+          .cLabel = "Registered"
+          .cShowExpression = [L7TimeDiff(V_artist.Art_Register_Time)]
+        endwith
+
+        .AddObject("edtKtb_Response", "L7Textarea")
+        with .edtKtb_Response
+          .cGroupID = "Register"
+          .cControlSource = "V_artist.Art_Ktb_Response"
+          .cLabel = "Ktb Response"
+          .nRows = 2
+          .cCssClass = "FormControlPrivate"
+        endwith
+      endif 
+    endwith
+    return 
+  endfunc  && addParticipationControls
+enddefine 
+
+*** ========================================================= ***
+define class aisRegisterForm AS aisArtistForms
+  cTitle = "New Sign-Up Form"
+  * --------------------------------------------------------- *
+  function AddControls
+    with this
+      .AddObject("txtFirst_Name", "L7Textbox")
+      with .txtFirst_Name
+        .cGroupID = "name"
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_First_Name"
+        .cLabel = "First Name"
+        .cCssStyle = "width: 30%;"
+      endwith
+      .AddObject("txtLast_Name", "L7Textbox")
+      with .txtLast_Name
+        .cGroupID = "name"
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_Last_Name"
+        .lRequired = .t.
+        .cLabel = "Last Name"
+        .cInstructions = "Required. Enter NLN if not providing your last name."
+        .cCssStyle = "width: 30%;"
+      endwith
+      .AddObject("txtEmail", "L7Textbox")
+      with .txtEmail
+        .cGroupID = "cont"
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_Email"
+        .cLabel = "Email"
+        .cInstructions = "Not required, but very helpful for KtB to communicate with you."
+        .cCssStyle = "width: 30%;"
+        .nSize = 60
+      endwith
+      .AddObject("txtPhone", "L7Textbox")
+      with .txtPhone
+        .cGroupID = "cont"
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_Phone"
+        .cLabel = "Phone"
+        .cInstructions = "Optional, but if not providing email, very helpful for KtB to communicate with you."
+        .cCssStyle = "width: 30%;"
+      endwith
+
+      .addParticipationControls()
+
+      .AddObject("edtAddress", "L7Textarea")
+      with .edtAddress
+        .cGroupID  ="addr"
+        .cControlSource = "V_artist.Art_Address"
+        .nRows = 3
+        .cLabel = "Neighborhood or Township"
+      endwith
+
+      .AddObject("edtComments", "L7Textarea")
+      with .edtComments
+        .cGroupID = "addr"
+        .cControlSource = "V_artist.Art_Comments"
+        .cLabel = "Additional Comments"
+        .nRows = 3
+      endwith
+    endwith
+    return 
+  endfunc  && addControls
+enddefine  && aisRegisterForm
+
+*** ========================================================= ***
+define class aisArtistForm AS aisArtistForms
+  cTitle = "Artist Form"
   cCssStyle = "width: 100%;"
   * --------------------------------------------------------- *
   function AddControls
@@ -630,6 +865,7 @@ define class aisArtistForm AS AisForm
           .cControlSource = "V_artist.Art_Unknown"
           .cLabel = "Unknown?"
           .cCaption = "Unknown Person"
+          .cCssClass = "FormControlPrivate"
         endwith
       endif
       
@@ -688,7 +924,6 @@ define class aisArtistForm AS AisForm
       with .edtAddress
         .cGroupID  ="addr"
         .cControlSource = "V_artist.Art_Address"
-        .cLabel = "Address"
         .nRows = 2
         .cLabel = "Original Neighborhood (e.g., from blog)"
         .cCssClass = "FormControlPrivate"
@@ -715,6 +950,18 @@ define class aisArtistForm AS AisForm
         .nRows = 3
       endwith
 
+      .AddObject("chkStarred", "L7Checkbox")
+      with .chkStarred
+        .cGroupID = "notes"
+        .nMode = L7_MULTI_RADIOBUTTON
+        .nStyle = L7_MULTISTYLE_VERTICAL  && only applies to radio-button transforms
+        .cControlSource = "V_artist.Art_Starred"
+        .cLabel = "Starred?"
+        .cCaption = "Starred"
+        .cFalseCaption = "Not Starred"
+        .cCssClass = "FormControlPrivate"
+      endwith
+
       .AddObject("edtNotes", "L7Textarea")
       with .edtNotes
         .cGroupID = "notes"
@@ -730,138 +977,6 @@ define class aisArtistForm AS AisForm
       
     endwith
   endfunc  && AddControls
-      
-  * --------------------------------------------------------- *
-  function addParticipationControls()
-    with this
-
-      .AddObject("divPart", "L7Divider")
-      with .divPart
-        .cLabel = "Participation Information"
-      endwith
-
-      .AddObject("colArt", "L7CollectionControl")  && L7CheckboxCollection
-      with .colArt
-        .cGroupId = "part"
-        .cCssStyle = "width: 40%;"
-        .lAutoRender = .T.
-        .cDefaultControlPattern = [(%l%s)%c(%s%i)(%b%v)]
-        .cLabel = "Submission Estimates"
-        .cInterControlText = L7BR  && CHR(38) + 'nbsp;'       && &nbsp
-      endwith
-      
-      .colArt.AddObjectToParent("chkArtist", "L7Checkbox")
-      with .chkArtist
-        .cControlSource = "V_artist.Art_Artist"
-        .cCaption = "Contributing Artist"
-        .cLabel = "Artist"
-        .cInstructions = "(Check this for anyone who may submit pieces.)"
-      endwith
-
-      .colArt.AddObjectToParent("txtPanel_Count", "L7Textbox")
-      with .txtPanel_Count
-        .cFieldType = "I"
-        .cControlSource = "V_artist.Art_Panel_Count"
-        .nSize = 3
-        .cLabel = "# of Whole Panels"
-        .cInstructions = "(estimate only, if n/a, enter 0)"
-      endwith
-
-      .colArt.AddObjectToParent("chkPartial_Panel", "L7Checkbox")
-      with .chkPartial_Panel
-        .cControlSource = "V_artist.Art_Partial_Panel"
-        .cCaption = "Making Partial Panel(s)"
-        .cLabel = "Partial Panels"
-      endwith
-
-      .colArt.AddObjectToParent("txtRailing_1_Count", "L7Textbox")
-      with .txtRailing_1_Count
-        .cFieldType = "I"
-        .cControlSource = "V_artist.Art_Railing_1_Count"
-        .nSize = 3
-        .cLabel = "# of 9x105 Railings"
-        .cInstructions = "(if none, enter 0)"
-      endwith
-
-      .colArt.AddObjectToParent("txtRailing_2_Count", "L7Textbox")
-      with .txtRailing_2_Count
-        .cFieldType = "I"
-        .cControlSource = "V_artist.Art_Railing_2_Count"
-        .nSize = 3
-        .cLabel = "# of 15x80 Railings"
-        .cInstructions = "(if none, enter 0)"
-      endwith
-
-      .AddObject("colPart", "L7CollectionControl")  && L7CheckboxCollection
-      with .colPart
-        .cGroupId = "part"
-        .cCssStyle = "width: 30%;"
-        .lAutoRender = .T.
-        .cDefaultControlPattern = "%c(%s%i)"
-        .cInterControlText = L7BR  && CHR(38) + 'nbsp;'       && &nbsp
-        .cLabel = "Additional Participation"
-      endwith
-      .colPart.AddObjectToParent("chkTowers", "L7Checkbox")
-      with .chkTowers
-        .cControlSource = "V_artist.Art_Towers"
-        .cCaption = "Machine Knitting for Towers"
-      endwith
-      .colPart.AddObjectToParent("chkHelp_Install", "L7Checkbox")
-      with .chkHelp_Install
-        .cControlSource = "V_artist.Art_Help_Install"
-        .cCaption = "Help with Installation"
-      endwith
-      .colPart.AddObjectToParent("chkHelp_Materials", "L7Checkbox")
-      with .chkHelp_Materials
-        .cControlSource = "V_artist.Art_Help_Materials"
-        .cCaption = "Donating Materials"
-      endwith
-      .colPart.AddObjectToParent("chkOrganizer", "L7Checkbox")
-      with .chkOrganizer
-        .cControlSource = "V_artist.Art_Organizer"
-        .cCaption = "Community Organizer"
-      endwith
-      .colPart.AddObjectToParent("chkHelp_Outreach", "L7Checkbox")
-      with .chkHelp_Outreach
-        .cControlSource = "V_artist.Art_Help_Outreach"
-        .cCaption = "Help with Outreach"
-      endwith
-
-      .colPart.AddObjectToParent("edtHelp_Other", "L7Textarea")
-      with .edtHelp_Other
-        .cGroupId = "part"
-        .cControlSource = "V_artist.Art_Help_Other"
-        .cLabel = "Help Other"
-        .nRows = 2
-      endwith
-      .AddObject("edtParticipation", "L7Textarea")
-      with .edtParticipation
-        .cGroupId = "part"
-        .cControlSource = "V_artist.Art_Participation"
-        .cLabel = "Original Participation answers (e.g., from blog)"
-        .nRows = 3
-        .cCssClass = "FormControlPrivate"
-      endwith
-
-      .AddObject("lblRegister_Time", "L7Label")
-      with .lblRegister_Time
-        .cGroupID = "Register"
-        .cControlSource = "V_artist.Art_Register_Time"
-        .cLabel = "Registered"
-        .cShowExpression = [L7TimeDiff(V_artist.Art_Register_Time)]
-      endwith
-
-      .AddObject("edtKtb_Response", "L7Textarea")
-      with .edtKtb_Response
-        .cGroupID = "Register"
-        .cControlSource = "V_artist.Art_Ktb_Response"
-        .cLabel = "Ktb Response"
-        .nRows = 2
-      endwith
-    endwith
-    return 
-  endfunc  && addParticipationControls
-
   * --------------------------------------------------------- *
   function addAdditionalControls()
     with this
@@ -1168,7 +1283,7 @@ enddefine && AisArtBrowseForm
 define class AisArtQuery AS L7Query
   cBaseTable = "Artist"
   cDefaultFieldList = ;
-    "Art_PK, Art_ID, Art_Access_Token, Art_Approved, Art_Artist, Art_Anonymous, Art_Unknown, Art_Hidden" + ;
+    "Art_PK, Art_ID, Art_Access_Token, Art_Approved, Art_Starred, Art_Artist, Art_Anonymous, Art_Unknown, Art_Hidden" + ;
     ", Art_Full_Name, Art_Last_Name, Art_First_Name, Art_Title, Art_Name_Orig" + ; 
     ", Art_Email, Art_Phone, Art_Neighborhood, Art_Age_Range" + ;
     ", Art_Register_Time, Art_KTB_Response" 
@@ -1182,10 +1297,13 @@ define class AisArtQuery AS L7Query
   lCore = .F.
   lHidden = .F. 
   lArtist = .F.
+  lStarred = .f.
   lInstall = .F.
   lOrganizer = .F.
+  lOutreach = .f. 
   lTowers = .F.
-  lOutreach = .F.
+  lMoney = .F.
+  lMaterials = .f. 
 
   * Name Search
   cName = ""
@@ -1199,7 +1317,7 @@ define class AisArtQuery AS L7Query
 
   * --------------------------------------------------------- *
   function addParticipationFields
-    this.addFields("Art_Towers, Art_Help_Install, Art_Help_Materials, Art_Organizer, Art_Help_Outreach, Art_Help_Other" + ;
+    this.addFields("Art_Towers, Art_Help_Install, Art_Help_Materials, Art_Help_Money, Art_Organizer, Art_Help_Outreach, Art_Help_Other" + ;
       ", Art_Partial_Panel, Art_Panel_Info, Art_Panel_Count, Art_Railing_1_Count, Art_Railing_2_Count, Art_Railing_3_Count")
     return 
   endfunc
@@ -1232,6 +1350,10 @@ define class AisArtQuery AS L7Query
 
       if !isnull( .lAccountInactive)
         .cWhereClause = .cWhereClause + [ AND Art_Approved = ] + IIF(.lAccountInactive, [.T.], [.F.])
+      endif 
+
+      if !isnull( .lStarred)
+        .cWhereClause = .cWhereClause + [ AND Art_Starred = ] + IIF(.lStarred, [.T.], [.F.])
       endif 
 
       if !isnull( .lHidden)

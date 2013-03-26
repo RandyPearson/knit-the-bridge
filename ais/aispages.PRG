@@ -270,7 +270,7 @@ define class aisPage as L7Page
       ADDPROPERTY(m.loContext, 'lAdmin',     m.loContext.lDeveloper or .IsAdministrator()) && developers are admins
       ADDPROPERTY(m.loContext, 'lCore',      m.loContext.lAdmin or .IsCore()) && admins are also core
       ADDPROPERTY(m.loContext, 'lArtist',    .IsArtist()) 
-      ADDPROPERTY(m.loContext, 'lAnonymous', .F.)
+      ADDPROPERTY(m.loContext, 'lAnonymous', !loContext.lCore and !loContext.lArtist)
       
       * Flags that can be decorated at the page level:
       ADDPROPERTY(m.loContext, 'lViewPage', .T.)  && "Yes" unless determined otherwise.
