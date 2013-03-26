@@ -541,7 +541,7 @@ define class ais_ArtForm as aisArtPage
         StampRec( CurrentUser, THIS.tNow )
         
         * Now save it using a transaction:
-        local loTrans, loExc, lcMailMessage, lcExcMessage, llSendEmail
+        local loTrans, loExc, lcMailMessage, lcExcMessage, llSendEmail, loNewRec
         llSendEmail = .f.  
         loTrans = THIS.CreateTransaction()
         loTrans.AddCursor("V_Artist")
@@ -549,11 +549,13 @@ define class ais_ArtForm as aisArtPage
         if loTrans.Save()  
           select V_Artist
           if this.lAdding
+            scatter memo name loNewRec
             if poContext.lAnonymous
               this.cCancelUrl = StuffURL(THIS.cUrlA, 2, "ThankYou")
             else
               this.cCancelUrl = StuffURL(THIS.cUrlA, 2, "ArtHome", "art", V_Artist.Art_PK)
             endif 
+            this.page_onNewArtist(m.loNewRec)
           endif
           Response.Redirect(THIS.cCancelUrl)
           return 
@@ -566,6 +568,47 @@ define class ais_ArtForm as aisArtPage
 
     endwith 
     response.write(loForm.render())
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_onNewArtist(loRec)
+    local loExc, lcMailMessage, lcName, lcSubject, lcUrl, lcExcMessage
+
+    try 
+      lcName = textmerge([<<TRIM(loRec.Art_First_Name)>> <<TRIM(loRec.Art_Last_Name)>>])
+      
+      text to lcMailMessage noshow pretext 3
+        Event.......: Person Created
+        Entry Time..: <<datetime()>> GMT
+        Name........: <<m.lcName>>
+        Email.......: <<trim(loRec.Art_Email)>> <<trim(loRec.Art_Phone)>>
+        URL.........: 
+        <<this.FullUrl(strtran(StuffUrl(this.cUrlA,2,'ArtHome','art',loRec.Art_PK),'&amp;','&'))>>
+        Comments....:
+        <<MemoToEmail(loRec.Art_Comments)>>
+      endtext
+
+      lcExcMessage = ""
+      lcSubject = textmerge([New Person Added: <<m.lcName>>])
+      lcMailMessage = textmerge(m.lcMailMessage)
+      * Send the Email:
+      this.oApp.QueueMessage( ;
+        Config.cAdminEmail, ;
+        m.lcSubject, ;
+        m.lcMailMessage, ;
+        "KtB Notification Service", ;
+        Config.cAdminEmail, ;
+        Config.cActionEmail, ;  && 
+        "", ;
+        "", "text/plain", .F.)
+      
+    CATCH TO loExc
+      lcExcMessage = TEXTMERGE(' [Error: <<loExc.Message>>, <<loExc.LineNo>>, <<loExc.Procedure>>]')
+    endtry
+    if !empty(m.lcExcMessage)
+      this.App_Log(L7_SEVERITY_WARNING, m.lcExcMessage) && impossible?
+    endif
+    return 
+    
   endfunc 
 enddefine && ais_ArtForm
 

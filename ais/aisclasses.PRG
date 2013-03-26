@@ -122,6 +122,8 @@ define class AisConfig as L7AppConfig
   cLogPath             = "d:\VfpLogs\ktb-ais\"
   cMessagingPath       = "d:\VfpMessaging\ktb-ais\"
   cTransactionPath     = "d:\VfpTransaction\ktb-ais\"
+  
+  cActionEmail         = "KnitTheBridge@gmail.com"
 enddefine 
 
 
