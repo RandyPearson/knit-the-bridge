@@ -3,11 +3,14 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     11
+#DEFINE THISAPP_DATABASE_REVISION     12
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
 define class AisApp AS KtbApp
+
+  * Lookup table aliases:
+  cFacAlias                 = NULL  && see cFacAlias_ACCESS method
 
   cConfigClass              = "AisConfig"  
   
@@ -36,6 +39,48 @@ define class AisApp AS KtbApp
   
   oLookup = NULL
 
+  * --------------------------------------------------------- *
+  function cFacAlias_ACCESS
+    this.OpenLookupTable("Facility")
+    return "Facility_LOOKUP_"
+  endfunc 
+  * -------------------------------------------------- *
+  function OpenLookupTable(lcCode)
+    local lcAlias, lcSql, lcIndexCommands, lnSelect
+    lcAlias = m.lcCode + "_LOOKUP_"
+    lcIndexCommands = ""
+    if used(m.lcAlias)
+      return 
+    endif 
+    do case 
+    case lcCode == "Facility"  && Rev. 12
+      lcSql = ;
+        [SELECT Fac_PK, Fac_ID, Fac_Name, Fac_Dropoff, Fac_Storage] + ;
+        [ FROM ] + THISAPP_DATABASE + [!Facility] + ;
+        [ WHERE Fac_Inactive = .F.] + ;
+        [ ORDER BY Fac_Name]
+      lcIndexCommands = ;
+        [INDEX ON Fac_PK TAG Fac_PK] + CRLF + ;
+        [INDEX ON Fac_Name TAG Fac_Name] 
+
+    otherwise 
+      error "Unknown lookup request: " + m.lcCode
+      return 
+    endcase 
+    * Change this to SQLEXEC for remote data:
+    lcSql = m.lcSql + [ INTO CURSOR ] + m.lcAlias + [ READWRITE]
+    lnSelect = SELECT()
+    &lcSql
+    if !empty(m.lcIndexCommands)
+      local laIndexCommands[1], lcXbase
+      alines(laIndexCommands, m.lcIndexCommands, .T.)
+      for each lcXbase in laIndexCommands
+        &lcXbase
+      endfor 
+    endif 
+    select (m.lnSelect)
+    return 
+  endfunc  && OpenLookupTable
   * --------------------------------------------------------- *
   function determineBrowser()
 
@@ -295,6 +340,17 @@ define class AisApp AS KtbApp
       index on Pnl_Fac_FK tag Fac_FK
       use in select("Panel")
 
+    case m.lnRev = 12
+      alter table Piece add column Pce_Fac_FK c(32) 
+      select Piece
+      index on Pce_Fac_FK tag Fac_FK
+      use in select("Piece")
+
+      use Facility exclusive in select("Facility")
+      select Facility
+      index on fac_Name tag Fac_Name
+      use in select("Facility")
+
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
@@ -547,6 +603,7 @@ function CreatePieceTable
       Pce_ID C(8), ;
       Pce_Art_FK C(32), ;
       Pce_Pnl_FK C(32), ;
+      Pce_Fac_FK C(32), ; && Rev 12
       Pce_Whole_Panel L, ;  
       Pce_Dim_1 C(12), ;
       Pce_Dim_2 C(12), ;
@@ -569,6 +626,7 @@ function CreatePieceTable
   * Foreign Keys:
   index on Pce_Art_FK tag Art_FK
   index on Pce_Pnl_FK tag Pnl_FK
+  index on Pce_Fac_FK tag Fac_FK  && Rev 12
   * Other Keys:
   index on Pce_ID tag Pce_ID
   index on Pce_Shipped tag shipped
@@ -613,7 +671,7 @@ function CreatePanelTable
   * Foreign Keys:
   index on Pnl_Stitcher_Art_FK tag Stitcher
   index on Pnl_Asm_FK tag Asm_FK
-  index on Pnl_Fac_FK tag Fac_FK
+  index on Pnl_Fac_FK tag Fac_FK  && Rev 11
   * Other Keys:
   index on Pnl_Completed tag Completed
   index on Pnl_ID tag Pnl_ID
@@ -657,6 +715,7 @@ function CreateFacilityTable  && TABLE added in Rev 11
   * Foreign Keys:
   * Other Keys:
   index on Fac_ID tag Fac_ID
+  index on Fac_Name tag Fac_Name  && Rev 12
   index on Fac_Storage tag Storage
   index on Fac_DropOff tag DropOff
      

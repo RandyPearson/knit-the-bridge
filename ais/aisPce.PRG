@@ -421,7 +421,7 @@ define class aisPieceForm as AisForm
       with .txtShip_Date
         .cGroupID = "STATUS"
         .cFieldType = "D"
-        .cControlSource = "V_piece.Pce_Ship_Date"
+        .cControlSource = "V_Piece.Pce_Ship_Date"
         .cLabel = "Ship/delivery date (expected or actual)"
         .cInstructions = "MM/DD/YYYY"
       endwith 
@@ -432,6 +432,24 @@ define class aisPieceForm as AisForm
         .cControlSource = "V_piece.Pce_Received"
         .cLabel = "Received?"
         .cCssClass = "FormControlPrivate"
+      endwith 
+
+      .AddObject("cboLoc_FK", "L7Popup")
+      with .cboLoc_FK
+        .cControlSource = "V_Piece.Pce_Fac_FK"
+        .lRequired = .F.
+        .cLabel = "Current Location"
+        .lAutoRender = .T.
+        .nRowSourceType = L7_ROWSOURCETYPE_ALIAS
+        .cRowSource = goL7App.cFacAlias  
+        *!* ex: .cFilterExpression = [Fac_Storage = .t.]
+        .cValueExpression = [Fac_PK]
+        .cLabelExpression = [Fac_Name]
+        .vFirstItemValue = space(32) && 0 for integer keys
+        .cFirstItemLabel = "[ select from choices below ]"
+        if this.lNewRecord
+          *!* .SetValue(something from Page context....)
+        endif 
       endwith 
 
       .AddObject("edtComments", "L7Textarea")
@@ -459,7 +477,7 @@ enddefine  && PieceForm
 define class AisPceQuery as L7Query
   cBaseTable = "Piece"
   cDefaultFieldList = ;
-    "Pce_PK, Pce_ID, Pce_Art_FK, Pce_Pnl_FK, Pce_Whole_Panel" + ;  
+    "Pce_PK, Pce_ID, Pce_Art_FK, Pce_Pnl_FK, Pce_Fac_FK, Pce_Whole_Panel" + ;  
     ", Pce_Dim_1, Pce_Dim_2, Pce_Type, Pce_Shipped, Pce_Ship_Date, Pce_Received" 
 
   nOrderBy = 1
@@ -468,6 +486,7 @@ define class AisPceQuery as L7Query
 
   cArt = null
   cPnl = null
+  cFac = null
   
   cType = null
 
@@ -522,6 +541,9 @@ define class AisPceQuery as L7Query
 
       if !isnull(.cPnl)
         .cWhereClause = .cWhereClause + [ and Pce_Pnl_FK = '] + .cPnl + [']
+      endif 
+      if !isnull(.cFac)
+        .cWhereClause = .cWhereClause + [ and Pce_Fac_FK = '] + .cFac + [']
       endif 
       if !isnull(.lOrphans)
         .cWhereClause = .cWhereClause + [ and ] + iif(.lOrphans, [], [!]) + [empty(Pce_Pnl_FK)]

@@ -93,6 +93,7 @@ define class ais_PnlList as aisPnlPage
        
     loQry = createobject("AisPnlQuery")
     with loQry
+      .lJoinFacility = .t.
       .execute()
     endwith 
     
@@ -107,6 +108,7 @@ define class ais_PnlList as aisPnlPage
       loCol = .addCursorColumn("Pnl_Single_Piece", "Single-Piece?")
       loCol = .addCursorColumn("Pnl_Dim_1", "Dimension 1")
       loCol = .addCursorColumn("Pnl_Dim_2", "Dimension 2")
+      loCol = .addCursorColumn("Fac_Name", "Current Storage Facility")
       loCol = .addCursorColumn("Pnl_PK", "Edit Panel", ;
         'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit Panel...]")')
       response.write(.render())
@@ -275,6 +277,24 @@ define class aisPanelForm as AisForm
         .cCssClass = "FormControlPrivate"
       endwith
       
+      .AddObject("cboLoc_FK", "L7Popup")
+      with .cboLoc_FK
+        .cControlSource = "V_Panel.Pnl_Fac_FK"
+        .lRequired = .F.
+        .cLabel = "Current Location"
+        .lAutoRender = .T.
+        .nRowSourceType = L7_ROWSOURCETYPE_ALIAS
+        .cRowSource = goL7App.cFacAlias  
+        *!* ex: .cFilterExpression = [Fac_Storage = .t.]
+        .cValueExpression = [Fac_PK]
+        .cLabelExpression = [Fac_Name]
+        .vFirstItemValue = space(32) && 0 for integer keys
+        .cFirstItemLabel = "[ select from choices below ]"
+        if this.lNewRecord
+          *!* .SetValue(something from Page context....)
+        endif 
+      endwith 
+      
       .AddObject("chkSingle_Piece", "L7Checkbox")
       with .chkSingle_Piece
         .cGroupID = "DIM"
@@ -330,8 +350,8 @@ enddefine  && PanelForm
 define class AisPnlQuery as L7Query
   cBaseTable = "Panel"
   cDefaultFieldList = ;
-    "Pnl_PK,Pnl_ID,Pnl_Stitcher_Art_FK,Pnl_Asm_FK,Pnl_Fac_FK,Pnl_Single_Piece" + ;  
-    ",Pnl_Dim_1,Pnl_Dim_2" 
+    "Pnl_PK, Pnl_ID, Pnl_Stitcher_Art_FK, Pnl_Asm_FK, Pnl_Fac_FK, Pnl_Single_Piece" + ;  
+    ", Pnl_Dim_1, Pnl_Dim_2" 
 
   nOrderBy = 1
   dimension aOrderBy[ 1, 2]
@@ -346,6 +366,7 @@ define class AisPnlQuery as L7Query
   lSinglePiece = null
   
   lJoinPiece = .f. 
+  lJoinFacility = .f.
   * --------------------------------------------------------- *
   function BuildWhereClause
     local lcStr
@@ -353,6 +374,7 @@ define class AisPnlQuery as L7Query
     with this 
       .lWhereBuilt = .T.
       .cWhereClause = [WHERE Pnl_Inactive = .F.] 
+
       if !isnull(.cArtPiece) or .lJoinPiece
         .nJoins = .nJoins + 1
         dimension .aJoins[.nJoins, 3]
@@ -362,6 +384,16 @@ define class AisPnlQuery as L7Query
           .cWhereClause = .cWhereClause + [ and Pce_Art_FK = '] + .cArtPiece + [']
         endif 
       endif 
+
+      if .lJoinFacility
+        .nJoins = .nJoins + 1
+        dimension .aJoins[.nJoins, 3]
+        .aJoins[.nJoins, 1] = "Facility"
+        .aJoins[.nJoins, 2] = "Pnl_Fac_FK = Fac_PK"
+        .aJoins[.nJoins, 3] = "LEFT OUTER"
+        .AddFields("Fac_ID, Fac_Name")
+      endif 
+
       if !isnull(.cArtStitcher) 
         .cWhereClause = .cWhereClause + [ and Pnl_Stitcher_Art_FK = '] + .cArtStitcher + [']
       endif 
