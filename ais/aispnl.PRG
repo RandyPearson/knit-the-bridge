@@ -18,6 +18,7 @@ function aisCreatePanel(toPce)
     Pnl_Single_Piece with toPce.Pce_Whole_Panel ;
     Pnl_Dim_1 with toPce.Pce_Dim_1 ; && initial approx, can free-wheel 
     Pnl_Dim_2 with toPce.Pce_Dim_2 ; &&  ''
+    Pnl_Fac_FK with toPce.Pce_Fac_FK ; && panel starts where piece was
     Pnl_ID with AisAssignID("PNL")
 
   select V_Panel  && UpdateControlSources can alter work area
@@ -59,20 +60,6 @@ define class aisPnlPage as aisPage
     dodefault()  && required bubble-up
     return    
   endfunc  
-  * --------------------------------------------------------- *
-  function VerifyPanel(tcKey)
-    local loData
-    lcKey = evl(m.tcKey, this.cPnl)
-    loData = createobject("AisPnlData")
-    if loData.FindRecord(m.lcKey)
-      if m.lcKey = this.cPnl
-        this.oPnl = loData.GetRecord()
-      endif 
-    else 
-      this.NotFound()
-    endif 
-    return  
-  endfunc   
 enddefine && AisPnlPage
 
 *** ========================================================= ***
@@ -116,7 +103,7 @@ define class ais_PnlList as aisPnlPage
     
     return 
   endfunc 
-enddefine 
+enddefine && ais_PnlList 
 
 *** ========================================================= ***
 define class ais_PnlHome as aisPnlPage 
@@ -129,44 +116,87 @@ define class ais_PnlHome as aisPnlPage
   * ----------------------------------------------------- *  
   function ProcessRequest
     this.cSubTitle = "Panel " + this.oPnl.Pnl_ID
-    response.write(this.page_getPieceInfo())
+    response.write(this.page_getMainRecord())
 
-    response.write(HTWrap("Raw Data for " + this.cSubTitle, 'h3'))
-    response.write(L7ShowObject(this.oPnl, this.cSubTitle, [class="record"]))
+    if poContext.lAdmin
+      response.write(HTWrap(L7ShowObject(this.oPnl, , [class="record"]),'div','admin'))
+    endif
     return 
   endfunc 
+  * ----------------------------------------------------- *  
+  function page_getMainRecord()
+    local loElem, loRow, lcRet, loData
+    lcRet = ""
+    loData = this.oPnl
+    loElem = createobject("aisRecordElement")
+    with loElem
+      loRow = .getRowObject()
+      .cCaption = this.cSubTitle
+      .AddHeading('Key Information')
+      
+      .AddRow("Panel ID", loData.Pnl_ID,, "id-field" )
+
+      .AddRow("Dimension 1", loData.Pnl_Dim_1)
+      .AddRow("Dimension 2", loData.Pnl_Dim_2)
+      .AddRow("Comments", L7ParseOnView(loData.Pnl_COMMENTS), .f.)
+
+      .AddHeading('Pieces Comprising Panel')
+      .AddRow(null, this.page_getPieceInfo())
+
+      .AddHeading('Logistical Information')
+      .AddRow("Current Storage Facility", AisFacilityName(loData.Pnl_Fac_FK))
+      if poContext.lCore
+        .AddRow("Notes", L7ParseOnView(loData.Pnl_NOTES), .F., "private")
+      endif
+
+      if poContext.lCore
+        .AddHeading('Administrative Information')
+        .AddRow("Pk", TRIM(loData.Pnl_PK), .F., "private")
+        .AddRow("Deleted", loData.Pnl_INACTIVE, .F., "private")
+        .AddRow("Created", TRANSFORM(loData.Pnl_ORIG_TIME) + [ by ] + AisArtistName(loData.Pnl_Orig_Art_FK), .F., "private")
+        .AddRow("Last Modified", TRANSFORM(loData.Pnl_REV_TIME) + [ by ] + AisArtistName(loData.Pnl_Rev_Art_FK), .F., "private")
+      endif
+
+      lcRet = lcRet + .Render()
+
+    endwith 
+    return m.lcRet
+  endfunc && page_getMainRecord
   * ----------------------------------------------------- *  
   function page_getPieceInfo()
     local lcRet, loQ, loTbl, loCol
     lcRet = ''
-    lcRet = m.lcRet + HTWrap("Pieces from " + this.cSubTitle, 'h3')
+    *!* lcRet = m.lcRet + HTWrap("Pieces from " + this.cSubTitle, 'h3')
     loQ = createobject("AisPceQuery")
     with loQ
       .cPnl = this.cPnl
       .lJoinArtist = .t. 
+      .lJoinFacility = .t.
       .Execute()
     endwith 
     
     urls.add(StuffUrl(this.cUrlA, 2, "PceHome"), "PceHome")
     urls.add(StuffUrl(this.cUrlA, 2, "PceForm"), "PceForm")
     urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
+    urls.add(StuffUrl(this.cUrlA, 2, "FacHome"), "FacHome")
 
     select (loQ.cAlias)
     loTbl = createobject("AisTable")
     with loTbl
-      loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
+      ** loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Pce_ID", "Piece ID", ;
         [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)])
       loCol = .addCursorColumn("Art_ID", "Artist ID", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), Art_ID)])
-      loCol = .addCursorColumn("Art_Last_Name", "Last Name", ;
-        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), Art_Last_Name)])
-      loCol = .addCursorColumn("Art_First_Name", "First Name")
+      loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), aisArtistName(THISRECORD))])
       loCol = .AddCursorColumn('Pce_Whole_Panel', 'Whole Panel?')
       loCol = .AddCursorColumn('Pce_Dim_1', 'Dim 1')
       loCol = .AddCursorColumn('Pce_Dim_2', 'Dim 2')
       loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
       loCol = .AddCursorColumn('Pce_Received', 'Received')
+      loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
+        [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pce_Fac_FK), trim(Fac_Name))])
       loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
         'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit Piece...]")')
 

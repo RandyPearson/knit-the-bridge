@@ -32,6 +32,10 @@ define class aisPage as L7Page
   cArt = ""
   oArt = null
   lArtRequired = .f.
+
+  cPnl = ""
+  oPnl = null
+  lPnlRequired = .f.
   * --------------------------------------------------------- *
   function BeforeProcessRequest
     if this.lArtRequired
@@ -55,6 +59,20 @@ define class aisPage as L7Page
     if loData.FindRecord(m.lcKey)
       if m.lcKey = this.cArt
         this.oArt = loData.GetRecord()
+      endif 
+    else 
+      this.NotFound()
+    endif 
+    return  
+  endfunc   
+  * --------------------------------------------------------- *
+  function VerifyPanel(tcKey)
+    local loData
+    lcKey = evl(m.tcKey, this.cPnl)
+    loData = createobject("AisPnlData")
+    if loData.FindRecord(m.lcKey)
+      if m.lcKey = this.cPnl
+        this.oPnl = loData.GetRecord()
       endif 
     else 
       this.NotFound()
@@ -379,7 +397,7 @@ define class aisPage as L7Page
   function AddDefaultMenu
     local lcMenu, lcLpInfo, lcForm
     lcMenu = "main\Navigate"
-    this.addMenuItem(m.lcMenu, 'People', StuffUrl(this.cUrlA, 2, "ArtList", "flags", "core"))
+    this.addMenuItem(m.lcMenu, 'People', StuffUrl(this.cUrlA, 2, "ArtList", "flags", "core", "fields", "contact"))
 
     lcLpInfo = THIS.GetBaseHiddenFormvars() && sustains license plate, etc. for GET form
     

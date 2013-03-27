@@ -55,7 +55,7 @@ define class AisApp AS KtbApp
     do case 
     case lcCode == "Facility"  && Rev. 12
       lcSql = ;
-        [SELECT Fac_PK, Fac_ID, Fac_Name, Fac_Dropoff, Fac_Storage] + ;
+        [SELECT Fac_PK, Fac_Name, Fac_ID, Fac_Order, Fac_Dropoff, Fac_Storage] + ;
         [ FROM ] + THISAPP_DATABASE + [!Facility] + ;
         [ WHERE Fac_Inactive = .F.] + ;
         [ ORDER BY Fac_Order]

@@ -19,6 +19,10 @@ define class aisPcePage as aisPage
         this.VerifyPiece()
         if !isnull(this.oPce)
           this.cArt = this.oPce.Pce_Art_FK
+          if !empty(this.oPce.Pce_Pnl_FK)
+            this.cPnl = this.oPce.Pce_Pnl_FK
+            this.verifyPanel()
+          endif
         endif
       endif 
     endif 
@@ -98,6 +102,8 @@ define class ais_PceList as aisPcePage
     loQry = createobject("AisPceQuery")
     with loQry
       .lJoinArtist = .t. 
+      .lJoinFacility = .t.
+      .lJoinPanel = .t. 
       .lOrphans    = this.lPage_Orphans 
       .lWholePanel = this.lPage_Whole 
       .lShipped    = this.lPage_Shipped 
@@ -119,16 +125,18 @@ define class ais_PceList as aisPcePage
         [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)])
       loCol = .addCursorColumn("Pce_Type", "Type")
       loCol = .addCursorColumn("Art_ID", "Artist ID", ;
-        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), Art_ID)])
-      loCol = .addCursorColumn("Art_Last_Name", "Last Name", ;
-        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), Art_Last_Name)])
-      loCol = .addCursorColumn("Art_First_Name", "First Name")
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), Art_ID)],"id-field")
+      loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), aisArtistName(THISRECORD))])
+      ** loCol = .addCursorColumn("Art_First_Name", "First Name")
+      loCol = .addCursorColumn("Pnl_Id", "Panel",, "id-field")
       loCol = .addCursorColumn("Pce_Whole_Panel", "Whole Panel?")
       loCol = .addCursorColumn("Pce_Dim_1", "Dimension 1")
       loCol = .addCursorColumn("Pce_Dim_2", "Dimension 2")
 
       loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
       loCol = .AddCursorColumn('Pce_Received', 'Received')
+      loCol = .addCursorColumn("Fac_Name", "Current Storage Facility")
       if poContext.lCore
         loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
           'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit Piece...]")')
@@ -185,7 +193,7 @@ define class ais_PceHome as aisPcePage
         .AddRow("Whole-Panel Piece?", loData.Pce_Whole_Panel)
         .AddRow("Assigned to Panel?", iif(empty(m.loData.Pce_Pnl_FK), ;
           "No. " + "(assign now function goes here...)", ;
-          "Yes. " + HTLink(StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", loData.Pce_Pnl_FK), "View Panel Page...")))
+          "Yes: " + HtWrap(this.oPnl.Pnl_Id, 'span', ,'id-field') + SP + HTLink(StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", loData.Pce_Pnl_FK), "View Panel Page...")))
       endif
       .AddRow("Comments", L7ParseOnView(loData.Pce_COMMENTS))
 
@@ -193,6 +201,7 @@ define class ais_PceHome as aisPcePage
       .AddRow("Shipped/Delivered", loData.Pce_Shipped)
       .AddRow("Ship/Delivery Date", loData.Pce_Ship_Date)
       .AddRow("Received", loData.Pce_RECEIVED)
+      .AddRow("Current Storage Facility", AisFacilityName(loData.Pce_Fac_FK))
       if poContext.lCore
         .AddRow("Notes", L7ParseOnView(loData.Pce_NOTES), .F., "private")
       endif
@@ -407,7 +416,7 @@ define class aisPieceForm as AisForm
           .SetValue(Page.cPage_Dim_2)
         endif 
         .cLabel = "Dimension 2 (inches)"
-        .cInstructions = "If not equal, please enter LARGER dimension first!"
+        .cInstructions = "If not equal, please enter LARGER dimension second!"
       endwith 
 
       .AddObject("chkShipped", "L7Checkbox")
@@ -496,6 +505,8 @@ define class AisPceQuery as L7Query
   lReceived   = null
   
   lJoinArtist = .f. 
+  lJoinFacility = .f.
+  lJoinPanel = .f. 
   * --------------------------------------------------------- *
   function GetCaption 
     local lcRet
@@ -528,7 +539,25 @@ define class AisPceQuery as L7Query
         dimension .aJoins[.nJoins, 3]
         .aJoins[.nJoins, 1] = "Artist"
         .aJoins[.nJoins, 2] = "Pce_Art_FK = Art_PK"
-        .AddFields("Art_ID,Art_Last_Name,Art_First_Name")
+        .AddFields("Art_ID,Art_Last_Name,Art_First_Name,Art_Anonymous,Art_Full_Name")
+      endif 
+
+      if .lJoinFacility
+        .nJoins = .nJoins + 1
+        dimension .aJoins[.nJoins, 3]
+        .aJoins[.nJoins, 1] = "Facility"
+        .aJoins[.nJoins, 2] = "Pce_Fac_FK = Fac_PK"
+        .aJoins[.nJoins, 3] = "LEFT OUTER"
+        .AddFields("Fac_ID, Fac_Name")
+      endif 
+
+      if .lJoinPanel
+        .nJoins = .nJoins + 1
+        dimension .aJoins[.nJoins, 3]
+        .aJoins[.nJoins, 1] = "Panel"
+        .aJoins[.nJoins, 2] = "Pce_Pnl_FK = Pnl_PK"
+        .aJoins[.nJoins, 3] = "LEFT OUTER"
+        .AddFields("Pnl_ID")
       endif 
 
       if !isnull(.cArt)

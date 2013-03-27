@@ -349,7 +349,7 @@ define class ais_ArtHome as aisArtPage
       this.addMenuItem("main\This,page", "Submit WHOLE PANEL Piece...", ;
         StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Panels", "dim_1", "34", "dim_2", "72", "whole", "1"))
       this.addMenuItem("main\This,page", "Submit Partial Panel Piece...", ;
-        StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Panels", "dim_1", "14", "dim_2", "14"))
+        StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Panels", "dim_1", "17", "dim_2", "17"))
 
       this.addMenuItem("main\This,page", "Submit 15x80 Railing Piece...", ;
         StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Railings", "dim_1", "15", "dim_2", "80"))
@@ -405,11 +405,12 @@ define class ais_ArtHome as aisArtPage
 
       if this.oArt.Art_Artist
         .AddHeading('Submitted Work and WIP')
-        loRow.Clear()
-        loRow.cLabel = "Pieces"
-        loRow.vValue = this.page_getPieceInfo()
+        *loRow.Clear()
+        *loRow.cLabel = "Pieces"
+        *loRow.vValue = this.page_getPieceInfo()
         ** StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Panels", "dim_1", "34", "dim_2", "72", "whole", "1")
-        .AddRowEx(m.loRow)
+        *.AddRowEx(m.loRow)
+        .AddRow(null, this.page_getPieceInfo())
       endif
 
       .AddHeading('Participation')
@@ -461,6 +462,8 @@ define class ais_ArtHome as aisArtPage
     loQ = createobject("AisPceQuery")
     with loQ
       .cArt = this.cArt
+      .lJoinFacility = .t.
+      .lJoinPanel = .t. 
       .Execute()
     endwith 
     if loQ.nTally = 0
@@ -476,11 +479,13 @@ define class ais_ArtHome as aisArtPage
         loCol = .addCursorColumn("Pce_ID", "Piece ID", ;
           [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)], "id-field")
         loCol = .addCursorColumn("Pce_Type", "Type")
+        loCol = .addCursorColumn("Pnl_Id", "Panel",, "id-field")
         loCol = .AddCursorColumn('Pce_Whole_Panel', 'Whole Panel?')
         loCol = .AddCursorColumn('Pce_Dim_1', 'Dim 1')
         loCol = .AddCursorColumn('Pce_Dim_2', 'Dim 2')
         loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
         loCol = .AddCursorColumn('Pce_Received', 'Received')
+        loCol = .addCursorColumn("Fac_Name", "Current Storage Facility")
         loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
           'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit Piece...]")')
 
@@ -1395,7 +1400,7 @@ define class AisArtQuery AS L7Query
 
       if !empty(.cSrch1)
         lcStr = lower(.cSrch1)
-        .cWhereClause = .cWhereClause + [ AND '] + m.lcStr + [' $ lower(Art_Last_Name + Art_First_Name + Art_User_Id + Art_Email + Art_Access_Token + Art_PK + Art_ID + Art_Notes + Art_Participation)]
+        .cWhereClause = .cWhereClause + [ AND '] + m.lcStr + [' $ lower(Art_Last_Name + Art_First_Name + Art_Full_Name + Art_User_Id + Art_Email + Art_Access_Token + Art_PK + Art_ID + Art_Notes + Art_Participation)]
       endif 
       if !empty(.cUser_Id)
         .cWhereClause = .cWhereClause + ;

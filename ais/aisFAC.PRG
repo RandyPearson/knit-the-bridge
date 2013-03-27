@@ -3,6 +3,29 @@
 #INCLUDE WCONNECT.H
 #INCLUDE AIS.H
 
+* --------------------------------------------------------- *
+function aisFacilityName(tvFac)
+  local loData, loPreserve
+  if vartype(m.tvFac) = "O"
+    loData = m.tvFac
+  else  && PK
+    if isnull(m.tvFac) or empty(m.tvFac)
+      return "--"
+    endif
+    loPreserve = createobject("L7PreserveSelect")
+    select * from KtbAis!Facility ;
+      where Fac_PK = m.tvFac ;
+      into cursor aisFacilityName_
+    if _tally < 1
+      error "Facility " + m.tvFac + " was not found!"
+    endif
+    scatter memo name loData
+    loPreserve = null 
+  endif 
+    
+  return trim(evl(loData.Fac_Name, loData.Fac_ID))
+endfunc  && aisFacilityName
+
 *** ========================================================= ***
 define class aisFacPage as aisPage 
   cFac = ""
@@ -126,6 +149,10 @@ define class ais_FacHome as aisFacPage
       .AddHeading('Logistical Information')
       .AddRow("Drop-Off Location?", loData.Fac_DropOff)
       .AddRow("Storage Location?", loData.Fac_Storage)
+
+      .AddHeading('Panels Currently at Facility')
+      .AddRow(null, this.page_getPanelInfo())
+
       if poContext.lCore
         .AddRow("Notes", L7ParseOnView(loData.fac_NOTES), .F., "private")
       endif
@@ -144,6 +171,37 @@ define class ais_FacHome as aisFacPage
     endwith 
     return m.lcRet
   endfunc && page_getMainRecord
+  * ----------------------------------------------------- *  
+  function page_getPanelInfo
+    local loQry, loTbl, loCol, loGrp
+       
+    loQry = createobject("AisPnlQuery")
+    with loQry
+      .cFac = this.cFac 
+      .execute()
+      if .nTally = 0
+        return "(none)"
+      endif 
+    endwith 
+    
+    urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
+    urls.add(StuffUrl(this.cUrlA, 2, "PnlForm"), "PnlForm")
+
+    loTbl = createobject("AisTable")
+    with loTbl
+      loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
+      loCol = .addCursorColumn("Pnl_ID", "Panel ID", ;
+        [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), Pnl_ID)])
+      loCol = .addCursorColumn("Pnl_Single_Piece", "Single-Piece?")
+      loCol = .addCursorColumn("Pnl_Dim_1", "Dimension 1")
+      loCol = .addCursorColumn("Pnl_Dim_2", "Dimension 2")
+      loCol = .addCursorColumn("Pnl_PK", "Edit Panel", ;
+        'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit Panel...]")')
+      return .render()
+    endwith 
+    
+    return 
+  endfunc && page_getPanelInfo
 enddefine && FacHome
 
 *** ========================================================= ***
