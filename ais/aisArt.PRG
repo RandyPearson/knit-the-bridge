@@ -64,7 +64,8 @@ function aisFormatContactInfo(toData)
   return ltrim(m.lcRet)
 endfunc && aisFormatContactInfo
 * --------------------------------------------------------- *
-function aisFormatParticipation(toData)
+function aisFormatParticipation(toData)  
+  * returns plain text--suitable for L7ParseOnView() or direct insertion into plain text 
   local loData, lcRet
   if vartype(m.toData) = 'O'
     loData = m.toData
@@ -528,9 +529,11 @@ define class ais_ArtForm as aisArtPage
         endif 
         .UpdateControlSources()
         select V_Artist && UpdateControlSources can alter work area
+        * flag as Artist if making anything: 
         if !Art_Artist and (Art_Partial_Panel = .t. or Art_Panel_Count > 0 or Art_Railing_1_Count > 0 or Art_Railing_2_Count > 0 or Art_Railing_3_Count > 0)
           replace Art_Artist with .t.
         endif 
+        * assign IDs and access tokens to approved people: 
         if Art_Approved and empty(Art_Id)
           lcStub = padr(alltrim(upper(evl(Art_Last_Name, "NLN"))), 5, 'X')
           replace Art_ID with AisAssignID(m.lcStub)
@@ -538,6 +541,10 @@ define class ais_ArtForm as aisArtPage
         if Art_Approved and empty(Art_Access_Token) 
           replace Art_Access_Token with GetGuidString(32)
         endif
+        * default neighborhood to address: 
+        if empty(Art_Neighborhood) and !empty(Art_Address)
+          replace Art_Neighborhood with Art_Address
+        endif 
         StampRec( CurrentUser, THIS.tNow )
         
         * Now save it using a transaction:
@@ -577,12 +584,17 @@ define class ais_ArtForm as aisArtPage
       lcName = textmerge([<<TRIM(loRec.Art_First_Name)>> <<TRIM(loRec.Art_Last_Name)>>])
       
       text to lcMailMessage noshow pretext 3
-        Event.......: Person Created
-        Entry Time..: <<datetime()>> GMT
-        Name........: <<m.lcName>>
-        Email.......: <<trim(loRec.Art_Email)>> <<trim(loRec.Art_Phone)>>
+        Event........: Person Created
+        Entry Time...: <<datetime()>> GMT
+        Name.........: <<m.lcName>>
+        Email........: <<trim(loRec.Art_Email)>> <<trim(loRec.Art_Phone)>>
+        Neighborhood.: <<trim(loRec.Art_Neighborhood)>> 
+        Participation: 
+        <<aisFormatParticipation(m.loRec)>> 
+        
         URL.........: 
         <<this.FullUrl(strtran(StuffUrl(this.cUrlA,2,'ArtHome','art',loRec.Art_PK),'&amp;','&'))>>
+        
         Comments....:
         <<MemoToEmail(loRec.Art_Comments)>>
       endtext
