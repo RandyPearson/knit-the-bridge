@@ -393,6 +393,7 @@ define class aisPage as L7Page
 
     this.addMenuItem(m.lcMenu, 'Pieces', StuffUrl(this.cUrlA, 2, "PceList"))
     this.addMenuItem(m.lcMenu, 'Panels', StuffUrl(this.cUrlA, 2, "PnlList"))
+    this.addMenuItem(m.lcMenu, 'Facilities', StuffUrl(this.cUrlA, 2, "FacList"))
     ** this.addMenuItem(m.lcMenu, 'About', StuffUrl(this.cUrlA, 2, "About"), "About")
     if poContext.lAdmin
       *!* this.addMenuItem("main\Admin", 'Refresh Content', StuffUrl(this.cUrlA, 2, "RefreshContent"))
@@ -422,11 +423,21 @@ enddefine
 
 *** ========================================================= ***
 define class ais_About as aisPage 
-  ** nMinLoginLevel = L7_NONE  && users always need access to login form
+  nMinLoginLevel = L7_NONE  
   cSubTitle = "About"
   * ----------------------------------------------------- *  
   function ProcessRequest
     Response.Write("About page content goes here...")
+  endfunc 
+enddefine 
+
+*** ========================================================= ***
+define class ais_ThankYou as aisPage 
+  nMinLoginLevel = L7_NONE  
+  cSubTitle = "Thank You!"
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    Response.Write(HTWrap("Knit the Bridge thanks you for signing up! We will contact you soon.", "p"))
   endfunc 
 enddefine 
 

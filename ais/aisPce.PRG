@@ -162,6 +162,7 @@ define class ais_PceHome as aisPcePage
     if poContext.lAdmin
       response.write(HTWrap(L7ShowObject(this.oPce, , [class="record"]),'div','admin'))
     endif
+    return 
   endfunc 
   * ----------------------------------------------------- *  
   function page_getMainRecord()

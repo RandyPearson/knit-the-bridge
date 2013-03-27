@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     10
+#DEFINE THISAPP_DATABASE_REVISION     11
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -284,6 +284,17 @@ define class AisApp AS KtbApp
       replace Art_Help_Materials with .t. for [materials] $ lower(art_participation)
       use in select("Artist")
       
+    case m.lnRev = 11
+      * Create Facility table:
+      do CreateTable ;
+        with "Facility", this.cDataPath, this.cDataBase
+      use in select("Facility")
+      
+      alter table Panel add column Pnl_Fac_FK c(32) 
+      select Panel
+      index on Pnl_Fac_FK tag Fac_FK
+      use in select("Panel")
+
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
@@ -330,9 +341,9 @@ function CreateEmptyDatabase( lcPath)
 
     ART = Artist
     ASM = Assembly
-    FAC = Facility
+    FAC = Facility (storage)
     FIL = Files
-    LOC = Location
+    LOC = Location (installation point)
     PCE = Piece
     PNL = Panel
     RCP = Recipient
@@ -356,7 +367,7 @@ function CreateEmptyDatabase( lcPath)
   * Primary Tables:
   do CreateArtistTable
   *!* do CreateAssemblyTable
-  *!* do CreateFacilityTable
+  do CreateFacilityTable
   *!* do CreateLocationTable
   do CreatePieceTable
   do CreatePanelTable
@@ -583,6 +594,7 @@ function CreatePanelTable
       Pnl_Completed L, ;
       Pnl_Stitcher_Art_FK C(32), ;
       Pnl_Asm_FK C(32), ;
+      Pnl_Fac_FK C(32), ; && Rev 11
       Pnl_Single_Piece L, ;  
       Pnl_Dim_1 C(12), ;
       Pnl_Dim_2 C(12), ;
@@ -601,6 +613,7 @@ function CreatePanelTable
   * Foreign Keys:
   index on Pnl_Stitcher_Art_FK tag Stitcher
   index on Pnl_Asm_FK tag Asm_FK
+  index on Pnl_Fac_FK tag Fac_FK
   * Other Keys:
   index on Pnl_Completed tag Completed
   index on Pnl_ID tag Pnl_ID
@@ -610,6 +623,47 @@ function CreatePanelTable
   dbsetprop("Panel", "Table", "Comment", ;
     [One record per Panel.] )
 endfunc  && CreatePanelTable
+
+* --------------------------------------------------------- *
+function CreateFacilityTable  && TABLE added in Rev 11
+  * Don't declare this PRIVATE. This command allows this procedure
+  * to be run by itself, as in DO <thisproc> IN <thisfile>.PRG:
+  poEnv = GetEnvObject()
+
+  create table ("Facility") name Facility ;
+    ( ;
+      Fac_PK C(32) primary key default GetGuid32(), ;
+      Fac_Inactive L default .F., ;
+      Fac_ID C(8), ;
+      Fac_Name C(60), ;
+      Fac_Address M, ;
+      Fac_Contact M, ;
+      Fac_Email C(THISAPP_USER_EMAIL_LEN), ;  && 80
+      Fac_Phone C(24), ;
+      Fac_Comments M, ;
+      Fac_Storage L, ;
+      Fac_DropOff L, ;  
+      Fac_Notes M, ;
+      Fac_Orig_Art_FK C(32), ;
+      Fac_Orig_Time T, ;
+      Fac_Rev_Art_FK C(32), ;
+      Fac_Rev_Time T, ;
+      Fac_Revision I NOT NULL DEFAULT 0 ;
+    )
+
+  * Standard 2 Indexes:
+  index on deleted() tag Deleted
+  index on Fac_Inactive tag Inactive
+  * Foreign Keys:
+  * Other Keys:
+  index on Fac_ID tag Fac_ID
+  index on Fac_Storage tag Storage
+  index on Fac_DropOff tag DropOff
+     
+  * Comment:
+  dbsetprop("Facility", "Table", "Comment", ;
+    [One record per Facility.] )
+endfunc  && CreateFacilityTable
 
 * ---------------------------------------------------------- *
 function CreateFilesTable

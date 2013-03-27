@@ -266,7 +266,7 @@ define class ais_ArtList as aisMultiArtPage
 
       if this.oPage_Fields.getkey("registry") > 0
         loCol = .addCursorColumn("Art_Participation", "Participation")
-        loCol = .addCursorColumn("Art_Register_Time", "Sign-Up Time", [ttoc(Art_Register_Time,3) + "&nbsp;" + L7TimeDiff(Art_Register_Time)])
+        loCol = .addCursorColumn("Art_Register_Time", "Sign-Up Time", [ttoc(Art_Register_Time,3) + "<br>" + L7TimeDiff(Art_Register_Time)])
         loCol = .addCursorColumn("Art_KTB_Response", "Response")
         loCol = .addCursorColumn("Art_Approved", "Approved?")
       endif

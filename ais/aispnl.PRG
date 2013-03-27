@@ -37,8 +37,6 @@ function aisCreatePanel(toPce)
   return m.loNewRec
 endfunc  && aisCreatePanel 
 
-* end 
-
 
 *** ========================================================= ***
 define class aisPnlPage as aisPage 
@@ -122,7 +120,7 @@ enddefine
 define class ais_PnlHome as aisPnlPage 
   * ----------------------------------------------------- *  
   function AddDefaultMenu
-    this.addMenuItem("main\This,page", "Edit Piece...", StuffUrl(this.cUrlA, 2, "PnlForm", "pnl", this.cPnl))
+    this.addMenuItem("main\This,page", "Edit Panel...", StuffUrl(this.cUrlA, 2, "PnlForm", "pnl", this.cPnl))
     dodefault()
     return 
   endfunc 
@@ -175,7 +173,7 @@ define class ais_PnlHome as aisPnlPage
     
     return m.lcRet
   endfunc && page_getPieceInfo
-enddefine && ArtHome
+enddefine && PnlHome
 
 *** ========================================================= ***
 define class ais_PnlNew as ais_PnlForm
@@ -249,19 +247,6 @@ define class aisPanelForm as AisForm
   * --------------------------------------------------------- *
   function  AddControls
     with this
-      .AddObject("lblPk", "L7Label")
-      with .lblPk
-        .cGroupID = "ADMIN"
-        .cControlSource = "V_Panel.Pnl_Pk"
-        .cLabel = "Internal Key"
-      endwith 
-      .AddObject("chkInactive", "L7Checkbox")
-      with .chkInactive
-        .cGroupID = "ADMIN"
-        .cControlSource = "V_Panel.Pnl_Inactive"
-        .cLabel = "Delete?"
-        .lDisabled = !m.poContext.lAdmin
-      endwith
       if !this.lNewRecord
         .AddObject("txtId", "L7Textbox")
         with .txtId
@@ -272,6 +257,23 @@ define class aisPanelForm as AisForm
           .lDisabled = .t. 
         endwith
       endif 
+
+      .AddObject("lblPk", "L7Label")
+      with .lblPk
+        .cGroupID = "ID"
+        .cControlSource = "V_Panel.Pnl_Pk"
+        .cLabel = "Internal Key"
+        .cCssClass = "FormControlPrivate"
+      endwith 
+
+      .AddObject("chkInactive", "L7Checkbox")
+      with .chkInactive
+        .cGroupID = "ID"
+        .cControlSource = "V_Panel.Pnl_Inactive"
+        .cLabel = "Delete?"
+        .lDisabled = !m.poContext.lAdmin
+        .cCssClass = "FormControlPrivate"
+      endwith
       
       .AddObject("chkSingle_Piece", "L7Checkbox")
       with .chkSingle_Piece
@@ -309,7 +311,7 @@ define class aisPanelForm as AisForm
         .cGroupID = "NOTES"
         .cControlSource = "V_Panel.Pnl_Comments"
         .cLabel = "Comments about Panel"
-        .nRows = 5
+        .nRows = 3
       endwith 
 
       .AddObject("edtNotes", "L7Textarea")
@@ -317,7 +319,8 @@ define class aisPanelForm as AisForm
         .cGroupID = "NOTES"
         .cControlSource = "V_Panel.Pnl_Notes"
         .cLabel = "Internal KtB Notes"
-        .nRows = 5
+        .nRows = 3
+        .cCssClass = "FormControlPrivate"
       endwith
     endwith
   endfunc
@@ -327,7 +330,7 @@ enddefine  && PanelForm
 define class AisPnlQuery as L7Query
   cBaseTable = "Panel"
   cDefaultFieldList = ;
-    "Pnl_PK,Pnl_ID,Pnl_Stitcher_Art_FK,Pnl_Asm_FK,Pnl_Single_Piece" + ;  
+    "Pnl_PK,Pnl_ID,Pnl_Stitcher_Art_FK,Pnl_Asm_FK,Pnl_Fac_FK,Pnl_Single_Piece" + ;  
     ",Pnl_Dim_1,Pnl_Dim_2" 
 
   nOrderBy = 1
@@ -335,6 +338,7 @@ define class AisPnlQuery as L7Query
   aOrderBy[ 1, 1] = "Pnl_ID"
 
   cAsm = null
+  cFac = null
   
   cArtPiece = null
   cArtStitcher = null 
@@ -364,6 +368,9 @@ define class AisPnlQuery as L7Query
       if !isnull(.cAsm)
         .cWhereClause = .cWhereClause + [ and Pnl_Asm_FK = '] + .cAsm + [']
       endif 
+      if !isnull(.cFac)
+        .cWhereClause = .cWhereClause + [ and Pnl_Fac_FK = '] + .cFac + [']
+      endif 
       if !isnull(.lSinglePiece)
         .cWhereClause = .cWhereClause + [ and Pnl_Single_Piece = ] + iif(.lSinglePiece, [.t.], [.f.])
       endif 
@@ -371,3 +378,5 @@ define class AisPnlQuery as L7Query
     return  
   endfunc   && BuildWhereClause
 enddefine  && AisPnlQuery
+
+* end: PNL 
