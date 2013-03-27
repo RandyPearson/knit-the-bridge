@@ -20,7 +20,7 @@ function AisArtQueryFlags()
 endfunc 
 
 * --------------------------------------------------------- *
-function aisArtistName(tvArt)
+function aisArtistName(tvArt, tlNoAlt)
   local loData, loPreserve
   if vartype(m.tvArt) = "O"
     loData = m.tvArt
@@ -39,13 +39,17 @@ function aisArtistName(tvArt)
     loPreserve = null 
   endif 
     
-  if empty(loData.Art_Last_Name )
-    return trim(loData.Art_ID ) + iif(loData.Art_Anonymous, " (ANONYMOUS)", "")
-  else 
-    if empty(loData.Art_First_Name )
-      return trim(loData.Art_Last_Name )
+  if !m.tlNoAlt and !empty(loData.Art_Full_Name) && alt. name provided
+    return trim(loData.Art_Full_Name)
+  else
+    if empty(loData.Art_Last_Name )
+      return trim(loData.Art_ID ) + iif(loData.Art_Anonymous, " (ANONYMOUS)", "")
     else 
-      return trim(loData.Art_First_Name ) + [ ] + trim(loData.Art_Last_Name )
+      if empty(loData.Art_First_Name )
+        return trim(loData.Art_Last_Name )
+      else 
+        return trim(loData.Art_First_Name ) + [ ] + trim(loData.Art_Last_Name )
+      endif 
     endif 
   endif 
   return  
@@ -385,7 +389,7 @@ define class ais_ArtHome as aisArtPage
 *!*        .AddRow("Anonymous", loData.ART_ANONYMOUS, .F.)
 *!*        .AddRow("Unknown", loData.ART_UNKNOWN, .F.)
 
-      .AddRow("Name", AisArtistName(m.loData))
+      .AddRow("Name", AisArtistName(m.loData, .t.))
       .AddRow("Alternative Full Name", TRIM(loData.ART_FULL_NAME), .t.)
       if loData.ART_Anonymous
         .AddRow("Anonymous", "ANONYMOUS", .F., "private")
@@ -810,7 +814,7 @@ define class aisRegisterForm AS aisArtistForms
         .cLabel = "Email"
         .cInstructions = "Not required, but very helpful for KtB to communicate with you."
         .cCssStyle = "width: 30%;"
-        .nSize = 60
+        .nSize = 40
       endwith
       .AddObject("txtPhone", "L7Textbox")
       with .txtPhone
@@ -822,19 +826,19 @@ define class aisRegisterForm AS aisArtistForms
         .cCssStyle = "width: 30%;"
       endwith
 
-      .addParticipationControls()
-
       .AddObject("edtAddress", "L7Textarea")
       with .edtAddress
         .cGroupID  ="addr"
         .cControlSource = "V_artist.Art_Address"
-        .nRows = 3
+        .nRows = 2
         .cLabel = "Neighborhood or Township"
       endwith
 
+      .addParticipationControls()
+
       .AddObject("edtComments", "L7Textarea")
       with .edtComments
-        .cGroupID = "addr"
+        .cGroupID = "comments"
         .cControlSource = "V_artist.Art_Comments"
         .cLabel = "Additional Comments"
         .nRows = 3
