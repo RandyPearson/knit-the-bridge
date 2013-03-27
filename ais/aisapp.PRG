@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     12
+#DEFINE THISAPP_DATABASE_REVISION     14
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -58,10 +58,11 @@ define class AisApp AS KtbApp
         [SELECT Fac_PK, Fac_ID, Fac_Name, Fac_Dropoff, Fac_Storage] + ;
         [ FROM ] + THISAPP_DATABASE + [!Facility] + ;
         [ WHERE Fac_Inactive = .F.] + ;
-        [ ORDER BY Fac_Name]
+        [ ORDER BY Fac_Order]
       lcIndexCommands = ;
         [INDEX ON Fac_PK TAG Fac_PK] + CRLF + ;
-        [INDEX ON Fac_Name TAG Fac_Name] 
+        [INDEX ON Fac_Name TAG Fac_Name] + CRLF + ;
+        [INDEX ON Fac_Order TAG Fac_Order] 
 
     otherwise 
       error "Unknown lookup request: " + m.lcCode
@@ -349,6 +350,18 @@ define class AisApp AS KtbApp
       use Facility exclusive in select("Facility")
       select Facility
       index on fac_Name tag Fac_Name
+      use in select("Facility")
+
+    case m.lnRev = 13
+      alter table Facility add column Fac_Order N(6, 1)
+      select Facility
+      index on Fac_Order tag order 
+      use in select("Facility")
+
+    case m.lnRev = 14
+      use Facility exclusive in select("Facility")
+      select Facility
+      replace all Fac_Order with recno() 
       use in select("Facility")
 
 ** CAUTION: Need to add any above changes to Create*() functions below!!
@@ -693,6 +706,7 @@ function CreateFacilityTable  && TABLE added in Rev 11
       Fac_PK C(32) primary key default GetGuid32(), ;
       Fac_Inactive L default .F., ;
       Fac_ID C(8), ;
+      Fac_Order N(6, 1), ;  && Rev 13
       Fac_Name C(60), ;
       Fac_Address M, ;
       Fac_Contact M, ;
@@ -718,6 +732,7 @@ function CreateFacilityTable  && TABLE added in Rev 11
   index on Fac_Name tag Fac_Name  && Rev 12
   index on Fac_Storage tag Storage
   index on Fac_DropOff tag DropOff
+  index on Fac_Order tag order && Rev 13
      
   * Comment:
   dbsetprop("Facility", "Table", "Comment", ;

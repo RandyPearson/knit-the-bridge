@@ -71,9 +71,10 @@ define class ais_FacList as aisFacPage
       loCol = .addCursorColumn("Fac_ID", "Facility ID", ;
         [HTLink(StuffUrl(urls.item("FacHome"), "Fac", Fac_PK), Fac_ID)])
       loCol = .addCursorColumn("Fac_Name", "Facility Name")
-      loCol = .addCursorColumn("Fac_DropOff", "Drop-Off?")
-      loCol = .addCursorColumn("Fac_Storage", "Storage?")
+      loCol = .addCursorColumn("Fac_DropOff", "Drop-Off?", [iif(Fac_DropOff, "Drop-Off", "--")])
+      loCol = .addCursorColumn("Fac_Storage", "Storage?", [iif(Fac_Storage, "Storage", "--")])
       loCol = .addCursorColumn("Fac_Address", "Address", [L7ParseOnView(Fac_Address)])
+      loCol = .addCursorColumn("Fac_Address", "Comments", [L7ParseOnView(Fac_Comments)])
       loCol = .addCursorColumn("Fac_PK", "Edit Facility", ;
         'HTLink(StuffUrl(urls.item("FacForm"), "fac", Fac_PK), "[Edit Facility...]")')
       response.write(.render())
@@ -116,9 +117,9 @@ define class ais_FacHome as aisFacPage
       
       .AddRow("Facility ID", loData.Fac_ID,, "id-field" )
       .AddRow("Name", loData.Fac_Name)
-      .AddRow("Contact", loData.Fac_Contact)
-      .AddRow("Email", loData.Fac_Email)
-      .AddRow("Phone", loData.Fac_Phone)
+      *!*        .AddRow("Contact", loData.Fac_Contact)
+      *!*        .AddRow("Email", loData.Fac_Email)
+      *!*        .AddRow("Phone", loData.Fac_Phone)
       .AddRow("Address", L7ParseOnView(loData.Fac_Address))
       .AddRow("Comments", L7ParseOnView(loData.Fac_Comments))
 
@@ -132,6 +133,7 @@ define class ais_FacHome as aisFacPage
       if poContext.lCore
         .AddHeading('Administrative Information')
         .AddRow("Pk", TRIM(loData.Fac_PK), .F., "private")
+        .AddRow("Order", loData.Fac_Order, .F., "private")
         .AddRow("Deleted", loData.Fac_INACTIVE, .F., "private")
         .AddRow("Created", TRANSFORM(loData.Fac_ORIG_TIME) + [ by ] + AisArtistName(loData.Fac_Orig_Art_FK), .F., "private")
         .AddRow("Last Modified", TRANSFORM(loData.Fac_REV_TIME) + [ by ] + AisArtistName(loData.Fac_Rev_Art_FK), .F., "private")
@@ -251,40 +253,16 @@ define class aisFacilityForm as AisForm
         .lRequired = .t. 
         .cLabel = "Facility Name"
       endwith
-
-      .AddObject("edtAddress", "L7Textarea")
-      with .edtAddress
-        .cGroupID  ="addr"
-        .cControlSource = "V_Facility.Fac_Address"
-        .nRows = 3
-        .cLabel = "Address"
-      endwith
-
-      .AddObject("edtContact", "L7Textarea")
-      with .edtContact
-        * .cGroupID  ="addr"
-        .cControlSource = "V_Facility.Fac_Contact"
-        .nRows = 3
-        .cLabel = "Contact"
-      endwith
-
-      .AddObject("txtEmail", "L7Textbox")
-      with .txtEmail
-        .cGroupID = "cont"
-        .cFieldType = "C"
-        .cControlSource = "V_Facility.Fac_Email"
-        .cLabel = "Email"
-        .cCssStyle = "width: 60%;"
-        .nSize = 40
-      endwith
-
-      .AddObject("txtPhone", "L7Textbox")
-      with .txtPhone
-        .cGroupID = "cont"
-        .cFieldType = "C"
-        .cControlSource = "V_Facility.Fac_Phone"
-        .cLabel = "Phone"
-        .cCssStyle = "width: 40%;"
+      .AddObject("txtOrder", "L7Textbox")
+      with .txtOrder
+        .cFieldType = "N"
+        .cControlSource = "V_Facility.Fac_Order"
+        .lRequired = .f. 
+        .cLabel = "Order"
+        .cCssClass = "FormControlPrivate"
+        if this.lNewRecord
+          .SetValue(999)
+        endif 
       endwith
 
       .AddObject("chkDropoff", "L7Checkbox")
@@ -294,7 +272,7 @@ define class aisFacilityForm as AisForm
         .cLabel = "Is this a drop-off Facility?"
         .nMode = L7_MULTI_RADIOBUTTON
         .nStyle = L7_MULTISTYLE_VERTICAL  && only applies to radio-button transforms
-        .cCaption = "Yes"
+        .cCaption = "Yes, a Drop-Off Facility"
         .cFalseCaption = "No" 
         .lFalseBeforeTrue = .T.
         .cInterControlText = NULL 
@@ -307,11 +285,46 @@ define class aisFacilityForm as AisForm
         .cLabel = "Is this a Storage Facility?"
         .nMode = L7_MULTI_RADIOBUTTON
         .nStyle = L7_MULTISTYLE_VERTICAL  && only applies to radio-button transforms
-        .cCaption = "Yes"
+        .cCaption = "Yes, a Storage Facility"
         .cFalseCaption = "No" 
         .lFalseBeforeTrue = .T.
         .cInterControlText = NULL 
       endwith 
+
+      .AddObject("edtAddress", "L7Textarea")
+      with .edtAddress
+        .cGroupID  ="addr"
+        .cControlSource = "V_Facility.Fac_Address"
+        .nRows = 3
+        .cLabel = "Address"
+      endwith
+
+      *!*        .AddObject("edtContact", "L7Textarea")
+      *!*        with .edtContact
+      *!*          * .cGroupID  ="addr"
+      *!*          .cControlSource = "V_Facility.Fac_Contact"
+      *!*          .nRows = 3
+      *!*          .cLabel = "Contact"
+      *!*        endwith
+
+      *!*        .AddObject("txtEmail", "L7Textbox")
+      *!*        with .txtEmail
+      *!*          .cGroupID = "cont"
+      *!*          .cFieldType = "C"
+      *!*          .cControlSource = "V_Facility.Fac_Email"
+      *!*          .cLabel = "Email"
+      *!*          .cCssStyle = "width: 60%;"
+      *!*          .nSize = 40
+      *!*        endwith
+
+      *!*        .AddObject("txtPhone", "L7Textbox")
+      *!*        with .txtPhone
+      *!*          .cGroupID = "cont"
+      *!*          .cFieldType = "C"
+      *!*          .cControlSource = "V_Facility.Fac_Phone"
+      *!*          .cLabel = "Phone"
+      *!*          .cCssStyle = "width: 40%;"
+      *!*        endwith
 
       .AddObject("edtComments", "L7Textarea")
       with .edtComments
@@ -338,11 +351,11 @@ define class AisFacQuery as L7Query
   cBaseTable = "Facility"
   cDefaultFieldList = ;
     "Fac_PK, Fac_ID, Fac_Name, Fac_Storage, Fac_DropOff" + ;  
-    ", Fac_Address, Fac_Contact, Fac_Email, Fac_Phone, Fac_Comments" 
+    ", Fac_Address, Fac_Contact, Fac_Comments" 
 
   nOrderBy = 1
   dimension aOrderBy[ 1, 2]
-  aOrderBy[ 1, 1] = "Fac_Name"
+  aOrderBy[ 1, 1] = "Fac_Order"
 
   lStorage = null
   lDropOff = null   
