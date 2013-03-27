@@ -2,28 +2,31 @@ body { margin: 0; font-family: Tahoma, Arial; cursor: default; overflow: hidden 
 
 /* Header */
 a { text-decoration: underline }
-#header { position: absolute; top: 0; left: 0; right: 0; height: 57px; 
-	color: white; background: -moz-linear-gradient(top, #CC0000, #990000); background-color: #900; padding: 5px 0 0 0; z-index: 200 }
+#header { position: absolute; top: 0; left: 0; right: 0; height: 57px;  padding: 5px 0 0 0; z-index: 200 }
 #header h1 { font-weight: normal; font-face: Tahoma, Arial; font-size: 18px; margin: 0;}
 #header h2 { font-weight: normal; font-face: Tahoma, Arial; font-size: 16px; margin: 0;}
 #header .user { position: absolute; right: 5px; top: 7px; font-size: 14px }
 #header .link { font-size: 14px }
 #header #signOut { color: white }
-#header .box { cursor: pointer; background: transparent none no-repeat scroll bottom left; font-size: 20px; z-index: 400; }
-#header .box #demo-header-label {cursor: default; margin-left: 4px; display: none;}
-#header .box #demo-header-label img {vertical-align: -6%;}
 #header .label { float: left; padding: 0 3px 0 5px; font-weight: normal; margin-right: 0px }
-#header.staging {background: -moz-linear-gradient(top, #0000CC, #000066); background-color: #006;}
-.development #header{background: -moz-linear-gradient(top, #00CC00, #006600); background-color: #060;}
-.localhost #header{background: -moz-linear-gradient(top, #0000CC, #000066); background-color: #006;}
+
 #server-override-notice-content {
   position: absolute; top: 0; left: 50%; margin-left: -115px; width: 230px; height: 19px; padding-top: 3px;
   background-image: url("../icons/Server_Override_Trapezoid.png");
   color: black;  font-size: 10px; text-align: center; }
 
+/* status and notification areas */
+#status_bar { position: absolute; bottom: 0; height: 15px; left: 0; right: 0; padding: 1px 5px 5px 15px; margin: 0 }
+#status_bar div { margin-top: 2px !important; padding: 0 !important }
+#statusText { overflow: hidden; height: 13px; font-size: 12px; }
+
+#header, #status_bar { color: white; background: -moz-linear-gradient(top, #CC0000, #990000); background-color: #900; }
+.development #header, .development status_bar{background: -moz-linear-gradient(top, #00CC00, #006600); background-color: #060;}
+.localhost #header, .localhost #status_bar{background: -moz-linear-gradient(top, #0000CC, #000066); background-color: #006;}
+
 /* Sidebar subtract 17px for scrollbar */
-#sidebar { position: absolute; left: 0; top: 62px; width: 218px !important; bottom: 23px; background-color: #eee; padding: 0 !important; margin: 0 !important; overflow-x: hidden; overflow-y: auto; white-space: nowrap; padding-top: 15px; z-index: 0; box-shadow: inset 0 5px 5px #ccc }
-#sidebar h1 { color: #C00; font-family: Tahoma, Arial; ; font-weight: 900; font-size: 14px; margin: 20px 0 5px 10px; line-height: 14px; padding:0px; }
+#sidebar { position: absolute; left: 0; top: 62px; width: 198px !important; bottom: 21px; background-color: #eee; padding: 0 !important; margin: 0 !important; overflow-x: hidden; overflow-y: auto; white-space: nowrap; padding-top: 15px; z-index: 0; box-shadow: inset 0 5px 5px #ccc }
+#sidebar h2 { color: #C00; font-family: Tahoma, Arial; ; font-weight: 900; font-size: 14px; margin: 20px 0 5px 10px; line-height: 14px; padding:0px; }
 #sidebar h1.first { margin-top: 0px }
 #sidebar ul { margin-left: 0px; padding-left: 0; list-style-type: none; margin-top: 0; margin-bottom: 5px; padding-top: 0 }
 #sidebar ul.noncontext li { color: #bbb }
@@ -34,22 +37,13 @@ a { text-decoration: underline }
 #sidebar ul.context li:hover { text-decoration: underline }
 #sidebar ul li.highlight { color: white; background-color: #C00 }
 #sidebar ul li.highlight a {color: white;}
-#sidebar h2 { color: #999; margin: 9px 0 0 10px; font-size: 13px; font-weight: normal !important; font-family: Arial !important; font-style: italic }
-#sidebar h2 .label { color: #999 !important; font-size: 13px }
-#sidebar h3 { color: #999; margin: 0; margin-left: 10px; font-style: italic; font-size: 14px; font-weight: normal }
 
 /* Main Content */
-#content{position: absolute; left: 0; right: 0; top: 62px; bottom: 23px; overflow-x: scroll; overflow-y: scroll;
-	padding: 10px 10px 10px 235px; }
+#content{position: absolute; left: 0; right: 0; top: 62px; bottom: 21px; overflow-x: scroll; overflow-y: scroll;
+	padding: 10px 10px 10px 215px; }
 
 #content h2, #content h3, #content h4 {font-family: Tahoma, Arial}
 #content {font-family: Tahoma, Arial; font-size: 11px;}
-
-/* status and notification areas */
-#status_bar { position: absolute; bottom: 0; height: 17px; left: 0; right: 0; background-image: url(../icons/status.png); padding: 1px 5px 5px 30px; margin: 0 }
-#status_bar div { margin-top: 2px !important; padding: 0 !important }
-#status { float: left; margin-right: 10px; margin-left: 5px }
-#statusText { overflow: hidden; height: 14px }
 
 /* Ubiquitous */
 .id-field {font-weight: bold; font-size: 14px; }

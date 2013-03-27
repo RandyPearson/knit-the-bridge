@@ -240,7 +240,7 @@ define class aisBody AS L7PageElement
 
     with this.oStatusBar
       text to lcTmp noshow pretext 3
-        <div>Server: <<request.getServerName()>> (<<config.cServerRole>>) at <<datetime()>></div>
+        <div id="statusText">Server: <<request.getServerName()>> (<<config.cServerRole>>) at <<datetime()>></div>
       endtext
       .Write(textmerge(m.lcTmp))
       lcText = m.lcText + .Render() + CRLF
@@ -281,7 +281,7 @@ define class aisSidebar AS L7MenuElement
         lcRet = HTLink(.cUrl, m.lcRet, m.lcOptions)
       endif 
       lcRet =   [<!-- ] + toMenu.cFullNodePath + [ Sub-Menu -->] + CR + ;
-                [<h1>] + m.lcRet + [</h1>] + CR + ;
+                [<h2>] + m.lcRet + [</h2>] + CR + ;
                 [<ul>] + CR
      ENDWITH 
     return lcRet
@@ -386,7 +386,7 @@ enddefine
 *** ===================================================== ***
 define class aisForm AS L7Form
   * App-wide sub-class.
-  cCssStyle = "width: 80%;"
+  *!* cCssStyle = "width: 80%;"
   cRenderClass = "L7FormRenderOverUnder"
   nLayoutStyle = 2  && 1 = over/under, 2 = 2-column
   lToolbarAtTop = .T.
