@@ -74,6 +74,7 @@ DEFINE CLASS L7Page AS CUSTOM
   cCopyright           = ""
   cKeywords            = ""
   cDescription         = ""
+  cFavicon             = ""
  
   cTemplateExpanderClass = "L7ExpandTemplate"  && bridge pattern
   

@@ -74,6 +74,7 @@ DEFINE CLASS L7HeadElement AS L7PageElement
   cKeywords    = NULL
   cGenerator   = NULL
   cDescription = NULL
+  cFavicon     = NULL 
   cCssFile     = NULL
   cJsFile      = NULL
   lInheritFromPage = .T.
@@ -103,13 +104,6 @@ DEFINE CLASS L7HeadElement AS L7PageElement
     LOCAL loPage
     loPage = m.Page
     WITH THIS
-      *!*        **.cBaseUrl     = NVL(.cBaseUrl, m.loPage.FullUrl()) && not page.cBaseUrl, that is relative
-      *!*        IF ISNULL(.cBaseUrl)
-      *!*          ** .cBaseUrl   = m.loPage.FullUrl(Request.cLogicalPath)
-      *!*          ** [above caused problems with intra-page hash URLs--UA's would hit server instead!]
-      *!*          .cBaseUrl   = Request.GetCurrentUrl()
-      *!*        ENDIF
-      
       .cTitle       = NVL(.cTitle, m.loPage.cTitle)
       .cSubTitle    = NVL(.cSubTitle, m.loPage.cSubTitle)
       .cTopUrl      = NVL(.cTopUrl, m.loPage.cTopUrl)
@@ -119,6 +113,7 @@ DEFINE CLASS L7HeadElement AS L7PageElement
       .cCssFile     = NVL(.cCssFile, m.loPage.cCssFile)
       .cJsFile      = NVL(.cJsFile, m.loPage.cJsFile)
       .cDescription = NVL(.cDescription, m.loPage.cDescription)
+      .cFavicon     = NVL(.cFavicon, m.loPage.cFavicon)
     ENDWITH
     RETURN
   ENDFUNC
@@ -153,7 +148,10 @@ DEFINE CLASS L7HeadElement AS L7PageElement
       IF NOT ISNULL( .cLastUrl)
         lcTxt = m.lcTxt + [<link rel="last" title="Last" href="] + .cLastUrl + [" />] + CRLF
       ENDIF
-
+      IF NOT ISNULL( .cFavicon)
+        lcTxt = m.lcTxt + [<link rel="icon"] + ;
+          [ type="image/] + juststem(.cFavicon) + [" href="] + .cFavicon + [" />] + CRLF
+      ENDIF
 
       IF NOT EMPTY( .cAuthor ) AND NOT ISNULL( .cAuthor)
       	lcTxt = m.lcTxt + [<meta name="author" content="] + .cAuthor + [" />] + CRLF

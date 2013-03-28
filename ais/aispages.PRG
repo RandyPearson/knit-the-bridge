@@ -21,8 +21,10 @@ define class aisPage as L7Page
   nMinLoginLevel =  L7_LOGIN_LOGGED_IN 
   lLoginPage = .F.
 
-  cTopPage      = "Login"
-  cCancelPage   = "InsList"
+  cTopPage      = "Home"
+  cCancelPage   = "Home"
+  
+  cFavicon = "http://knitthebridge.com/favicon.ico"
 
   cCssFile = null
   cJsFile  = null 
