@@ -386,7 +386,7 @@ define class aisPage as L7Page
   * ----------------------------------------------------- *  
   function AddMenuHeadings
     this.AddSubMenu("This", "THIS PAGE")
-    this.AddSubMenu("Reports", "REPORTS")
+    this.AddSubMenu("Reports", "Listings")
     this.AddSubMenu("Navigate", "Navigate")
     this.AddSubMenu("Search", "Search")
     if poContext.lAdmin
@@ -411,7 +411,7 @@ define class aisPage as L7Page
       [</form>]
     this.AddMenuItem("main\Search", m.lcForm, .t.)
 
-    this.addMenuItem(m.lcMenu, 'Pieces', StuffUrl(this.cUrlA, 2, "PceList"))
+    this.addMenuItem(m.lcMenu, 'Pieces and Railings', StuffUrl(this.cUrlA, 2, "PceList", "type", "Panels", "orphans", "1"))
     this.addMenuItem(m.lcMenu, 'Panels', StuffUrl(this.cUrlA, 2, "PnlList"))
     this.addMenuItem(m.lcMenu, 'Facilities', StuffUrl(this.cUrlA, 2, "FacList"))
     ** this.addMenuItem(m.lcMenu, 'About', StuffUrl(this.cUrlA, 2, "About"), "About")

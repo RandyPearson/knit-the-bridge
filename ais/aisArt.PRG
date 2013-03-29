@@ -85,6 +85,8 @@ function aisFormatParticipation(toData)
       "* 9 x 105 Railing pieces: " + transform(loData.Art_Railing_1_Count) + crlf) + ;
     iif(loData.Art_Railing_2_Count <= 0, "", ;
       "* 15 x 80 Railing pieces: " + transform(loData.Art_Railing_2_Count) + crlf) + ;
+    iif(loData.Art_Railing_3_Count <= 0, "", ;
+      "* 9 x 80 Railing pieces: " + transform(loData.Art_Railing_3_Count) + crlf) + ;
     iif(!loData.ART_TOWERS, "", "* Machine Knitting for Towers" + crlf) + ;
     iif(!loData.ART_HELP_INSTALL, "", "* Helping with *Installation*" + crlf) + ;
     iif(!loData.ART_HELP_MATERIALS, "", "* Donating Materials" + crlf) + ;
@@ -355,6 +357,8 @@ define class ais_ArtHome as aisArtPage
         StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Railings", "dim_1", "15", "dim_2", "80"))
       this.addMenuItem("main\This,page", "Submit 9x105 Railing Piece...", ;
         StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Railings", "dim_1", "9", "dim_2", "105"))
+      this.addMenuItem("main\This,page", "Submit 9x80 Railing Piece...", ;
+        StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Railings", "dim_1", "9", "dim_2", "80"))
     endif   
     if poContext.lAdmin and !empty(this.oArt.Art_ID)
       this.addMenuItem("main\This", "Set Password...", StuffUrl(this.cUrlA, 2, "SetPassword", "art", this.cArt))
@@ -692,6 +696,15 @@ define class aisArtistForms AS AisForm
         .cControlSource = "V_artist.Art_Railing_2_Count"
         .nSize = 3
         .cLabel = "# of 15x80 Railing pieces"
+        .cInstructions = "(if none, enter 0)"
+      endwith
+
+      .colArt.AddObjectToParent("txtRailing_3_Count", "L7Textbox")
+      with .txtRailing_3_Count
+        .cFieldType = "I"
+        .cControlSource = "V_artist.Art_Railing_3_Count"
+        .nSize = 3
+        .cLabel = "# of 9x80 Railing pieces"
         .cInstructions = "(if none, enter 0)"
       endwith
 

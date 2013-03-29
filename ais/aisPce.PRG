@@ -52,6 +52,8 @@ define class ais_PceList as aisPcePage
   lPage_Whole = null
   lPage_Shipped = null
   lPage_Received = null 
+  cPage_Type = null
+  cPage_Order = null
   * --------------------------------------------------------- *
   function BeforeProcessRequest
     local lcStr
@@ -68,29 +70,40 @@ define class ais_PceList as aisPcePage
     lcStr = this.ReadQueryString("Received", .t., .t.)
     this.lPage_Received = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
 
+    this.cPage_Type = this.ReadQueryString("type", .t., .t.)
+    this.cPage_Order = this.ReadQueryString("order", .t., .t.)
+
     dodefault()  && required bubble-up
     return    
   endfunc  
   * --------------------------------------------------------- *
   function AddDefaultMenu
     with this
-      .AddSubMenu("This", "PIECES")
+      .AddSubMenu("This", "PIECES and RAILINGS")
 
-      .addMenuItem("main\This", "Available", StuffUrl(.cUrlC, "orphans", "1"),, !isnull(.lPage_Orphans) and .lPage_Orphans)
-      .addMenuItem("main\This", "Assigned", StuffUrl(.cUrlC, "orphans", "0"),, !isnull(.lPage_Orphans) and !.lPage_Orphans)
-      .addMenuItem("main\This", "Available and Assigned", StuffUrl(.cUrlC, "orphans", .f.),, isnull(.lPage_Orphans))
+*!*        .addMenuItem("main\This", "Available", StuffUrl(.cUrlC, "orphans", "1"),, !isnull(.lPage_Orphans) and .lPage_Orphans)
+*!*        .addMenuItem("main\This", "Assigned", StuffUrl(.cUrlC, "orphans", "0"),, !isnull(.lPage_Orphans) and !.lPage_Orphans)
+*!*        .addMenuItem("main\This", "Available and Assigned", StuffUrl(.cUrlC, "orphans", .f.),, isnull(.lPage_Orphans))
 
-      .addMenuItem("main\This", "Whole-Panel", StuffUrl(.cUrlC, "whole", "1"),, !isnull(.lPage_Whole) and .lPage_Whole)
-      .addMenuItem("main\This", "Non-Whole-Panel", StuffUrl(.cUrlC, "whole", "0"),, !isnull(.lPage_Whole) and !.lPage_Whole)
-      .addMenuItem("main\This", "Whole- and Non-Whole-Panel", StuffUrl(.cUrlC, "whole", .f.),, isnull(.lPage_Whole))
+*!*        .addMenuItem("main\This", "Whole-Panel", StuffUrl(.cUrlC, "whole", "1"),, !isnull(.lPage_Whole) and .lPage_Whole)
+*!*        .addMenuItem("main\This", "Non-Whole-Panel", StuffUrl(.cUrlC, "whole", "0"),, !isnull(.lPage_Whole) and !.lPage_Whole)
+*!*        .addMenuItem("main\This", "Whole- and Non-Whole-Panel", StuffUrl(.cUrlC, "whole", .f.),, isnull(.lPage_Whole))
 
-      .addMenuItem("main\This", "Shipped", StuffUrl(.cUrlC, "Shipped", "1"),, !isnull(.lPage_Shipped) and .lPage_Shipped)
-      .addMenuItem("main\This", "Not Shipped", StuffUrl(.cUrlC, "Shipped", "0"),, !isnull(.lPage_Shipped) and !.lPage_Shipped)
-      .addMenuItem("main\This", "Shipped and Not Shipped", StuffUrl(.cUrlC, "Shipped", .f.),, isnull(.lPage_Shipped))
+*!*        .addMenuItem("main\This", "Shipped", StuffUrl(.cUrlC, "Shipped", "1"),, !isnull(.lPage_Shipped) and .lPage_Shipped)
+*!*        .addMenuItem("main\This", "Not Shipped", StuffUrl(.cUrlC, "Shipped", "0"),, !isnull(.lPage_Shipped) and !.lPage_Shipped)
+*!*        .addMenuItem("main\This", "Shipped and Not Shipped", StuffUrl(.cUrlC, "Shipped", .f.),, isnull(.lPage_Shipped))
 
-      .addMenuItem("main\This", "Received", StuffUrl(.cUrlC, "Received", "1"),, !isnull(.lPage_Received) and .lPage_Received)
-      .addMenuItem("main\This", "Not Received", StuffUrl(.cUrlC, "Received", "0"),, !isnull(.lPage_Received) and !.lPage_Received)
-      .addMenuItem("main\This", "Received and Not Received", StuffUrl(.cUrlC, "Received", .f.),, isnull(.lPage_Received))
+*!*        .addMenuItem("main\This", "Received", StuffUrl(.cUrlC, "Received", "1"),, !isnull(.lPage_Received) and .lPage_Received)
+*!*        .addMenuItem("main\This", "Not Received", StuffUrl(.cUrlC, "Received", "0"),, !isnull(.lPage_Received) and !.lPage_Received)
+*!*        .addMenuItem("main\This", "Received and Not Received", StuffUrl(.cUrlC, "Received", .f.),, isnull(.lPage_Received))
+
+*!*        .addMenuItem("main\This", "Available", StuffUrl(.cUrlC, "orphans", "1"),, !isnull(.lPage_Orphans) and .lPage_Orphans)
+
+      .addMenuItem("main\This", "Available Bits",       StuffUrl(.cUrlB, "order", "fac", "type", "Panels", "orphans", "1"))
+      .addMenuItem("main\This", "Whole-Panel Pieces",   StuffUrl(.cUrlB, "order", "fac", "type", "Panels", "whole", "1"))
+      
+      .addMenuItem("main\This", "Railings by Size",     StuffUrl(.cUrlB, "order", "size", "type", "Railings"))
+      .addMenuItem("main\This", "Railings by Facility", StuffUrl(.cUrlB, "order", "fac", "type", "Railings"))
     endwith 
     dodefault()
     return 
@@ -108,8 +121,20 @@ define class ais_PceList as aisPcePage
       .lWholePanel = this.lPage_Whole 
       .lShipped    = this.lPage_Shipped 
       .lReceived   = this.lPage_Received 
+      .cType       = evl(this.cPage_Type, null)
       
-      .AddOrderBy('Pce_Rev_Time', .t.)
+      do case
+      case this.cPage_Order = "size" 
+        .AddOrderBy('Pce_Dim_1',  .f., .f.)
+        .AddOrderBy('Pce_Dim_2',  .f., .t.)
+        .AddOrderBy('Pce_Fac_FK', .f., .t.)
+      case this.cPage_Order = "fac"
+        .AddOrderBy('Pce_Fac_FK', .f., .f.)
+        .AddOrderBy('Pce_Dim_1',  .f., .t.)
+        .AddOrderBy('Pce_Dim_2',  .f., .t.)
+      otherwise 
+        = .f. && default
+      endcase
       .execute()
       
       this.cSubTitle = this.cSubTitle + .GetCaption()
@@ -122,6 +147,16 @@ define class ais_PceList as aisPcePage
 
     loTbl = createobject("AisTable")
     with loTbl
+
+      do case
+      case this.cPage_Order = "size" 
+        .addGroup('Pce_Dim_1 + Pce_Dim_2', 'Size: ', .t., ["Size: " + Pce_Dim_1 + " x " + Pce_Dim_2])
+      case this.cPage_Order = "fac"
+        .addGroup('Pce_Fac_FK', 'Facility: ', .t., ["Facility: " + Fac_Name])
+      otherwise 
+        = .f. && no grouping
+      endcase
+
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Pce_ID", "Piece ID", ;
         [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)])
