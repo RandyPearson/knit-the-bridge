@@ -330,7 +330,7 @@ define class aisPanelForm as AisForm
       .AddObject("cboLoc_FK", "L7Popup")
       with .cboLoc_FK
         .cControlSource = "V_Panel.Pnl_Fac_FK"
-        .lRequired = .F.
+        .lRequired = .t.
         .cLabel = "Current Location"
         .lAutoRender = .T.
         .nRowSourceType = L7_ROWSOURCETYPE_ALIAS
@@ -376,6 +376,13 @@ define class aisPanelForm as AisForm
         .cInstructions = "If not equal, please enter LARGER dimension second!"
       endwith 
 
+      .AddObject("chkCompleted", "L7Checkbox")
+      with .chkCompleted
+        .cGroupID = "DIM"
+        .cControlSource = "V_Panel.Pnl_Completed"
+        .cLabel = "Completed?"
+      endwith
+      
       .AddObject("edtComments", "L7Textarea")
       with .edtComments
         .cGroupID = "NOTES"

@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     14
+#DEFINE THISAPP_DATABASE_REVISION     15
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -363,6 +363,24 @@ define class AisApp AS KtbApp
       select Facility
       replace all Fac_Order with recno() 
       use in select("Facility")
+
+    case m.lnRev = 15
+      use Panel in select("Panel")
+      use Piece in select("Piece")
+      select Panel
+      scan for Pnl_Single_Piece and empty(Pnl_Stitcher_Art_FK)
+        select Piece
+        locate for Pce_Pnl_FK = Panel.Pnl_PK
+        select Panel
+        if found("Piece")
+          replace Pnl_Stitcher_Art_FK with Piece.Pce_Art_FK ;
+            Pnl_Completed with .t. 
+          this.app_log(L7_SEVERITY_NOTICE, "Updated stitcher and completion of Panel: " + Panel.Pnl_ID)
+        endif
+      endscan 
+        
+      use in select("Panel")
+      use in select("Piece")
 
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
