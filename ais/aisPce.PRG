@@ -99,8 +99,9 @@ define class ais_PceList as aisPcePage
 
 *!*        .addMenuItem("main\This", "Available", StuffUrl(.cUrlC, "orphans", "1"),, !isnull(.lPage_Orphans) and .lPage_Orphans)
 
-      .addMenuItem("main\This", "Available Bits",       StuffUrl(.cUrlB, "order", "fac", "type", "Panels", "orphans", "1"))
       .addMenuItem("main\This", "Whole-Panel Pieces",   StuffUrl(.cUrlB, "order", "fac", "type", "Panels", "whole", "1"))
+      .addMenuItem("main\This", "Available Bits",       StuffUrl(.cUrlB, "order", "fac", "type", "Panels", "orphans", "1"))
+      .addMenuItem("main\This", "Consumed Bits",        StuffUrl(.cUrlB, "order", "fac", "type", "Panels", "orphans", "0"))
       
       .addMenuItem("main\This", "Railings by Size",     StuffUrl(.cUrlB, "order", "size", "type", "Railings"))
       .addMenuItem("main\This", "Railings by Facility", StuffUrl(.cUrlB, "order", "fac", "type", "Railings"))
@@ -190,11 +191,55 @@ define class ais_PceList as aisPcePage
 enddefine && ais_PceList 
 
 *** ========================================================= ***
+define class ais_PceToPanel as aisPcePage 
+  lPceRequired = .t.
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+
+    this.Assert(poContext.lCore)
+    this.cCancelUrl = StuffURL(THIS.cUrlB, 2, "PceHome")
+
+    local vp_cPce_PK, loPnl
+    vp_cPce_PK = THIS.cPce
+    use V_Piece in select("V_Piece")
+    this.assert(inlist(this.oPce.Pce_Type, "Panels"), "Function only applies to panel piece type. ")
+    cursorsetprop("Buffering", 5, "V_Piece")
+
+    loPnl = AisCreatePanel(this.oPce)
+    this.cCancelUrl = StuffURL(THIS.cUrlB, 2, "PnlHome", "pnl", loPnl.Pnl_PK)
+    select V_Piece  
+    replace Pce_Pnl_FK with loPnl.Pnl_PK
+    StampRec( CurrentUser, THIS.tNow )
+        
+    * Now save the piece using a transaction:
+    local loTrans, loExc
+    loTrans = THIS.CreateTransaction()
+    loTrans.AddCursor("V_Piece")
+
+    if loTrans.Save()  
+      select V_Piece
+      Response.Redirect(THIS.cCancelUrl)
+      return 
+    else 
+      this.ErrorMsg( "Database Failure Saving Record!", ;
+        "Error " + TRANSFORM( loTrans.aFailures[1, 1]) + [ :] + ;
+        loTrans.aFailures[1, 2] )
+    endif  && Save()
+    return
+  endfunc && ProcessRequest 
+enddefine  && ais_PceToPanel 
+
+*** ========================================================= ***
 define class ais_PceHome as aisPcePage 
   lArtRequired = .t.
   * ----------------------------------------------------- *  
   function AddDefaultMenu
     this.AddSubMenu("This", "This Piece")
+    if this.oPce.Pce_Type = "Panels" and empty(this.oPce.Pce_Pnl_FK)
+      this.addMenuItem("main\This,page", "Start Panel from This Piece...", ;
+        StuffUrl(this.cUrlA, 2, "PceToPanel", "pce", this.cPce))
+    endif 
+    
     this.addMenuItem("main\This,page", "Edit Piece...", StuffUrl(this.cUrlA, 2, "PceForm", "pce", this.cPce))
     this.addMenuItem("main\This,page", "Artist's Page", StuffUrl(this.cUrlA, 2, "ArtHome", "art", this.cArt))
     dodefault()
@@ -230,7 +275,7 @@ define class ais_PceHome as aisPcePage
       if m.loData.Pce_Type = "Panels"
         .AddRow("Whole-Panel Piece?", loData.Pce_Whole_Panel)
         .AddRow("Assigned to Panel?", iif(empty(m.loData.Pce_Pnl_FK), ;
-          "No. " + "(assign now function goes here...)", ;
+          "No (see menu options)", ;
           "Yes: " + HtWrap(this.oPnl.Pnl_Id, 'span', ,'id-field') + SP + HTLink(StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", loData.Pce_Pnl_FK), "View Panel Page...")))
       endif
       .AddRow("Comments", L7ParseOnView(loData.Pce_COMMENTS))

@@ -120,10 +120,96 @@ define class ais_PnlList as aisPnlPage
 enddefine && ais_PnlList 
 
 *** ========================================================= ***
+define class ais_PnlAddPiece as aisPnlPage 
+  cPage_Pce_PK = null
+  * --------------------------------------------------------- *
+  function BeforeProcessRequest
+    this.cPage_Pce_PK = this.readQueryString("pce", .t., .t.)
+    dodefault()
+    return 
+  endfunc   
+  * ----------------------------------------------------- *  
+  function page_selectPiece
+    local loQ, loTbl, loCol, loGrp
+
+    loQ = createobject("AisPceQuery")
+    with loQ
+      .cType = "Panels"
+      .lOrphans = .t. 
+      .lJoinArtist = .t. 
+      .lJoinFacility = .t.
+      .Execute()
+    endwith 
+
+    urls.add(this.cUrlB, "Select")
+    
+    select (loQ.cAlias)
+    loTbl = createobject("AisTable")
+    with loTbl
+      loCol = .addCursorColumn("Pce_ID", "Add Piece", ;
+        [HTLink(StuffUrl(urls.item("Select"), "pce", Pce_PK), "Choose&nbsp;piece...")])
+
+      loCol = .addCursorColumn("Pce_ID", "Piece ID")
+      loCol = .addCursorColumn("Art_ID", "Artist ID")
+      loCol = .addCursorColumn("Art_Last_Name", "Artist Name", [aisArtistName(THISRECORD)])
+      loCol = .AddCursorColumn('Pce_Whole_Panel', 'Whole Panel?')
+      loCol = .AddCursorColumn('Pce_Dim_1', 'Dim 1')
+      loCol = .AddCursorColumn('Pce_Dim_2', 'Dim 2')
+      loCol = .addCursorColumn("Fac_Name", "Current Storage Facility")
+
+    endwith 
+    response.Write(loTbl.Render())    
+    return 
+    
+  endfunc  && page_selectPiece 
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    this.cCancelUrl = StuffURL(THIS.cUrlB, 2, "PnlHome")
+    this.Assert(poContext.lCore)
+
+    if empty(this.cPage_Pce_PK)
+      this.page_selectPiece()
+      return
+    endif
+
+    local vp_cPce_PK
+    vp_cPce_PK = THIS.cPage_Pce_PK
+    use V_Piece in select("V_Piece")
+    cursorsetprop("Buffering", 5, "V_Piece")
+
+    this.assert(inlist(V_Piece.Pce_Type, "Panels"), "Function only applies to panel piece type. ")
+
+    select V_Piece  
+    replace Pce_Pnl_FK with this.cPnl
+    StampRec( CurrentUser, THIS.tNow )
+        
+    * Now save the piece using a transaction:
+    local loTrans, loExc
+    loTrans = THIS.CreateTransaction()
+    loTrans.AddCursor("V_Piece")
+
+    if loTrans.Save()  
+      select V_Piece
+      Response.Redirect(THIS.cCancelUrl)
+      return 
+    else 
+      this.ErrorMsg( "Database Failure Saving Record!", ;
+        "Error " + TRANSFORM( loTrans.aFailures[1, 1]) + [ :] + ;
+        loTrans.aFailures[1, 2] )
+    endif  && Save()
+    return
+  endfunc && ProcessRequest 
+enddefine  && ais_PnlAddPiece 
+
+*** ========================================================= ***
 define class ais_PnlHome as aisPnlPage 
   * ----------------------------------------------------- *  
   function AddDefaultMenu
     this.addMenuItem("main\This,page", "Edit Panel...", StuffUrl(this.cUrlA, 2, "PnlForm", "pnl", this.cPnl))
+    if this.oPnl.Pnl_Single_Piece = .f. and !this.oPnl.Pnl_Completed 
+      this.addMenuItem("main\This,page", "Add Piece to Panel...", ;
+        StuffUrl(this.cUrlA, 2, "PnlAddPiece", "pnl", this.cPnl))
+    endif
     dodefault()
     return 
   endfunc 
