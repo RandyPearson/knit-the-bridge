@@ -118,6 +118,8 @@ define class ais_PceList as aisPcePage
     urls.add(StuffUrl(this.cUrlA, 2, "PceHome"), "PceHome")
     urls.add(StuffUrl(this.cUrlA, 2, "PceForm"), "PceForm")
     urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
+    urls.add(StuffUrl(this.cUrlA, 2, "FacHome"), "FacHome")
+
     loTbl = createobject("AisTable")
     with loTbl
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
@@ -136,7 +138,8 @@ define class ais_PceList as aisPcePage
 
       loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
       loCol = .AddCursorColumn('Pce_Received', 'Received')
-      loCol = .addCursorColumn("Fac_Name", "Current Storage Facility")
+      loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
+        [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pce_Fac_FK), trim(Fac_Name))])
       if poContext.lCore
         loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
           'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit Piece...]")')

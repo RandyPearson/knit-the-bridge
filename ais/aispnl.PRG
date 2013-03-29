@@ -16,10 +16,16 @@ function aisCreatePanel(toPce)
   append blank
   replace ;
     Pnl_Single_Piece with toPce.Pce_Whole_Panel ;
-    Pnl_Dim_1 with toPce.Pce_Dim_1 ; && initial approx, can free-wheel 
-    Pnl_Dim_2 with toPce.Pce_Dim_2 ; &&  ''
+    Pnl_Dim_1 with toPce.Pce_Dim_1 ;   && initial approx, can free-wheel 
+    Pnl_Dim_2 with toPce.Pce_Dim_2 ;   &&  ''
     Pnl_Fac_FK with toPce.Pce_Fac_FK ; && panel starts where piece was
     Pnl_ID with AisAssignID("PNL")
+
+  if toPce.Pce_Whole_Panel
+    replace ; 
+      Pnl_Stitcher_Art_FK with toPce.Pce_Art_FK ; && panel attributed to piece artist
+      Pnl_Completed with .t.                      && single-piece panel are complete by def'n 
+  endif 
 
   select V_Panel  && UpdateControlSources can alter work area
   StampRec( CurrentUser, Environ.item("appManager.startTime") )
@@ -37,7 +43,6 @@ function aisCreatePanel(toPce)
   scatter memo name loNewRec 
   return m.loNewRec
 endfunc  && aisCreatePanel 
-
 
 *** ========================================================= ***
 define class aisPnlPage as aisPage 
@@ -65,7 +70,7 @@ enddefine && AisPnlPage
 *** ========================================================= ***
 define class ais_PnlList as aisPnlPage 
   lPnlRequired = .f.
-  cSubTitle = "Panels"
+  cSubTitle = "Panel List"
   * ----------------------------------------------------- *  
   function AddDefaultMenu
     with this
@@ -81,21 +86,30 @@ define class ais_PnlList as aisPnlPage
     loQry = createobject("AisPnlQuery")
     with loQry
       .lJoinFacility = .t.
+      .lJoinArtist = .t. 
       .execute()
     endwith 
     
     urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
     urls.add(StuffUrl(this.cUrlA, 2, "PnlForm"), "PnlForm")
+    urls.add(StuffUrl(this.cUrlA, 2, "FacHome"), "FacHome")
+    urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
 
     loTbl = createobject("AisTable")
     with loTbl
+      .cTableCaption = this.cSubTitle 
+      
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Pnl_ID", "Panel ID", ;
         [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), Pnl_ID)])
       loCol = .addCursorColumn("Pnl_Single_Piece", "Single-Piece?")
       loCol = .addCursorColumn("Pnl_Dim_1", "Dimension 1")
       loCol = .addCursorColumn("Pnl_Dim_2", "Dimension 2")
-      loCol = .addCursorColumn("Fac_Name", "Current Storage Facility")
+      loCol = .addCursorColumn("Pnl_Completed", "Completed?")
+      loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pnl_Stitcher_Art_FK), aisArtistName(THISRECORD))])
+      loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
+        [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pnl_Fac_FK), trim(Fac_Name))])
       loCol = .addCursorColumn("Pnl_PK", "Edit Panel", ;
         'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit Panel...]")')
       response.write(.render())
@@ -136,23 +150,29 @@ define class ais_PnlHome as aisPnlPage
       
       .AddRow("Panel ID", loData.Pnl_ID,, "id-field" )
 
+      .AddRow("Single-Piece?", loData.Pnl_Single_Piece)
+
       .AddRow("Dimension 1", loData.Pnl_Dim_1)
       .AddRow("Dimension 2", loData.Pnl_Dim_2)
-      .AddRow("Comments", L7ParseOnView(loData.Pnl_COMMENTS), .f.)
+      .AddRow("Comments", L7ParseOnView(loData.Pnl_COMMENTS), .t.)
+
+      .AddRow("Completed?", loData.Pnl_Completed)
+      .AddRow("Artist Name", ;
+        HTLink(StuffUrl(this.cUrlA, 2, "ArtHome", "art", loData.Pnl_Stitcher_Art_FK), aisArtistName(loData.Pnl_Stitcher_Art_FK)))
+      .AddRow("Current Storage Facility", ;
+        HTLink(StuffUrl(this.cUrlA, 2, "FacHome", "fac", loData.Pnl_Fac_FK), aisFacilityName(loData.Pnl_Fac_FK)))
 
       .AddHeading('Pieces Comprising Panel')
       .AddRow(null, this.page_getPieceInfo())
 
-      .AddHeading('Logistical Information')
-      .AddRow("Current Storage Facility", AisFacilityName(loData.Pnl_Fac_FK))
       if poContext.lCore
-        .AddRow("Notes", L7ParseOnView(loData.Pnl_NOTES), .F., "private")
+        .AddRow("Notes", L7ParseOnView(loData.Pnl_NOTES), .t., "private")
       endif
 
       if poContext.lCore
         .AddHeading('Administrative Information')
         .AddRow("Pk", TRIM(loData.Pnl_PK), .F., "private")
-        .AddRow("Deleted", loData.Pnl_INACTIVE, .F., "private")
+        .AddRow("Deleted", loData.Pnl_INACTIVE, .t., "private")
         .AddRow("Created", TRANSFORM(loData.Pnl_ORIG_TIME) + [ by ] + AisArtistName(loData.Pnl_Orig_Art_FK), .F., "private")
         .AddRow("Last Modified", TRANSFORM(loData.Pnl_REV_TIME) + [ by ] + AisArtistName(loData.Pnl_Rev_Art_FK), .F., "private")
       endif
@@ -381,7 +401,7 @@ define class AisPnlQuery as L7Query
   cBaseTable = "Panel"
   cDefaultFieldList = ;
     "Pnl_PK, Pnl_ID, Pnl_Stitcher_Art_FK, Pnl_Asm_FK, Pnl_Fac_FK, Pnl_Single_Piece" + ;  
-    ", Pnl_Dim_1, Pnl_Dim_2" 
+    ", Pnl_Dim_1, Pnl_Dim_2, Pnl_Completed" 
 
   nOrderBy = 1
   dimension aOrderBy[ 1, 2]
@@ -393,8 +413,10 @@ define class AisPnlQuery as L7Query
   cArtPiece = null
   cArtStitcher = null 
   
+  lCompleted = null
   lSinglePiece = null
   
+  lJoinArtist = .f. 
   lJoinPiece = .f. 
   lJoinFacility = .f.
   * --------------------------------------------------------- *
@@ -424,6 +446,15 @@ define class AisPnlQuery as L7Query
         .AddFields("Fac_ID, Fac_Name")
       endif 
 
+      if .lJoinArtist
+        .nJoins = .nJoins + 1
+        dimension .aJoins[.nJoins, 3]
+        .aJoins[.nJoins, 1] = "Artist"
+        .aJoins[.nJoins, 2] = "Pnl_Stitcher_Art_FK = Art_PK"
+        .aJoins[.nJoins, 3] = "LEFT OUTER"
+        .AddFields("Art_ID,Art_Last_Name,Art_First_Name,Art_Anonymous,Art_Full_Name")
+      endif 
+
       if !isnull(.cArtStitcher) 
         .cWhereClause = .cWhereClause + [ and Pnl_Stitcher_Art_FK = '] + .cArtStitcher + [']
       endif 
@@ -435,6 +466,9 @@ define class AisPnlQuery as L7Query
       endif 
       if !isnull(.lSinglePiece)
         .cWhereClause = .cWhereClause + [ and Pnl_Single_Piece = ] + iif(.lSinglePiece, [.t.], [.f.])
+      endif 
+      if !isnull(.lCompleted)
+        .cWhereClause = .cWhereClause + [ and Pnl_Completed = ] + iif(.lCompleted, [.t.], [.f.])
       endif 
     endwith   
     return  

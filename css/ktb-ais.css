@@ -75,8 +75,11 @@ p.break { margin-bottom: 5em }
 table, table th, table td {border: 1px solid #c6c; border-collapse: collapse;}
 
 table thead th, .record tbody th{font-weight: normal;}
-tr.record-heading th{font-weight: bold; text-align: center; }
-.record th{text-align: right; color: brown; background-color: #eee; }
+tr.record-heading th{font-weight: bold; text-align: left; font-size: 110%;
+	color: darkgreen; background-color: #ddd;}
+.record th{text-align: right; color: brown; background-color: #eee; 
+	padding: 1px 2px;}
+.record td{padding: 1px 2px;}
 
 table tfoot th {padding: 3px 10px 0 1px;border-top: 1px solid black;}
 

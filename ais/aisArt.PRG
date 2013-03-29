@@ -384,11 +384,6 @@ define class ais_ArtHome as aisArtPage
       .AddRow("ID", loData.ART_ID,, "id-field" )
       .AddRow("Approved", loData.ART_APPROVED)
 
-*!*        .AddRow("Last Name", TRIM(loData.ART_LAST_NAME), .F.)
-*!*        .AddRow("First Name", TRIM(loData.ART_FIRST_NAME), .F.)
-*!*        .AddRow("Anonymous", loData.ART_ANONYMOUS, .F.)
-*!*        .AddRow("Unknown", loData.ART_UNKNOWN, .F.)
-
       .AddRow("Name", AisArtistName(m.loData, .t.))
       .AddRow("Alternative Full Name", TRIM(loData.ART_FULL_NAME), .t.)
       if loData.ART_Anonymous
@@ -405,11 +400,6 @@ define class ais_ArtHome as aisArtPage
 
       if this.oArt.Art_Artist
         .AddHeading('Submitted Work and WIP')
-        *loRow.Clear()
-        *loRow.cLabel = "Pieces"
-        *loRow.vValue = this.page_getPieceInfo()
-        ** StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Panels", "dim_1", "34", "dim_2", "72", "whole", "1")
-        *.AddRowEx(m.loRow)
         .AddRow(null, this.page_getPieceInfo())
       endif
 
@@ -418,19 +408,19 @@ define class ais_ArtHome as aisArtPage
       .AddRow("Participation", L7ParseOnView(aisFormatParticipation(loData)), .t.)
       
       .AddRow("Participation (from blog)", L7ParseOnView(loData.ART_PARTICIPATION), .t., "private")
-      .AddRow("Panel Info", L7ParseOnView(loData.ART_PANEL_INFO), .t.)
 
       .AddRow("Comments", L7ParseOnView(loData.ART_COMMENTS))
+      .AddRow("Register Time", loData.ART_REGISTER_TIME, .F.)
+      .AddRow("Ktb Response", L7ParseOnView(loData.ART_KTB_RESPONSE))
       if poContext.lCore
         .AddRow("Notes", L7ParseOnView(loData.ART_NOTES), .t., "private")
       endif
-      .AddRow("Register Time", loData.ART_REGISTER_TIME, .F.)
-      .AddRow("Ktb Response", L7ParseOnView(loData.ART_KTB_RESPONSE))
       
-      .AddHeading('Other Info')
-      .AddRow("Bit Info", L7ParseOnView(loData.ART_BIT_INFO), .t.)
-      .AddRow("Received", loData.ART_RECEIVED, .t.)
-      .AddRow("Storage Location", L7ParseOnView(loData.ART_STORAGE_LOCATION), .t.)
+      .AddHeading('Other Historical Info (from Google doc)')
+      .AddRow("Panel Info", L7ParseOnView(loData.ART_PANEL_INFO), .t., "private")
+      .AddRow("Bit Info", L7ParseOnView(loData.ART_BIT_INFO), .t., "private")
+      .AddRow("Received", loData.ART_RECEIVED, .t., "private")
+      .AddRow("Storage Location", L7ParseOnView(loData.ART_STORAGE_LOCATION), .t., "private")
 
       if poContext.lAdmin
         .AddHeading('Administrative Information')
@@ -471,6 +461,8 @@ define class ais_ArtHome as aisArtPage
     else
       urls.add(StuffUrl(this.cUrlA, 2, "PceHome"), "PceHome")
       urls.add(StuffUrl(this.cUrlA, 2, "PceForm"), "PceForm")
+      urls.add(StuffUrl(this.cUrlA, 2, "FacHome"), "FacHome")
+      urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
       
       select (loQ.cAlias)
       loTbl = createobject("AisTable")
@@ -479,13 +471,16 @@ define class ais_ArtHome as aisArtPage
         loCol = .addCursorColumn("Pce_ID", "Piece ID", ;
           [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)], "id-field")
         loCol = .addCursorColumn("Pce_Type", "Type")
-        loCol = .addCursorColumn("Pnl_Id", "Panel",, "id-field")
+        loCol = .addCursorColumn("Pnl_Id", "Panel", ;
+          [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pce_Pnl_FK), Pnl_ID)], "id-field")
+
         loCol = .AddCursorColumn('Pce_Whole_Panel', 'Whole Panel?')
         loCol = .AddCursorColumn('Pce_Dim_1', 'Dim 1')
         loCol = .AddCursorColumn('Pce_Dim_2', 'Dim 2')
         loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
         loCol = .AddCursorColumn('Pce_Received', 'Received')
-        loCol = .addCursorColumn("Fac_Name", "Current Storage Facility")
+        loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
+          [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pce_Fac_FK), trim(Fac_Name))])
         loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
           'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit Piece...]")')
 
