@@ -24,6 +24,7 @@ return
 function AisAssignID(lcPref)
   local lnNo, lcRet
   lcPref = upper(alltrim(m.lcPref))
+  lcPref = chrtran(m.lcPref, chrtran(m.lcPref, L7_ALPHA_UPPER_CHARACTERS, ''), '')
   lnNo = AisNextId(m.lcPref)
   return m.lcPref + padl(transform(m.lnNo), THISAPP_LENGTH_ID_FIELDS - len(m.lcPref), "0")
 endfunc 
