@@ -20,6 +20,38 @@ define class ais_RefreshContent as aisAdminPage
 enddefine 
 
 *** ========================================================= ***
+define class ais_ReassignID as aisAdminPage 
+  lArtRequired = .t.
+  * --------------------------------------------------------- *
+  function processRequest
+
+    this.cCancelUrl = StuffURL(THIS.cUrlB, 2, "ArtHome")
+    local vp_cArt_PK, lcXml, lcAlias, lcStub, lnAns, lcOldId, lcNewID
+    
+    lcAlias = "V_Artist"
+    vp_cArt_PK = THIS.cArt
+    use (m.lcAlias) in select(m.lcAlias)
+    lcOldId = V_Artist.Art_ID
+
+    lnAns = THIS.MessageBox(TEXTMERGE("CAUTION: You will lose the ability to search for the previous ID <<m.lcOldID>>. OK to re-assign ID?"))
+    if m.lnAns = IDYES
+      cursorsetprop("Buffering", 5, m.lcAlias)
+      select (m.lcAlias)
+      lcStub = padr(alltrim(upper(evl(Art_Last_Name, "NLN"))), 5, 'X')
+      lcNewID = AisAssignID(m.lcStub)
+      replace Art_ID with m.lcNewId ;
+        Art_Notes with textmerge([<<date()>> ID changed from <<m.lcOldID>> to <<m.lcNewID>> by <<CurrentUser.getUserName()>>]) + CRLF + Art_Notes 
+      
+      StampRec( CurrentUser, THIS.tNow )
+      lcXml = ''
+      this.AssertTransaction(m.lcAlias, @lcXml)
+    endif 
+    Response.Redirect(this.cCancelUrl)
+    return
+  endfunc
+enddefine 
+
+*** ========================================================= ***
 define class ais_SetPassword as aisAdminPage 
   lArtRequired = .t.
   * --------------------------------------------------------- *

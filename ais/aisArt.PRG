@@ -363,6 +363,11 @@ define class ais_ArtHome as aisArtPage
     if poContext.lAdmin and !empty(this.oArt.Art_ID)
       this.addMenuItem("main\This", "Set Password...", StuffUrl(this.cUrlA, 2, "SetPassword", "art", this.cArt))
     endif 
+
+    if poContext.lDeveloper and !empty(this.oArt.Art_ID)
+      this.addMenuItem("main\This", "Re-Assign ID...", StuffUrl(this.cUrlA, 2, "ReassignID", "art", this.cArt))
+    endif 
+
     dodefault()
     return 
   endfunc 
@@ -1432,7 +1437,7 @@ define class AisArtQuery AS L7Query
 
       if !empty(.cSrch1)
         lcStr = lower(.cSrch1)
-        .cWhereClause = .cWhereClause + [ AND '] + m.lcStr + [' $ lower(Art_Last_Name + Art_First_Name + Art_Full_Name + Art_User_Id + Art_Email + Art_Access_Token + Art_PK + Art_ID + Art_Notes + Art_Participation)]
+        .cWhereClause = .cWhereClause + [ AND '] + m.lcStr + [' $ lower(Art_Last_Name + Art_First_Name + Art_Full_Name + Art_Email + Art_Access_Token + Art_PK + Art_ID + Art_Notes + Art_Participation)]
       endif 
       if !empty(.cUser_Id)
         .cWhereClause = .cWhereClause + ;
