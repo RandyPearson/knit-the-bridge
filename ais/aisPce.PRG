@@ -288,9 +288,10 @@ define class ais_PceHome as aisPcePage
       .AddRow("Comments", L7ParseOnView(loData.Pce_COMMENTS))
 
       .AddHeading('Logistical Information')
-      .AddRow("Shipped/Delivered", loData.Pce_Shipped)
+      .AddRow("Shipped/Delivered?", loData.Pce_Shipped)
       .AddRow("Ship/Delivery Date", loData.Pce_Ship_Date)
-      .AddRow("Received", loData.Pce_RECEIVED)
+      .AddRow("Received?", loData.Pce_RECEIVED)
+      .AddRow("Acknowledged?", loData.Pce_Acknowledged)
       .AddRow("Current Storage Facility", AisFacilityName(loData.Pce_Fac_FK))
       if poContext.lCore
         .AddRow("Notes", L7ParseOnView(loData.Pce_NOTES), .F., "private")
@@ -304,7 +305,7 @@ define class ais_PceHome as aisPcePage
         .AddRow("Last Modified", TRANSFORM(loData.Pce_REV_TIME) + [ by ] + AisArtistName(loData.Pce_Rev_Art_FK), .F., "private")
       endif
 
-      lcRet = lcRet + .Render()
+      lcRet = m.lcRet + .Render()
 
     endwith 
     return m.lcRet
@@ -577,7 +578,7 @@ define class AisPceQuery as L7Query
   cBaseTable = "Piece"
   cDefaultFieldList = ;
     "Pce_PK, Pce_ID, Pce_Art_FK, Pce_Pnl_FK, Pce_Fac_FK, Pce_Whole_Panel" + ;  
-    ", Pce_Dim_1, Pce_Dim_2, Pce_Type, Pce_Shipped, Pce_Ship_Date, Pce_Received" 
+    ", Pce_Dim_1, Pce_Dim_2, Pce_Type, Pce_Shipped, Pce_Ship_Date, Pce_Received, Pce_Acknowledged"
 
   nOrderBy = 1
   dimension aOrderBy[ 1, 2]
@@ -593,6 +594,7 @@ define class AisPceQuery as L7Query
   lWholePanel = null
   lShipped    = null
   lReceived   = null
+  lAcknowledged = null
   
   lJoinArtist = .f. 
   lJoinFacility = .f.
@@ -603,6 +605,7 @@ define class AisPceQuery as L7Query
     lcRet = ""
     with this
       lcRet = m.lcRet + ;
+        iif(isnull(.lAcknowledged), "", iif(.lAcknowledged, " Acknowledged", " Un-Acknowledged")) + ;
         iif(isnull(.lOrphans), "", iif(.lOrphans, " Available", " Assigned")) + ;
         iif(isnull(.lWholePanel), "", iif(.lWholePanel, " Whole-Panel", " Non-Whole-Panel")) 
       lcRet = m.lcRet + " Pieces"
@@ -678,6 +681,9 @@ define class AisPceQuery as L7Query
       endif 
       if !isnull(.lReceived)
         .cWhereClause = .cWhereClause + [ and Pce_Received = ] + iif(.lReceived, [.t.], [.f.])
+      endif 
+      if !isnull(.lAcknowledged)
+        .cWhereClause = .cWhereClause + [ and Pce_Acknowledged = ] + iif(.lAcknowledged, [.t.], [.f.])
       endif 
     endwith   
     return  

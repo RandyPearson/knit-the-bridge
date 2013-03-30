@@ -390,6 +390,7 @@ define class ais_ArtHome as aisArtPage
 
       .AddRow("Name", AisArtistName(m.loData, .t.))
       .AddRow("Alternative Full Name", TRIM(loData.ART_FULL_NAME), .t.)
+      .AddRow("Name Release", iif(loData.ART_Release_NAME, "OK to Release Name", "DO NOT Release Name"))
       if loData.ART_Anonymous
         .AddRow("Anonymous", "ANONYMOUS", .F., "private")
       endif 
@@ -763,29 +764,32 @@ define class aisArtistForms AS AisForm
         .nRows = 3
       endwith
 
-      if poContext.lAdmin and !this.lNewRecord
-        .AddObject("edtParticipation", "L7Textarea")
-        with .edtParticipation
-          .cGroupId = "part"
-          .cControlSource = "V_artist.Art_Participation"
-          .cLabel = "Original Participation answers (e.g., from blog)"
-          .nRows = 3
-          .cCssClass = "FormControlPrivate"
-        endwith
+      if poContext.lAdmin 
+        if !this.lNewRecord
+          .AddObject("edtParticipation", "L7Textarea")
+          with .edtParticipation
+            .cGroupId = "part"
+            .cControlSource = "V_artist.Art_Participation"
+            .cLabel = "Original Participation answers (e.g., from blog)"
+            .nRows = 3
+            .cCssClass = "FormControlPrivate"
+          endwith
 
-        .AddObject("lblRegister_Time", "L7Label")
-        with .lblRegister_Time
-          .cGroupID = "Register"
-          .cControlSource = "V_artist.Art_Register_Time"
-          .cLabel = "Registered"
-          .cShowExpression = [L7TimeDiff(V_artist.Art_Register_Time)]
-        endwith
+          .AddObject("lblRegister_Time", "L7Label")
+          with .lblRegister_Time
+            .cGroupID = "Register"
+            .cControlSource = "V_artist.Art_Register_Time"
+            .cLabel = "Registered"
+            .cShowExpression = [L7TimeDiff(V_artist.Art_Register_Time)]
+          endwith
+        endif 
 
         .AddObject("edtKtb_Response", "L7Textarea")
         with .edtKtb_Response
           .cGroupID = "Register"
           .cControlSource = "V_artist.Art_Ktb_Response"
-          .cLabel = "Ktb Response"
+          .cLabel = "KtB Response"
+          .cInstructions = "To be completed after response has been sent. If no response needed, enter: n/a"
           .nRows = 2
           .cCssClass = "FormControlPrivate"
         endwith
@@ -818,6 +822,16 @@ define class aisRegisterForm AS aisArtistForms
         .cLabel = "Last Name"
         .cInstructions = "Required. Enter NLN if not providing your last name."
         .cCssStyle = "width: 30%;"
+      endwith
+      .AddObject("chkRelease_Name", "L7Checkbox")
+      with .chkRelease_Name
+        .cGroupID = "name"
+        .cControlSource = "V_artist.Art_Release_Name"
+        .cLabel = "Release Name?"
+        .nMode = L7_MULTI_RADIOBUTTON
+        .nStyle = L7_MULTISTYLE_VERTICAL  && only applies to radio-button transforms
+        .cCaption = "OK to Release Name"
+        .cFalseCaption = "DO NOT Release Name"
       endwith
       .AddObject("txtEmail", "L7Textbox")
       with .txtEmail
@@ -922,6 +936,16 @@ define class aisArtistForm AS aisArtistForms
         .cControlSource = "V_artist.Art_Last_Name"
         .cLabel = "Last Name"
         .cCssStyle = "width: 20%;"
+      endwith
+      .AddObject("chkRelease_Name", "L7Checkbox")
+      with .chkRelease_Name
+        .cGroupID = "name"
+        .cControlSource = "V_artist.Art_Release_Name"
+        .cLabel = "Release Name?"
+        .nMode = L7_MULTI_RADIOBUTTON
+        .nStyle = L7_MULTISTYLE_VERTICAL  && only applies to radio-button transforms
+        .cCaption = "OK to Release Name"
+        .cFalseCaption = "DO NOT Release Name"
       endwith
       .AddObject("chkAnonymous", "L7Checkbox")
       with .chkAnonymous
@@ -1356,7 +1380,7 @@ define class AisArtQuery AS L7Query
   cBaseTable = "Artist"
   cDefaultFieldList = ;
     "Art_PK, Art_ID, Art_Access_Token, Art_Approved, Art_Starred, Art_Artist, Art_Anonymous, Art_Unknown, Art_Hidden" + ;
-    ", Art_Full_Name, Art_Last_Name, Art_First_Name, Art_Title, Art_Name_Orig" + ; 
+    ", Art_Full_Name, Art_Last_Name, Art_First_Name, Art_Title, Art_Release_Name, Art_Name_Orig" + ; 
     ", Art_Email, Art_Phone, Art_Neighborhood, Art_Age_Range" + ;
     ", Art_Register_Time, Art_KTB_Response" 
 

@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     15
+#DEFINE THISAPP_DATABASE_REVISION     16
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -382,6 +382,16 @@ define class AisApp AS KtbApp
       use in select("Panel")
       use in select("Piece")
 
+    case m.lnRev = 16
+      this.removeColumn("Artist", "Art_User_ID") && no error if d.n.e. 
+      alter table Artist add column Art_Release_Name L
+      use in select("Artist")
+
+      alter table Piece add column Pce_Acknowledged L
+      select Piece 
+      index on Pce_Acknowledged tag ack 
+      use in select("Piece")
+
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
@@ -544,6 +554,7 @@ function CreateArtistTable
       Art_Hidden L default .f., ; && Rev 4
       Art_Artist L default .t., ;
       Art_Starred L, ;  && Rev 10
+      Art_Release_Name L, ;  && Rev 16
       Art_Anonymous L, ;
       Art_Unknown L, ;
       Art_Full_Name C(60), ;
@@ -578,7 +589,6 @@ function CreateArtistTable
       Art_Register_Time T, ;
       Art_KTB_Response M, ;
       Art_Access_Token C(32), ;
-      Art_User_ID C(THISAPP_USER_ID_LEN), ; && 20 
       Art_Password_Hash C(16), ;      
       Art_Previous_Passwords C(80), ; 
       Art_Password_Count I, ;         
@@ -642,6 +652,7 @@ function CreatePieceTable
       Pce_Shipped L, ;
       Pce_Ship_Date D, ;
       Pce_Received L, ;
+      Pce_Acknowledged L, ;  && Rev 16
       Pce_Comments M, ;
       Pce_Notes M, ;
       Pce_Orig_Art_FK C(32), ;
@@ -662,6 +673,7 @@ function CreatePieceTable
   index on Pce_ID tag Pce_ID
   index on Pce_Shipped tag shipped
   index on Pce_Received tag received
+  index on Pce_Acknowledged tag ack 
   index on Pce_Whole_Panel tag wholePanel
      
   * Comment:
