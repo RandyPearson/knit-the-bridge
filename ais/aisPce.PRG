@@ -100,8 +100,8 @@ define class ais_PceList as aisPcePage
 *!*        .addMenuItem("main\This", "Available", StuffUrl(.cUrlC, "orphans", "1"),, !isnull(.lPage_Orphans) and .lPage_Orphans)
 
       .addMenuItem("main\This", "Whole-Panel Pieces",   StuffUrl(.cUrlB, "order", "fac", "type", "Panels", "whole", "1"))
-      .addMenuItem("main\This", "Available Bits",       StuffUrl(.cUrlB, "order", "fac", "type", "Panels", "orphans", "1"))
-      .addMenuItem("main\This", "Consumed Bits",        StuffUrl(.cUrlB, "order", "fac", "type", "Panels", "orphans", "0"))
+      .addMenuItem("main\This", "Available Bits",       StuffUrl(.cUrlB, "order", "fac", "type", "Panels", "whole", "0", "orphans", "1"))
+      .addMenuItem("main\This", "Consumed Bits",        StuffUrl(.cUrlB, "order", "pnl", "type", "Panels", "whole", "0", "orphans", "0"))
       
       .addMenuItem("main\This", "Railings by Size",     StuffUrl(.cUrlB, "order", "size", "type", "Railings"))
       .addMenuItem("main\This", "Railings by Facility", StuffUrl(.cUrlB, "order", "fac", "type", "Railings"))
@@ -133,6 +133,10 @@ define class ais_PceList as aisPcePage
         .AddOrderBy('Pce_Fac_FK', .f., .f.)
         .AddOrderBy('Pce_Dim_1',  .f., .t.)
         .AddOrderBy('Pce_Dim_2',  .f., .t.)
+      case this.cPage_Order = "pnl"
+        .AddOrderBy('Pnl_ID', .f., .f.)
+        .AddOrderBy('Pce_Dim_1',  .f., .t.)
+        .AddOrderBy('Pce_Dim_2',  .f., .t.)
       otherwise 
         = .f. && default
       endcase
@@ -148,12 +152,15 @@ define class ais_PceList as aisPcePage
 
     loTbl = createobject("AisTable")
     with loTbl
+      .cTableCaption = this.cSubTitle 
 
       do case
       case this.cPage_Order = "size" 
         .addGroup('Pce_Dim_1 + Pce_Dim_2', 'Size: ', .t., ["Size: " + Pce_Dim_1 + " x " + Pce_Dim_2])
       case this.cPage_Order = "fac"
         .addGroup('Pce_Fac_FK', 'Facility: ', .t., ["Facility: " + Fac_Name])
+      case this.cPage_Order = "pnl"
+        .addGroup('Pnl_ID', 'Panel: ', .t., ["Panel: " + Pnl_ID])
       otherwise 
         = .f. && no grouping
       endcase
@@ -169,8 +176,8 @@ define class ais_PceList as aisPcePage
       ** loCol = .addCursorColumn("Art_First_Name", "First Name")
       loCol = .addCursorColumn("Pnl_Id", "Panel",, "id-field")
       loCol = .addCursorColumn("Pce_Whole_Panel", "Whole Panel?")
-      loCol = .addCursorColumn("Pce_Dim_1", "Dimension 1")
-      loCol = .addCursorColumn("Pce_Dim_2", "Dimension 2")
+      loCol = .addCursorColumn("Pce_Dim_1", "Dim 1")
+      loCol = .addCursorColumn("Pce_Dim_2", "Dim 2")
 
       loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
       loCol = .AddCursorColumn('Pce_Received', 'Received')
@@ -480,7 +487,7 @@ define class aisPieceForm as AisForm
       
       .AddObject("txtDim_1", "L7Textbox")
       with .txtDim_1
-        .cGroupID = "DIM"
+        *.cGroupID = "DIM"
         .cFieldType = "C"
         .cControlSource = "V_piece.Pce_Dim_1"
         if this.lNewRecord
@@ -492,7 +499,7 @@ define class aisPieceForm as AisForm
        
       .AddObject("txtDim_2", "L7Textbox")
       with .txtDim_2
-        .cGroupID = "DIM"
+        *.cGroupID = "DIM"
         .cFieldType = "C"
         .cControlSource = "V_piece.Pce_Dim_2"
         if this.lNewRecord
@@ -500,6 +507,14 @@ define class aisPieceForm as AisForm
         endif 
         .cLabel = "Dimension 2 (inches)"
         .cInstructions = "If not equal, please enter LARGER dimension second!"
+      endwith 
+
+      .AddObject("edtComments", "L7Textarea")
+      with .edtComments
+        * .cGroupID = "NOTES"
+        .cControlSource = "V_piece.Pce_Comments"
+        .cLabel = "Comments about Piece"
+        .nRows = 2
       endwith 
 
       .AddObject("chkShipped", "L7Checkbox")
@@ -542,14 +557,6 @@ define class aisPieceForm as AisForm
         if this.lNewRecord
           *!* .SetValue(something from Page context....)
         endif 
-      endwith 
-
-      .AddObject("edtComments", "L7Textarea")
-      with .edtComments
-        .cGroupID = "NOTES"
-        .cControlSource = "V_piece.Pce_Comments"
-        .cLabel = "Comments about Piece"
-        .nRows = 3
       endwith 
 
       .AddObject("edtNotes", "L7Textarea")
@@ -597,8 +604,11 @@ define class AisPceQuery as L7Query
     with this
       lcRet = m.lcRet + ;
         iif(isnull(.lOrphans), "", iif(.lOrphans, " Available", " Assigned")) + ;
-        iif(isnull(.lWholePanel), "", iif(.lWholePanel, " Whole-Panel", " Non-Whole-Panel")) + ;
-        " Pieces"
+        iif(isnull(.lWholePanel), "", iif(.lWholePanel, " Whole-Panel", " Non-Whole-Panel")) 
+      lcRet = m.lcRet + " Pieces"
+      if !isnull(.cType)
+        lcRet = m.lcRet + " for " + .cType
+      endif
       if !isnull(.lShipped) or !isnull(.lReceived)
         lcRet = m.lcRet + ", w/ Status: " + substr( ;
           iif(isnull(.lShipped), "", " and " + iif(.lShipped, "Shipped", "not Shipped")) + ;
