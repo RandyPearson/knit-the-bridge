@@ -38,6 +38,13 @@ define class AisFilData AS AisViewData
   cPrefix = "FIL"
 enddefine    
 
+*** ============================================== ***
+define class AisLocData AS AisViewData 
+  cTable = "Location"
+  cPrefix = "LOC"
+enddefine    
+
+
 
 *** ===================================================== ***
 define class AisQuery AS L7Query

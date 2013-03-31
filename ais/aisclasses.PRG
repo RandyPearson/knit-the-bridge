@@ -17,6 +17,7 @@ set procedure to AisArt     additive  && Artist pages
 set procedure to AisPce     additive  && Piece pages  
 set procedure to AisPnl     additive  && Panel pages  
 set procedure to AisFac     additive  && Facility pages  
+set procedure to AisLoc     additive  && Location pages  
 
 return 
 

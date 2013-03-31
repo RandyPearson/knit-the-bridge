@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     16
+#DEFINE THISAPP_DATABASE_REVISION     17
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -392,6 +392,12 @@ define class AisApp AS KtbApp
       index on Pce_Acknowledged tag ack 
       use in select("Piece")
 
+    case m.lnRev = 17
+      * Create Location table:
+      do CreateTable ;
+        with "Location", this.cDataPath, this.cDataBase
+      use in select("Location")
+
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
@@ -465,7 +471,7 @@ function CreateEmptyDatabase( lcPath)
   do CreateArtistTable
   *!* do CreateAssemblyTable
   do CreateFacilityTable
-  *!* do CreateLocationTable
+  do CreateLocationTable
   do CreatePieceTable
   do CreatePanelTable
   *!* do CreateRecipientTable
@@ -768,6 +774,50 @@ function CreateFacilityTable  && TABLE added in Rev 11
   dbsetprop("Facility", "Table", "Comment", ;
     [One record per Facility.] )
 endfunc  && CreateFacilityTable
+
+* --------------------------------------------------------- *
+function CreateLocationTable  && TABLE added in Rev 17
+  * Don't declare this PRIVATE. This command allows this procedure
+  * to be run by itself, as in DO <thisproc> IN <thisfile>.PRG:
+  poEnv = GetEnvObject()
+
+  create table ("Location") name Location ;
+    ( ;
+      Loc_PK C(32) primary key default GetGuid32(), ;
+      Loc_Inactive L default .F., ;
+      Loc_ID C(8), ;
+      Loc_Side C(4), ;
+      Loc_No N(3,0), ;
+      Loc_Old_ID C(4), ;
+      Loc_H1 N(6,2), ;
+      Loc_W1 N(6,2), ;
+      Loc_H2 N(6,2), ;
+      Loc_Skip L, ;
+      Loc_Marker C(20), ;
+      Loc_Comments M, ;
+      Loc_Notes M, ;
+      Loc_Orig_Art_FK C(32), ;
+      Loc_Orig_Time T, ;
+      Loc_Rev_Art_FK C(32), ;
+      Loc_Rev_Time T, ;
+      Loc_Revision I NOT NULL DEFAULT 0 ;
+    )
+
+  * Standard 2 Indexes:
+  index on deleted() tag Deleted
+  index on Loc_Inactive tag Inactive
+  * Foreign Keys:
+  * Other Keys:
+  index on Loc_ID tag Loc_ID
+  index on Loc_Side tag Loc_Side
+  index on Loc_No tag Loc_No
+  index on Loc_Old_ID tag Loc_Old_ID
+  index on Loc_W1 tag Loc_W1
+     
+  * Comment:
+  dbsetprop("Location", "Table", "Comment", ;
+    [One record per Location.] )
+endfunc  && CreateLocationTable
 
 * ---------------------------------------------------------- *
 function CreateFilesTable
