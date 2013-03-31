@@ -598,7 +598,7 @@ define class ais_ArtForm as aisArtPage
       lcName = textmerge([<<TRIM(loRec.Art_First_Name)>> <<TRIM(loRec.Art_Last_Name)>>])
       
       text to lcMailMessage noshow pretext 3
-        Event........: Person Created
+        Event........: Person Created by <<CurrentUser.getUserName()>>
         Entry Time...: <<datetime()>> GMT
         Name.........: <<m.lcName>>
         Email........: <<trim(loRec.Art_Email)>> <<trim(loRec.Art_Phone)>>

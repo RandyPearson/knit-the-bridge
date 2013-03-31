@@ -6,11 +6,28 @@
 * note: cannot use "{Microsoft Excel Driver (*.xls, *.xlsx, *.xlsm, *.xlsb)}" on 64-bit OS, thus cannot import from XLSX 
 * 
 
-* Test mode
-if program(-1) = 1
-  do AisUtils__main__
-endif
-return
+function AisFillLocation()
+  set procedure to L7Json additive 
+  close databases all 
+  use .\Files\Loc
+  local lcSide, lnNo, lcSpec, loSpec
+  lcSpec = '{"sides": [{"side": "Up", "spots": 139}, {"side": "Down", "spots": 149}]}'
+  loSpec = L7JsonParse(m.lcSpec)
+  for lnSide = 1 to loSpec.sides.count
+    loSide = loSpec.sides.item(m.lnSide)
+    for lnNo = 1 to loSide.spots
+      insert into Loc (Loc_Side, Loc_No, Loc_H1, Loc_W1) ;
+        values (loSide.Side, m.lnNo, 36, 75)
+    next 
+  next
+  return 
+endfunc && AisFillLocation
+
+*!*  * Test mode
+*!*  if program(-1) = 1
+*!*    do AisUtils__main__
+*!*  endif
+*!*  return
 
 function AisUtils__main__
   loImp = createobject("AisImport")

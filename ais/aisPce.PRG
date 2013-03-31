@@ -179,10 +179,12 @@ define class ais_PceList as aisPcePage
       loCol = .addCursorColumn("Pce_Dim_1", "Dim 1")
       loCol = .addCursorColumn("Pce_Dim_2", "Dim 2")
 
-      loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
-      loCol = .AddCursorColumn('Pce_Received', 'Received')
-      loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
-        [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pce_Fac_FK), trim(Fac_Name))])
+      if isnull(loQry.lOrphans) or loQry.lOrphans
+        loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
+        loCol = .AddCursorColumn('Pce_Received', 'Received')
+        loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
+          [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pce_Fac_FK), trim(Fac_Name))])
+      endif 
       if poContext.lCore
         loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
           'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit Piece...]")')
@@ -653,7 +655,7 @@ define class AisPceQuery as L7Query
         .aJoins[.nJoins, 1] = "Panel"
         .aJoins[.nJoins, 2] = "Pce_Pnl_FK = Pnl_PK"
         .aJoins[.nJoins, 3] = "LEFT OUTER"
-        .AddFields("Pnl_ID")
+        .AddFields("Pnl_ID, Pnl_Fac_FK")
       endif 
 
       if !isnull(.cArt)
