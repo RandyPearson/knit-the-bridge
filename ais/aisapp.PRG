@@ -732,50 +732,6 @@ function CreatePanelTable
 endfunc  && CreatePanelTable
 
 * --------------------------------------------------------- *
-function CreateFacilityTable  && TABLE added in Rev 11
-  * Don't declare this PRIVATE. This command allows this procedure
-  * to be run by itself, as in DO <thisproc> IN <thisfile>.PRG:
-  poEnv = GetEnvObject()
-
-  create table ("Facility") name Facility ;
-    ( ;
-      Fac_PK C(32) primary key default GetGuid32(), ;
-      Fac_Inactive L default .F., ;
-      Fac_ID C(8), ;
-      Fac_Order N(6, 1), ;  && Rev 13
-      Fac_Name C(60), ;
-      Fac_Address M, ;
-      Fac_Contact M, ;
-      Fac_Email C(THISAPP_USER_EMAIL_LEN), ;  && 80
-      Fac_Phone C(24), ;
-      Fac_Comments M, ;
-      Fac_Storage L, ;
-      Fac_DropOff L, ;  
-      Fac_Notes M, ;
-      Fac_Orig_Art_FK C(32), ;
-      Fac_Orig_Time T, ;
-      Fac_Rev_Art_FK C(32), ;
-      Fac_Rev_Time T, ;
-      Fac_Revision I NOT NULL DEFAULT 0 ;
-    )
-
-  * Standard 2 Indexes:
-  index on deleted() tag Deleted
-  index on Fac_Inactive tag Inactive
-  * Foreign Keys:
-  * Other Keys:
-  index on Fac_ID tag Fac_ID
-  index on Fac_Name tag Fac_Name  && Rev 12
-  index on Fac_Storage tag Storage
-  index on Fac_DropOff tag DropOff
-  index on Fac_Order tag order && Rev 13
-     
-  * Comment:
-  dbsetprop("Facility", "Table", "Comment", ;
-    [One record per Facility.] )
-endfunc  && CreateFacilityTable
-
-* --------------------------------------------------------- *
 function CreateLocationTable  && TABLE added in Rev 17
   * Don't declare this PRIVATE. This command allows this procedure
   * to be run by itself, as in DO <thisproc> IN <thisfile>.PRG:
@@ -818,6 +774,50 @@ function CreateLocationTable  && TABLE added in Rev 17
   dbsetprop("Location", "Table", "Comment", ;
     [One record per Location.] )
 endfunc  && CreateLocationTable
+
+* --------------------------------------------------------- *
+function CreateFacilityTable  && TABLE added in Rev 11
+  * Don't declare this PRIVATE. This command allows this procedure
+  * to be run by itself, as in DO <thisproc> IN <thisfile>.PRG:
+  poEnv = GetEnvObject()
+
+  create table ("Facility") name Facility ;
+    ( ;
+      Fac_PK C(32) primary key default GetGuid32(), ;
+      Fac_Inactive L default .F., ;
+      Fac_ID C(8), ;
+      Fac_Order N(6, 1), ;  && Rev 13
+      Fac_Name C(60), ;
+      Fac_Address M, ;
+      Fac_Contact M, ;
+      Fac_Email C(THISAPP_USER_EMAIL_LEN), ;  && 80
+      Fac_Phone C(24), ;
+      Fac_Comments M, ;
+      Fac_Storage L, ;
+      Fac_DropOff L, ;  
+      Fac_Notes M, ;
+      Fac_Orig_Art_FK C(32), ;
+      Fac_Orig_Time T, ;
+      Fac_Rev_Art_FK C(32), ;
+      Fac_Rev_Time T, ;
+      Fac_Revision I NOT NULL DEFAULT 0 ;
+    )
+
+  * Standard 2 Indexes:
+  index on deleted() tag Deleted
+  index on Fac_Inactive tag Inactive
+  * Foreign Keys:
+  * Other Keys:
+  index on Fac_ID tag Fac_ID
+  index on Fac_Name tag Fac_Name  && Rev 12
+  index on Fac_Storage tag Storage
+  index on Fac_DropOff tag DropOff
+  index on Fac_Order tag order && Rev 13
+     
+  * Comment:
+  dbsetprop("Facility", "Table", "Comment", ;
+    [One record per Facility.] )
+endfunc  && CreateFacilityTable
 
 * ---------------------------------------------------------- *
 function CreateFilesTable
