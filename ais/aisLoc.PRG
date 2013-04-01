@@ -38,20 +38,22 @@ define class aisLocPage as aisPage
     endif 
     return  
   endfunc   
+  * ----------------------------------------------------- *  
+  function AddDefaultMenu
+    with this
+      .AddSubMenu("This", "BRIDGE LOCATIONS")
+      .addMenuItem("main\This", 'Bridge Locations', StuffUrl(.cUrlA, 2, "LocList"))
+      .addMenuItem("main\This", 'Panel Requirements', StuffUrl(.cUrlA, 2, "LocSumList"))
+    endwith 
+    dodefault()
+    return 
+  endfunc 
 enddefine && AisLocPage
 
 *** ========================================================= ***
 define class ais_LocList as aisLocPage 
   lLocRequired = .f.
   cSubTitle = "Bridge Locations"
-  * ----------------------------------------------------- *  
-  function AddDefaultMenu
-    with this
-      .AddSubMenu("This", "BRIDGE LOCATIONS")
-    endwith 
-    dodefault()
-    return 
-  endfunc 
   * ----------------------------------------------------- *  
   function ProcessRequest
     local loQry, loTbl, loCol, loGrp
@@ -81,17 +83,78 @@ define class ais_LocList as aisLocPage
   endfunc 
 enddefine && LocList
 
+*** ========================================================= ***
+define class ais_LocSumList as aisLocPage 
+  lLocRequired = .f.
+  cSubTitle = "Panel Quantities"
+  * ----------------------------------------------------- *  
+  function AddDefaultMenu
+    with this
+      .AddSubMenu("This", "BRIDGE LOCATIONS")
+    endwith 
+    dodefault()
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    local loQry, loTbl, loCol, loGrp
+       
+    loQry = createobject("AisLocQuery")
+    with loQry
+      .lSkip = .f. && don't count spaces we're skipping 
+      
+      .lOldEngineBehavior = .t. 
+      .AddOrderBy("Loc_W1",, .f.)
+      .AddOrderBy("Loc_H1",, .t.)
+      .AddOrderBy("Loc_H2",, .t.)
+      .nGrouping = 3
+      .ClearFields()
+      
+      .AddFields("Loc_H1, Loc_W1, Loc_H2, count(*) as Count_")
+      
+      .execute()
+    endwith 
+    
+    loTbl = createobject("AisTable")
+    with loTbl
+      .cGrandRowClass      = "GrandRow sortbottom"  
+      
+      loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
+
+      loCol = .addCursorColumn("Loc_H1", "Height-L")
+      loCol = .addCursorColumn("Loc_W1", "Width")
+
+
+      loCol = .addCursorColumn("Loc_H2", "Height-R")
+      * loCol.cHeadingClass = "nosort" 
+
+      loCol = .addCursorColumn("Count_", "Location<br>Count")
+      loCol.nCalcType = L7_CALCTYPE_SUM
+      
+      loCol = .addCursorColumn("2*Count_", "Panels<br>Needed", [2*Count_])
+      loCol.nCalcType = L7_CALCTYPE_SUM
+      
+      response.write(.render())
+    endwith 
+    
+    return 
+  endfunc 
+enddefine && LocSumList
+
 
 *** ===================================================== ***
 define class AisLocQuery as L7Query
   cBaseTable = "Location"
   cDefaultFieldList = ;
-    "*" 
-  nOrderBy = 1
+    "Loc_PK, Loc_ID, Loc_Side, Loc_No, Loc_Old_ID, Loc_Rev_Art_FK, Loc_Rev_Time" ;
+      + ", Loc_H1, Loc_W1, Loc_H2, Loc_Skip, Loc_Marker, Loc_Comments, Loc_Notes"
+
+  lSkip = null 
+  
+  nOrderBy = 2
   dimension aOrderBy[ 2, 2]
   aOrderBy[ 1, 1] = "Loc_Side"
   aOrderBy[ 2, 1] = "Loc_No"
-
   * --------------------------------------------------------- *
   function BuildWhereClause
     local lcStr
@@ -99,6 +162,11 @@ define class AisLocQuery as L7Query
     with this 
       .lWhereBuilt = .t.
       .cWhereClause = [WHERE Loc_Inactive = .F.] 
+
+      if !isnull(.lSkip)
+        .cWhereClause = .cWhereClause + [ and Loc_Skip = ] + iif(.lSkip, [.t.], [.f.])
+      endif 
+
     endwith   
     return  
   endfunc   && BuildWhereClause
