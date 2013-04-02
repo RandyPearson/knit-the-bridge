@@ -226,6 +226,7 @@ define class ais_PnlSetLoc as aisPnlPage
   * ----------------------------------------------------- *  
   function ProcessRequest
     this.cCancelUrl = StuffURL(THIS.cUrlB, 2, "PnlHome")
+    
     this.Assert(poContext.lAdmin)
     this.assert(inlist(this.cPage_Orient, "Outer", "Inner"), "inavalid orientation")
     this.assert(inlist(this.cPage_Side, "Up", "Down"), "inavalid side")
@@ -271,10 +272,10 @@ define class ais_PnlSetLoc as aisPnlPage
           Response.Redirect(this.cCancelUrl)
           return 
         else 
-          *!*            this.ErrorMsg( "Database Failure Saving Record!", ;
-          *!*              "Error " + TRANSFORM( loTrans.aFailures[1, 1]) + [ :] + ;
-          *!*              loTrans.aFailures[1, 2] )
-          this.ServerError(textmerge('Database Failure Saving Record. Error <<loTrans.aFailures[1, 1]>>: <<loTrans.aFailures[1, 2]>>'))
+          this.ErrorMsg( "Database Failure Saving Record!", ;
+            "Error " + TRANSFORM( loTrans.aFailures[1, 1]) + [ :] + ;
+            loTrans.aFailures[1, 2] )
+          ** this.ServerError(textmerge('Database Failure Saving Record. Error <<loTrans.aFailures[1, 1]>>: <<loTrans.aFailures[1, 2]>>'))
           return  
         endif  && Save()
         

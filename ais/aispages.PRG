@@ -350,6 +350,14 @@ define class aisPage as L7Page
   endfunc 
 
   * --------------------------------------------------------- *
+  FUNCTION SetupErrorOutput
+    THIS.oBody = NULL  && kills any current body
+    THIS.SetupBodyElement()
+    THIS.CreateMenu()
+    THIS.cTitle = THIS.oApp.cTitle
+    RETURN 
+  ENDFUNC
+  * --------------------------------------------------------- *
   function SetCss  && defeat parent
     this.oHead.AddCssLink("../ktb-content/css/ktb-ais.css", "all")
     this.oHead.AddCssLink("../ktb-content/css/ktb-aisForm.css", "all")
