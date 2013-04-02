@@ -271,9 +271,11 @@ define class ais_PnlSetLoc as aisPnlPage
           Response.Redirect(this.cCancelUrl)
           return 
         else 
-          this.ErrorMsg( "Database Failure Saving Record!", ;
-            "Error " + TRANSFORM( loTrans.aFailures[1, 1]) + [ :] + ;
-            loTrans.aFailures[1, 2] )
+          *!*            this.ErrorMsg( "Database Failure Saving Record!", ;
+          *!*              "Error " + TRANSFORM( loTrans.aFailures[1, 1]) + [ :] + ;
+          *!*              loTrans.aFailures[1, 2] )
+          this.ServerError(textmerge('Database Failure Saving Record. Error <<loTrans.aFailures[1, 1]>>: <<loTrans.aFailures[1, 2]>>'))
+          return  
         endif  && Save()
         
       endif 
