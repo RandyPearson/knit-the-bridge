@@ -46,10 +46,30 @@ endfunc  && aisCreatePanel
 
 * --------------------------------------------------------- *
 function aisGetPanelLocation(tcPnl)
-  local lcRet
-  lcRet = null
-  return m.lcRet
+  local loRet, loSelect
+  loRet = null
+  loSelect = createobject("L7PreserveSelect")
+  select Plc_PK, Plc_Orientation, Loc_Side, Loc_No, Loc_PK ;
+    from PanelLocation join Location on Plc_Loc_FK = Loc_PK ;
+    where Plc_Pnl_FK = m.tcPnl ;
+    into cursor GetPanelLocation_ 
+  if _tally > 0
+    scatter memo name loRet 
+  endif 
+  use in select("GetPanelLocation_")
+  return m.loRet
 endfunc && aisGetPanelLocation
+
+* --------------------------------------------------------- *
+function aisFormatPanelLocation(tvPnl) && object or key
+  if isnull(m.tvPnl) or (vartype(m.tvPnl) = 'C' and empty(m.tvPnl))
+    return null
+  endif 
+  local loPlc, lcRet
+  loPlc = iif(vartype(m.tvPnl) = "O", m.tvPnl, aisGetPanelLocation(m.tvPnl))
+  lcRet = textmerge([<<trim(loPlc.Loc_Side)>>-<<loPlc.Loc_No>> (<<loPlc.Plc_Orientation>>)])
+  return m.lcRet
+endfunc 
 
 *** ========================================================= ***
 define class aisPnlPage as aisPage 
@@ -213,6 +233,41 @@ define class ais_PnlAddPiece as aisPnlPage
 enddefine  && ais_PnlAddPiece 
 
 *** ========================================================= ***
+define class ais_PnlRemLoc as aisPnlPage 
+  cPage_Plc = null 
+  * --------------------------------------------------------- *
+  function BeforeProcessRequest
+    this.cPage_Plc = this.readQueryString("plc", .t., .t.)
+    dodefault()
+    return 
+  endfunc   
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    this.cCancelUrl = StuffURL(THIS.cUrlB, 2, "PnlHome")
+    
+    this.Assert(poContext.lAdmin)
+    this.cSubTitle = "Remove Panel Location for " + this.oPnl.Pnl_ID
+
+    local loForm, vp_cPlc_PK, lcAlias, lcXml
+    lcAlias = "V_PanelLocation"
+    vp_cPlc_PK = this.cPage_Plc && [[ validate........
+    use (m.lcAlias) in select()
+    cursorsetprop("Buffering", 5, m.lcAlias)
+    select (m.lcAlias)
+    replace Plc_Inactive with .t. ;
+      Plc_Pnl_FK with "" ;
+      Plc_Loc_FK with "" ;
+      Plc_Orientation with ""
+
+    StampRec( CurrentUser, THIS.tNow )
+    lcXml = ""
+    this.AssertTransaction(m.lcAlias, @lcXml)
+    Response.Redirect(this.cCancelUrl)
+    return 
+  endfunc 
+enddefine && ais_PnlRemLoc 
+
+*** ========================================================= ***
 define class ais_PnlSetLoc as aisPnlPage 
   cPage_Side = null
   cPage_Orient = null 
@@ -228,8 +283,8 @@ define class ais_PnlSetLoc as aisPnlPage
     this.cCancelUrl = StuffURL(THIS.cUrlB, 2, "PnlHome")
     
     this.Assert(poContext.lAdmin)
-    this.assert(inlist(this.cPage_Orient, "Outer", "Inner"), "inavalid orientation")
-    this.assert(inlist(this.cPage_Side, "Up", "Down"), "inavalid side")
+    this.assert(inlist(this.cPage_Orient, "Outer", "Inner"), "invalid orientation")
+    this.assert(inlist(this.cPage_Side, "Up", "Down"), "invalid side")
 
     this.cSubTitle = "Set Panel Location for " + this.oPnl.Pnl_ID
     local loForm, vp_cPlc_PK, loQ
@@ -241,6 +296,7 @@ define class ais_PnlSetLoc as aisPnlPage
       .lSkip = .f. 
       .Execute()
     endwith 
+    this.assert(loQ.nTally > 0, "No open slots remain.")
 
     vp_cPlc_PK = space(32)
     use V_PanelLocation in select("V_PanelLocation")
@@ -312,15 +368,16 @@ enddefine
 
 *** ========================================================= ***
 define class ais_PnlHome as aisPnlPage 
-  cPage_Location = null 
+  oPage_Location = null 
   * --------------------------------------------------------- *
   function BeforeProcessRequest
     dodefault()
-    this.cPage_Location = aisGetPanelLocation(this.cPnl)
+    this.oPage_Location = aisGetPanelLocation(this.cPnl)
     return 
   endfunc   
   * ----------------------------------------------------- *  
   function AddDefaultMenu
+    local lcUrl
     with this
       .AddSubMenu("This", "This Panel")
 
@@ -330,9 +387,19 @@ define class ais_PnlHome as aisPnlPage
           .addMenuItem("main\This,page", "Add Piece to Panel...", ;
             StuffUrl(.cUrlA, 2, "PnlAddPiece", "pnl", .cPnl))
         endif
-        if isnull(this.cPage_Location)
+        lcUrl = StuffUrl(.cUrlB, 2, "PnlSetLoc")
+        if isnull(this.oPage_Location)
           .AddMenuItem("main\This,page", "Assign Up-River Inner Location...", ;
-            StuffUrl(.cUrlA, 2, "PnlSetLoc", "pnl", .cPnl, "side", "Up", "orient", "Inner"))
+            StuffUrl(m.lcUrl, "side", "Up", "orient", "Inner"))
+          .AddMenuItem("main\This,page", "Assign Up-River Outer Location...", ;
+            StuffUrl(m.lcUrl, "side", "Up", "orient", "Outer"))
+          .AddMenuItem("main\This,page", "Assign Down-River Inner Location...", ;
+            StuffUrl(m.lcUrl, "side", "Down", "orient", "Inner"))
+          .AddMenuItem("main\This,page", "Assign Down-River Outer Location...", ;
+            StuffUrl(m.lcUrl, "side", "Down", "orient", "Outer"))
+        else 
+          .addMenuItem("main\This,page", "Remove Panel Location...", ;
+            StuffUrl(.cUrlB, 2, "PnlRemLoc", "plc", this.oPage_Location.plc_pk))
         endif 
       endif 
     endwith 
@@ -351,9 +418,10 @@ define class ais_PnlHome as aisPnlPage
   endfunc 
   * ----------------------------------------------------- *  
   function page_getMainRecord()
-    local loElem, loRow, lcRet, loData
+    local loElem, loRow, lcRet, loData, loPlc
     lcRet = ""
     loData = this.oPnl
+    loPlc = this.oPage_Location 
     loElem = createobject("aisRecordElement")
     with loElem
       loRow = .getRowObject()
@@ -376,7 +444,7 @@ define class ais_PnlHome as aisPnlPage
             
       loRow.clear()
       loRow.cLabel = "Bridge Location"
-      loRow.vValue = this.cPage_Location
+      loRow.vValue = aisFormatPanelLocation(this.oPage_Location)
       .AddRowEx(m.loRow)
       
       .AddHeading('Pieces Comprising Panel')

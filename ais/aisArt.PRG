@@ -491,6 +491,8 @@ define class ais_ArtHome as aisArtPage
         loCol = .AddCursorColumn('Pce_Received', 'Received')
         loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
           [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pce_Fac_FK), trim(Fac_Name))])
+        loCol = .addCursorColumn('Pce_Pnl_FK', "Bridge<br>Location", ;
+          [aisFormatPanelLocation(Pce_Pnl_FK)])
         loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
           'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit Piece...]")')
 
