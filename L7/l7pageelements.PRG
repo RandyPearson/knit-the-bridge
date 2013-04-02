@@ -681,21 +681,24 @@ DEFINE CLASS L7RecordElement AS L7PageElement
     LOCAL lcRowTag, lcLabelTag, lcValueTag, lvValue, lcLink
     WITH loRowObj
       lvValue = .vValue
-      IF .lEval
-        lvValue = EVALUATE(m.lvValue)
-      ENDIF
-      IF .lSkipIfEmpty AND EMPTY(m.lvValue)
-        RETURN  && don't transform or anything
-      ENDIF
-      IF .lTextmerge
+      if .lEval
+        lvValue = evaluate(m.lvValue)
+      endif 
+      if  .lSkipIfEmpty AND (isnull(m.lvValue) or EMPTY(m.lvValue))
+        return   && don't transform or anything
+      endif 
+      if .lTextmerge
         lvValue = TEXTMERGE(m.lvValue)
-      ENDIF
-      IF NOT EMPTY(.cFormatString)
-        lvValue = EVALUATE(STRTRAN(.cFormatString,[%1],[m.lvValue]))
-      ENDIF
-      IF VARTYPE(m.lvValue) <> "C"
+      endif
+      if isnull(m.lvValue)
+        lvValue = set("Nulldisplay")
+      endif 
+      if !empty(.cFormatString)
+        lvValue = evaluate(strtran(.cFormatString,[%1],[m.lvValue]))
+      endif 
+      IF vartype(m.lvValue) <> "C"
         lvValue = TRANSFORM(m.lvValue)
-      ENDIF
+      endif 
       STORE "" TO lcRowTag, lcLabelTag, lcValueTag
       lcRowTag = [<tr] + ;
         IIF(EMPTY(.cRowCssClass), [], [ class="] + .cRowCssClass + ["]) + ;

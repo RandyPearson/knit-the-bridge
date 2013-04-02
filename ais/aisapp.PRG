@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     17
+#DEFINE THISAPP_DATABASE_REVISION     18
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -113,6 +113,7 @@ define class AisApp AS KtbApp
     * Force lookups to get created now (so they stay open):
     * Deploy physical files needed in http space:
     this.DeployContent()
+    set nulldisplay to "--"
     return .T.
   endfunc  && OnFirstPostMaintenanceHit
   * --------------------------------------------------------- *
@@ -398,6 +399,12 @@ define class AisApp AS KtbApp
         with "Location", this.cDataPath, this.cDataBase
       use in select("Location")
 
+    case m.lnRev = 18
+      * Create PanelLocation table:
+      do CreateTable ;
+        with "PanelLocation", this.cDataPath, this.cDataBase
+      use in select("PanelLocation")
+
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
@@ -448,6 +455,7 @@ function CreateEmptyDatabase( lcPath)
     FIL = Files
     LOC = Location (installation point)
     PCE = Piece
+    PLC = PanelLocation
     PNL = Panel
     RCP = Recipient
     
@@ -474,6 +482,8 @@ function CreateEmptyDatabase( lcPath)
   do CreateLocationTable
   do CreatePieceTable
   do CreatePanelTable
+  do CreatePanelLocationTable
+
   *!* do CreateRecipientTable
 
   * Miscellaneous:
@@ -730,6 +740,39 @@ function CreatePanelTable
   dbsetprop("Panel", "Table", "Comment", ;
     [One record per Panel.] )
 endfunc  && CreatePanelTable
+
+* --------------------------------------------------------- *
+function CreatePanelLocationTable  && TABLE added in Rev 18
+  * Don't declare this PRIVATE. This command allows this procedure
+  * to be run by itself, as in DO <thisproc> IN <thisfile>.PRG:
+  poEnv = GetEnvObject()
+
+  create table ("PanelLocation") name PanelLocation ;
+    ( ;
+      Plc_PK C(32) primary key default GetGuid32(), ;
+      Plc_Inactive L default .F., ;
+      Plc_Pnl_FK C(32), ;
+      Plc_Loc_FK C(32), ;
+      Plc_Orientation C(5), ;
+      Plc_Orig_Art_FK C(32), ;
+      Plc_Orig_Time T, ;
+      Plc_Rev_Art_FK C(32), ;
+      Plc_Rev_Time T, ;
+      Plc_Revision I NOT NULL DEFAULT 0 ;
+    )
+
+  * Standard 2 Indexes:
+  index on deleted() tag Deleted
+  index on Plc_Inactive tag Inactive
+  * Foreign Keys:
+  index on Plc_Pnl_FK tag pnl for !Plc_Inactive candidate 
+  index on Plc_Loc_FK tag loc
+  * Other Keys:
+  index on Plc_Orientation tag Orient 
+  * Comment:
+  dbsetprop("PanelLocation", "Table", "Comment", ;
+    [One record per Panel Location.] )
+endfunc  && CreatePanelLocationTable
 
 * --------------------------------------------------------- *
 function CreateLocationTable  && TABLE added in Rev 17

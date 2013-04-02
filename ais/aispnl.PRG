@@ -44,6 +44,13 @@ function aisCreatePanel(toPce)
   return m.loNewRec
 endfunc  && aisCreatePanel 
 
+* --------------------------------------------------------- *
+function aisGetPanelLocation(tcPnl)
+  local lcRet
+  lcRet = null
+  return m.lcRet
+endfunc && aisGetPanelLocation
+
 *** ========================================================= ***
 define class aisPnlPage as aisPage 
   cPnl = ""
@@ -86,6 +93,7 @@ define class ais_PnlList as aisPnlPage
     loQry = createobject("AisPnlQuery")
     with loQry
       .lJoinFacility = .t.
+      .lJoinLocation = .t. 
       .lJoinArtist = .t. 
       .execute()
     endwith 
@@ -110,6 +118,9 @@ define class ais_PnlList as aisPnlPage
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pnl_Stitcher_Art_FK), aisArtistName(THISRECORD))])
       loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
         [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pnl_Fac_FK), trim(Fac_Name))])
+      loCol = .addCursorColumn("Plc_Orientation", "Bridge<br>Location", ;
+        [<<trim(Loc_Side)>>-<<Loc_No>> (<<Plc_Orientation>>)])
+      loCol.lDisplayTextmerge = .t. 
       loCol = .addCursorColumn("Pnl_PK", "Edit Panel", ;
         'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit Panel...]")')
       response.write(.render())
@@ -203,13 +214,30 @@ enddefine  && ais_PnlAddPiece
 
 *** ========================================================= ***
 define class ais_PnlHome as aisPnlPage 
+  cPage_Location = null 
+  * --------------------------------------------------------- *
+  function BeforeProcessRequest
+    dodefault()
+    this.cPage_Location = aisGetPanelLocation(this.cPnl)
+    return 
+  endfunc   
   * ----------------------------------------------------- *  
   function AddDefaultMenu
-    this.addMenuItem("main\This,page", "Edit Panel...", StuffUrl(this.cUrlA, 2, "PnlForm", "pnl", this.cPnl))
-    if this.oPnl.Pnl_Single_Piece = .f. and !this.oPnl.Pnl_Completed 
-      this.addMenuItem("main\This,page", "Add Piece to Panel...", ;
-        StuffUrl(this.cUrlA, 2, "PnlAddPiece", "pnl", this.cPnl))
-    endif
+    with this
+      .AddSubMenu("This", "This Panel")
+
+      if poContext.lAdmin
+        .addMenuItem("main\This,page", "Edit Panel...", StuffUrl(.cUrlA, 2, "PnlForm", "pnl", .cPnl))
+        if .oPnl.Pnl_Single_Piece = .f. and !.oPnl.Pnl_Completed 
+          .addMenuItem("main\This,page", "Add Piece to Panel...", ;
+            StuffUrl(.cUrlA, 2, "PnlAddPiece", "pnl", .cPnl))
+        endif
+        if isnull(this.cPage_Location)
+          .AddMenuItem("main\This,page", "Assign Up-River Inner Location...", ;
+            StuffUrl(.cUrlA, 2, "PnlSetLoc", "pnl", .cPnl, "side", "Up", "orient", "Inner"))
+        endif 
+      endif 
+    endwith 
     dodefault()
     return 
   endfunc 
@@ -247,7 +275,12 @@ define class ais_PnlHome as aisPnlPage
         HTLink(StuffUrl(this.cUrlA, 2, "ArtHome", "art", loData.Pnl_Stitcher_Art_FK), aisArtistName(loData.Pnl_Stitcher_Art_FK)))
       .AddRow("Current Storage Facility", ;
         HTLink(StuffUrl(this.cUrlA, 2, "FacHome", "fac", loData.Pnl_Fac_FK), aisFacilityName(loData.Pnl_Fac_FK)))
-
+            
+      loRow.clear()
+      loRow.cLabel = "Bridge Location"
+      loRow.vValue = this.cPage_Location
+      .AddRowEx(m.loRow)
+      
       .AddHeading('Pieces Comprising Panel')
       .AddRow(null, this.page_getPieceInfo())
 
@@ -263,7 +296,7 @@ define class ais_PnlHome as aisPnlPage
         .AddRow("Last Modified", TRANSFORM(loData.Pnl_REV_TIME) + [ by ] + AisArtistName(loData.Pnl_Rev_Art_FK), .F., "private")
       endif
 
-      lcRet = lcRet + .Render()
+      lcRet = m.lcRet + .Render()
 
     endwith 
     return m.lcRet
@@ -512,6 +545,7 @@ define class AisPnlQuery as L7Query
   lJoinArtist = .f. 
   lJoinPiece = .f. 
   lJoinFacility = .f.
+  lJoinLocation = .f. 
   * --------------------------------------------------------- *
   function BuildWhereClause
     local lcStr
@@ -537,6 +571,20 @@ define class AisPnlQuery as L7Query
         .aJoins[.nJoins, 2] = "Pnl_Fac_FK = Fac_PK"
         .aJoins[.nJoins, 3] = "LEFT OUTER"
         .AddFields("Fac_ID, Fac_Name")
+      endif 
+
+      if .lJoinLocation
+        .nJoins = .nJoins + 2
+        dimension .aJoins[.nJoins, 3]
+        .aJoins[.nJoins - 1, 1] = "PanelLocation"
+        .aJoins[.nJoins - 1, 2] = "Pnl_PK = Plc_Pnl_FK"
+        .aJoins[.nJoins - 1, 3] = "LEFT OUTER"
+
+        .aJoins[.nJoins, 1] = "Location"
+        .aJoins[.nJoins, 2] = "Plc_Loc_FK = Loc_PK"
+        .aJoins[.nJoins, 3] = "LEFT OUTER"
+
+        .AddFields("Plc_Orientation, Loc_Side, Loc_No")
       endif 
 
       if .lJoinArtist
