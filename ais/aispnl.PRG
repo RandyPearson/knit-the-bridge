@@ -296,6 +296,7 @@ define class ais_PnlSetLoc as aisPnlPage
       .cAlias = "Available_Locations_"
       .lHasPanel = .f.
       .cSide = this.cPage_Side
+      .cOrient = this.cPage_Orient 
       .lSkip = .f. 
       .Execute()
     endwith 

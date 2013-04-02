@@ -56,10 +56,19 @@ define class ais_LocList as aisLocPage
   cSubTitle = "Bridge Locations"
   * ----------------------------------------------------- *  
   function ProcessRequest
-    local loQry, loTbl, loCol, loGrp
+    local loLocQry, loPlcQry, loTbl, loCol, loGrp
        
-    loQry = createobject("AisLocQuery")
-    with loQry
+    loPlcQry = createobject("AisPlcQuery")
+    with loPlcQry
+      .cAlias = "PlcQuery_"
+      .lJoinPanel = .t.
+      .lJoinLocation = .t.
+      .execute()
+      index on Plc_Loc_FK + Plc_Orientation tag LocOrient 
+    endwith 
+
+    loLocQry = createobject("AisLocQuery")
+    with loLocQry
       .execute()
     endwith 
     
@@ -74,6 +83,10 @@ define class ais_LocList as aisLocPage
       loCol = .addCursorColumn("Loc_H1", "Height-L")
       loCol = .addCursorColumn("Loc_W1", "Width")
       loCol = .addCursorColumn("Loc_H2", "Height-R")
+      loCol = .addCursorColumn("Loc_PK", "Inner<br>Panel", ;
+        [iif(seek(Loc_PK + "Inner", "PlcQuery_"), PlcQuery_.Pnl_ID, null)])
+      loCol = .addCursorColumn("Loc_PK", "Outer<br>Panel", ;
+        [iif(seek(Loc_PK + "Outer", "PlcQuery_"), PlcQuery_.Pnl_ID, null)])
       loCol = .addCursorColumn("Loc_Notes", "Notes", [L7ParseOnView(Loc_Notes)])
       loCol = .addCursorColumn("Loc_Marker", "Marker")
       response.write(.render())
@@ -124,7 +137,6 @@ define class ais_LocSumList as aisLocPage
       loCol = .addCursorColumn("Loc_H1", "Height-L")
       loCol = .addCursorColumn("Loc_W1", "Width")
 
-
       loCol = .addCursorColumn("Loc_H2", "Height-R")
       * loCol.cHeadingClass = "nosort" 
 
@@ -141,6 +153,52 @@ define class ais_LocSumList as aisLocPage
   endfunc 
 enddefine && LocSumList
 
+*** ===================================================== ***
+define class AisPlcQuery as L7Query
+  cBaseTable = "PanelLocation"
+  cDefaultFieldList = "Plc_Pnl_FK, Plc_Loc_FK, Plc_Orientation"
+
+  cSide = null
+  cOrient = null 
+
+  lJoinPanel = .f. 
+  lJoinLocation = .f. 
+
+  * --------------------------------------------------------- *
+  function BuildWhereClause
+    local lcStr
+
+    with this 
+      .lWhereBuilt = .t.
+      .cWhereClause = [WHERE Plc_Inactive = .F.] 
+
+      if .lJoinLocation or !isnull(.cSide)
+        .nJoins = .nJoins + 1
+        dimension .aJoins[.nJoins, 3]
+        .aJoins[.nJoins, 1] = "Location"
+        .aJoins[.nJoins, 2] = "Plc_Loc_FK = Loc_PK"
+        .AddFields("Loc_Side, Loc_No")
+      endif 
+
+      if .lJoinPanel
+        .nJoins = .nJoins + 1
+        dimension .aJoins[.nJoins, 3]
+        .aJoins[.nJoins, 1] = "Panel"
+        .aJoins[.nJoins, 2] = "Plc_Pnl_FK = Pnl_PK"
+        .AddFields("Pnl_ID, Pnl_Stitcher_Art_FK, Pnl_Single_Piece")
+      endif 
+
+      if !isnull(.cSide)
+        .cWhereClause = .cWhereClause + [ and Loc_Side = '] + padr(this.cSide, THISAPP_LENGTH_SIDE) + [']
+      endif 
+      if !isnull(.cOrient)
+        .cWhereClause = .cWhereClause + [ Plc_Orientation = '] + padr(.cOrient, THISAPP_LENGTH_ORIENTATION ) + [']
+      endif 
+
+    endwith   
+    return  
+  endfunc   && BuildWhereClause
+enddefine  && AisPlcQuery
 
 *** ===================================================== ***
 define class AisLocQuery as L7Query
@@ -171,11 +229,14 @@ define class AisLocQuery as L7Query
         .cWhereClause = .cWhereClause + [ and Loc_Skip = ] + iif(.lSkip, [.t.], [.f.])
       endif 
       if !isnull(.cSide)
-        .cWhereClause = .cWhereClause + [ and Loc_Side = '] + padr(this.cSide, THISAPP_LENGTH_SIDE) + [']
+        .cWhereClause = .cWhereClause + [ and Loc_Side = '] + padr(.cSide, THISAPP_LENGTH_SIDE) + [']
       endif 
       if !isnull(.lHasPanel)
         .cWhereClause = .cWhereClause + [ and Loc_PK] + iif(.lHasPanel, [ in ], [ not in ]) + ;
-          [(select Plc_Loc_FK from PanelLocation where !plc_Inactive)]
+          [(select Plc_Loc_FK from PanelLocation] + ;
+            [ where !plc_Inactive] + ;
+            iif(isnull(.cOrient), [], [ and Plc_Orientation = '] + padr(.cOrient, THISAPP_LENGTH_ORIENTATION ) + [']) + ;
+          [)]
       endif 
 
     endwith   
@@ -183,5 +244,5 @@ define class AisLocQuery as L7Query
   endfunc   && BuildWhereClause
 enddefine  && AisLocQuery
 
-* end: FAC 
+* end: LOC 
 
