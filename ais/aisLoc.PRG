@@ -150,6 +150,10 @@ define class AisLocQuery as L7Query
       + ", Loc_H1, Loc_W1, Loc_H2, Loc_Skip, Loc_Marker, Loc_Comments, Loc_Notes"
 
   lSkip = null 
+  cSide = null
+  
+  cOrient = null 
+  lHasPanel = null 
   
   nOrderBy = 2
   dimension aOrderBy[ 2, 2]
@@ -165,6 +169,13 @@ define class AisLocQuery as L7Query
 
       if !isnull(.lSkip)
         .cWhereClause = .cWhereClause + [ and Loc_Skip = ] + iif(.lSkip, [.t.], [.f.])
+      endif 
+      if !isnull(.cSide)
+        .cWhereClause = .cWhereClause + [ and Loc_Side = '] + padr(this.cSide, THISAPP_LENGTH_SIDE) + [']
+      endif 
+      if !isnull(.lHasPanel)
+        .cWhereClause = .cWhereClause + [ and Loc_PK] + iif(.lHasPanel, [ in ], [ not in ]) + ;
+          [(select Plc_Loc_FK from PanelLocation where !plc_Inactive)]
       endif 
 
     endwith   

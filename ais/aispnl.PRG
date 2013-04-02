@@ -176,7 +176,7 @@ define class ais_PnlAddPiece as aisPnlPage
   * ----------------------------------------------------- *  
   function ProcessRequest
     this.cCancelUrl = StuffURL(THIS.cUrlB, 2, "PnlHome")
-    this.Assert(poContext.lCore)
+    this.Assert(poContext.lAdmin)
 
     if empty(this.cPage_Pce_PK)
       this.page_selectPiece()
@@ -211,6 +211,101 @@ define class ais_PnlAddPiece as aisPnlPage
     return
   endfunc && ProcessRequest 
 enddefine  && ais_PnlAddPiece 
+
+*** ========================================================= ***
+define class ais_PnlSetLoc as aisPnlPage 
+  cPage_Side = null
+  cPage_Orient = null 
+  * --------------------------------------------------------- *
+  function BeforeProcessRequest
+    this.cPage_Side = this.readQueryString("side", .t., .t.)
+    this.cPage_Orient = this.readQueryString("orient", .t., .t.)
+    dodefault()
+    return 
+  endfunc   
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    this.cCancelUrl = StuffURL(THIS.cUrlB, 2, "PnlHome")
+    this.Assert(poContext.lAdmin)
+    this.assert(inlist(this.cPage_Orient, "Outer", "Inner"), "inavalid orientation")
+    this.assert(inlist(this.cPage_Side, "Up", "Down"), "inavalid side")
+
+    this.cSubTitle = "Set Panel Location for " + this.oPnl.Pnl_ID
+    local loForm, vp_cPlc_PK, loQ
+    loQ = createobject("AisLocQuery")
+    with loQ
+      .cAlias = "Available_Locations_"
+      .lHasPanel = .f.
+      .cSide = this.cPage_Side
+      .lSkip = .f. 
+      .Execute()
+    endwith 
+
+    vp_cPlc_PK = space(32)
+    use V_PanelLocation in select("V_PanelLocation")
+    cursorsetprop("Buffering", 5, "V_PanelLocation")
+    loForm = this.createForm('aisPanelSetLocForm', this.cUrlC)
+    with loForm
+      .AddControls()
+      .DoEvents() 
+
+      if .Valid()
+        select V_PanelLocation
+        append blank
+        replace Plc_Pnl_FK with this.cPnl ;
+          Plc_Orientation with this.cPage_Orient 
+
+        .UpdateControlSources()
+        select V_PanelLocation  && UpdateControlSources can alter work area
+        StampRec( CurrentUser, THIS.tNow )
+        scatter memo name loNewRec 
+        
+        * Now save the record using a transaction:
+        local loTrans, loExc, lcMailMessage, lcExcMessage, llSendEmail
+        llSendEmail = .f.  
+        loTrans = THIS.CreateTransaction()
+        loTrans.AddCursor("V_PanelLocation")
+
+        if loTrans.Save()  
+          select V_PanelLocation 
+          Response.Redirect(this.cCancelUrl)
+          return 
+        else 
+          this.ErrorMsg( "Database Failure Saving Record!", ;
+            "Error " + TRANSFORM( loTrans.aFailures[1, 1]) + [ :] + ;
+            loTrans.aFailures[1, 2] )
+        endif  && Save()
+        
+      endif 
+    endwith 
+    response.write(loForm.render())
+  endfunc 
+enddefine 
+
+*** ========================================================= ***
+define class aisPanelSetLocForm as AisForm
+  cTitle = "Set Panel Location Form"
+  * --------------------------------------------------------- *
+  function AddControls
+    with this
+      .AddObject("cboLoc_FK", "L7Popup")
+      with .cboLoc_FK
+        .cControlSource = "V_PanelLocation.Plc_Loc_FK"
+        .lRequired = .t.
+        .cLabel = "Bridge Location"
+        .lAutoRender = .T.
+        .nRowSourceType = L7_ROWSOURCETYPE_ALIAS
+        .cRowSource = "Available_Locations_"
+        *!* ex: .cFilterExpression = [Fac_Storage = .t.]
+        .cValueExpression = [Loc_PK]
+        .cLabelExpression = [Loc_Side + "-" + str(loc_no)]
+        .vFirstItemValue = space(32) && 0 for integer keys
+        .cFirstItemLabel = "[ select from choices below ]"
+      endwith 
+    endwith
+    return 
+  endfunc 
+enddefine 
 
 *** ========================================================= ***
 define class ais_PnlHome as aisPnlPage 
