@@ -101,10 +101,28 @@ enddefine && AisPnlPage
 define class ais_PnlList as aisPnlPage 
   lPnlRequired = .f.
   cSubTitle = "Panel List"
+
+  lPage_Location = null
+  * --------------------------------------------------------- *
+  function BeforeProcessRequest
+    local lcStr
+
+    lcStr = this.ReadQueryString("location", .t., .t.)
+    this.lPage_Location = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+    
+    dodefault()  && required bubble-up
+    return    
+  endfunc  
   * ----------------------------------------------------- *  
   function AddDefaultMenu
+    local lcMenu
     with this
       .AddSubMenu("This", "PANELS")
+      lcMenu = "main\This"
+      .addMenuItem(m.lcMenu, 'Panel w/Bridge Locations', StuffUrl(this.cUrlA, 2, "PnlList", "location", "1"))
+      .addMenuItem(m.lcMenu, 'Panels Still Available', StuffUrl(this.cUrlA, 2, "PnlList", "location", "0"))
+      .addMenuItem(m.lcMenu, 'ALL Panels', StuffUrl(this.cUrlA, 2, "PnlList", "location", .f.))
+      
     endwith 
     dodefault()
     return 
@@ -115,6 +133,7 @@ define class ais_PnlList as aisPnlPage
        
     loQry = createobject("AisPnlQuery")
     with loQry
+      .lHasLocation = this.lPage_Location 
       .lJoinFacility = .t.
       .lJoinLocation = .t. 
       .lJoinArtist = .t. 
@@ -709,6 +728,8 @@ define class AisPnlQuery as L7Query
   cArtPiece = null
   cArtStitcher = null 
   
+  lHasLocation = null
+
   lCompleted = null
   lSinglePiece = null
   
@@ -781,6 +802,12 @@ define class AisPnlQuery as L7Query
       if !isnull(.lCompleted)
         .cWhereClause = .cWhereClause + [ and Pnl_Completed = ] + iif(.lCompleted, [.t.], [.f.])
       endif 
+
+      if !isnull(.lHasLocation)
+        .cWhereClause = .cWhereClause + [ and Pnl_PK] + iif(.lHasLocation, [ in ], [ not in ]) + ;
+          [(select Plc_Pnl_FK from PanelLocation where !plc_Inactive)]
+      endif 
+
     endwith   
     return  
   endfunc   && BuildWhereClause
