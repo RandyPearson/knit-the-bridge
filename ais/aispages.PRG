@@ -395,7 +395,8 @@ define class aisPage as L7Page
   function AddMenuHeadings
     this.AddSubMenu("This", "THIS PAGE")
     this.AddSubMenu("Reports", "Listings")
-    this.AddSubMenu("Navigate", "Navigate")
+    this.AddSubMenu("Navigate", "Navigate AIS")
+    this.AddSubMenu("Links", "Links")
     this.AddSubMenu("Search", "Search")
     if poContext.lAdmin
       this.AddSubMenu("Admin", "Admin")
@@ -422,13 +423,16 @@ define class aisPage as L7Page
     this.addMenuItem(m.lcMenu, 'Pieces and Railings', StuffUrl(this.cUrlA, 2, "PceList", "type", "Panels", "orphans", "1"))
     this.addMenuItem(m.lcMenu, 'Panels', StuffUrl(this.cUrlA, 2, "PnlList"))
     this.addMenuItem(m.lcMenu, 'Facilities', StuffUrl(this.cUrlA, 2, "FacList"))
-    this.addMenuItem(m.lcMenu, 'Bridge Locations', StuffUrl(this.cUrlA, 2, "LocList"))
-
+    ** this.addMenuItem(m.lcMenu, 'Bridge Locations', StuffUrl(this.cUrlA, 2, "LocList"))
+    this.addMenuItem(m.lcMenu, 'Dahntahn Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Down"))
+    this.addMenuItem(m.lcMenu, 'Uptahn Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Up"))
+    
     ** this.addMenuItem(m.lcMenu, 'About', StuffUrl(this.cUrlA, 2, "About"), "About")
     if poContext.lAdmin
       *!* this.addMenuItem("main\Admin", 'Refresh Content', StuffUrl(this.cUrlA, 2, "RefreshContent"))
     endif
 
+    lcMenu = "main\Links"
     this.addMenuItem(m.lcMenu, 'KtB Webpage', "/")
     this.addMenuItem(m.lcMenu, 'KtB Blog', "http://knitthebridge.wordpress.com/")
 

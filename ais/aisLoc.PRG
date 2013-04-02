@@ -40,10 +40,14 @@ define class aisLocPage as aisPage
   endfunc   
   * ----------------------------------------------------- *  
   function AddDefaultMenu
+    local lcMenu
+    lcMenu = "main\This"
     with this
       .AddSubMenu("This", "BRIDGE LOCATIONS")
-      .addMenuItem("main\This", 'Bridge Locations', StuffUrl(.cUrlA, 2, "LocList"))
-      .addMenuItem("main\This", 'Panel Requirements', StuffUrl(.cUrlA, 2, "LocSumList"))
+      .addMenuItem(m.lcMenu, 'Dahntahn Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Down"))
+      .addMenuItem(m.lcMenu, 'Uptahn Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Up"))
+      .addMenuItem(m.lcMenu, 'All Bridge Locations', StuffUrl(.cUrlA, 2, "LocList"))
+      .addMenuItem(m.lcMenu, 'Panel Requirements', StuffUrl(.cUrlA, 2, "LocSumList"))
     endwith 
     dodefault()
     return 
@@ -54,6 +58,13 @@ enddefine && AisLocPage
 define class ais_LocList as aisLocPage 
   lLocRequired = .f.
   cSubTitle = "Bridge Locations"
+  cPage_Side = ""
+  * --------------------------------------------------------- *
+  function BeforeProcessRequest
+    this.cPage_Side = this.readQueryString("side", .t., .t.)
+    dodefault()
+    return 
+  endfunc   
   * ----------------------------------------------------- *  
   function ProcessRequest
     local loLocQry, loPlcQry, loTbl, loCol, loGrp
@@ -72,9 +83,11 @@ define class ais_LocList as aisLocPage
       .execute()
     endwith 
     
+    urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
+
     loTbl = createobject("AisTable")
     with loTbl
-      loGrp = .AddGroup('Loc_Side', 'Side: ', .t., ["Side: " + Loc_Side])
+      ** loGrp = .AddGroup('Loc_Side', 'Side: ', .t., ["Side: " + Loc_Side])
       
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
 
@@ -84,12 +97,25 @@ define class ais_LocList as aisLocPage
       loCol = .addCursorColumn("Loc_W1", "Width")
       loCol = .addCursorColumn("Loc_H2", "Height-R")
       loCol = .addCursorColumn("Loc_PK", "Inner<br>Panel", ;
-        [iif(seek(Loc_PK + "Inner", "PlcQuery_"), PlcQuery_.Pnl_ID, null)])
+        [iif(seek(Loc_PK + "Inner", "PlcQuery_"), HTLink(StuffUrl(Urls.item("PnlHome"), "pnl", PlcQuery_.Plc_Pnl_FK), PlcQuery_.Pnl_ID), null)])
       loCol = .addCursorColumn("Loc_PK", "Outer<br>Panel", ;
-        [iif(seek(Loc_PK + "Outer", "PlcQuery_"), PlcQuery_.Pnl_ID, null)])
+        [iif(seek(Loc_PK + "Outer", "PlcQuery_"), HTLink(StuffUrl(Urls.item("PnlHome"), "pnl", PlcQuery_.Plc_Pnl_FK), PlcQuery_.Pnl_ID), null)])
       loCol = .addCursorColumn("Loc_Notes", "Notes", [L7ParseOnView(Loc_Notes)])
       loCol = .addCursorColumn("Loc_Marker", "Marker")
-      response.write(.render())
+      
+      if empty(this.cPage_Side) or "Down" $ this.cPage_Side
+        .cFilter = [Loc_Side = "Down"]
+        .cTableCaption = "Dahntahn List"
+        response.write(.render())
+        .Reset()
+      endif
+      if empty(this.cPage_Side) or "Up" $ this.cPage_Side
+        .cFilter = [Loc_Side = "Up  "]
+        .cTableCaption = "Uptahn List"
+        response.write(.render())
+        .Reset()
+      endif
+      
     endwith 
     
     return 
@@ -99,7 +125,7 @@ enddefine && LocList
 *** ========================================================= ***
 define class ais_LocSumList as aisLocPage 
   lLocRequired = .f.
-  cSubTitle = "Panel Quantities"
+  cSubTitle = "Panel Summary Quantities"
   * ----------------------------------------------------- *  
   function AddDefaultMenu
     with this
@@ -130,6 +156,7 @@ define class ais_LocSumList as aisLocPage
     
     loTbl = createobject("AisTable")
     with loTbl
+      .cTableCaption = this.cSubTitle 
       .cGrandRowClass      = "GrandRow sortbottom"  
       
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
