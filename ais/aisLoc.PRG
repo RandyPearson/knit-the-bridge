@@ -27,7 +27,7 @@ define class aisLocPage as aisPage
   * --------------------------------------------------------- *
   function VerifyLocation(tcKey)
     local loData
-    lcKey = evl(m.tcKey, this.cFac)
+    lcKey = evl(m.tcKey, this.cLoc)
     loData = createobject("AisLocData")
     if loData.FindRecord(m.lcKey)
       if m.lcKey = this.cLoc
@@ -67,7 +67,7 @@ define class ais_LocList as aisLocPage
   endfunc   
   * ----------------------------------------------------- *  
   function ProcessRequest
-    local loLocQry, loPlcQry, loTbl, loCol, loGrp
+    local loLocQry, loPlcQry, loTbl, loCol, loGrp, lnOrient, lcOrient
        
     loPlcQry = createobject("AisPlcQuery")
     with loPlcQry
@@ -84,11 +84,10 @@ define class ais_LocList as aisLocPage
     endwith 
     
     urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
+    urls.add(StuffUrl(this.cUrlA, 2, "LocAssign", "side", this.cPage_Side), "LocAssign")
 
     loTbl = createobject("AisTable")
     with loTbl
-      ** loGrp = .AddGroup('Loc_Side', 'Side: ', .t., ["Side: " + Loc_Side])
-      
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
 
       loCol = .addCursorColumn("Loc_Side", "Side")
@@ -96,10 +95,15 @@ define class ais_LocList as aisLocPage
       loCol = .addCursorColumn("Loc_H1", "Height-L")
       loCol = .addCursorColumn("Loc_W1", "Width")
       loCol = .addCursorColumn("Loc_H2", "Height-R")
-      loCol = .addCursorColumn("Loc_PK", "Inner<br>Panel", ;
-        [iif(seek(Loc_PK + "Inner", "PlcQuery_"), HTLink(StuffUrl(Urls.item("PnlHome"), "pnl", PlcQuery_.Plc_Pnl_FK), PlcQuery_.Pnl_ID), null)])
-      loCol = .addCursorColumn("Loc_PK", "Outer<br>Panel", ;
-        [iif(seek(Loc_PK + "Outer", "PlcQuery_"), HTLink(StuffUrl(Urls.item("PnlHome"), "pnl", PlcQuery_.Plc_Pnl_FK), PlcQuery_.Pnl_ID), null)])
+      for lnOrient = 1 to 2
+        lcOrient = iif(m.lnOrient = 1, "Inner", "Outer")
+        loCol = .addCursorColumn("Loc_PK", m.lcOrient + "<br>Panel", ;
+          [iif(seek(Loc_PK + "] + m.lcOrient + [", "PlcQuery_"),] + ;
+            [ HTLink(StuffUrl(Urls.item("PnlHome"), "pnl", PlcQuery_.Plc_Pnl_FK), PlcQuery_.Pnl_ID)] + [, ] + ;
+            [ HTLink(StuffUrl(Urls.item("LocAssign"), "loc", Loc_PK, "orient", "] + m.lcOrient + ["), "--", "assign panel...")] + ;
+          [)])
+      next 
+
       loCol = .addCursorColumn("Loc_Notes", "Notes", [L7ParseOnView(Loc_Notes)])
       loCol = .addCursorColumn("Loc_Marker", "Marker")
       
@@ -115,7 +119,6 @@ define class ais_LocList as aisLocPage
         response.write(.render())
         .Reset()
       endif
-      
     endwith 
     
     return 
@@ -179,6 +182,104 @@ define class ais_LocSumList as aisLocPage
     return 
   endfunc 
 enddefine && LocSumList
+
+*** ========================================================= ***
+define class ais_LocAssign as aisLocPage 
+  cPage_Orient = null 
+  cPage_Side = null
+  * --------------------------------------------------------- *
+  function BeforeProcessRequest
+    this.cPage_Orient = this.readQueryString("orient", .t., .t.)
+    this.cPage_Side = this.readQueryString("side", .t., .t.)
+    dodefault()
+    return 
+  endfunc   
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    this.cCancelUrl = StuffURL(this.cUrlB, 2, "LocList", "side", this.cPage_Side)
+    this.Assert(poContext.lAdmin)
+    this.assert(inlist(this.cPage_Orient, "Outer", "Inner"), "invalid orientation")
+
+    this.cSubTitle = textmerge([Set Panel Location for <<this.oLoc.Loc_Side>>-<<this.oLoc.Loc_No>> (<<this.cPage_Orient>>)])
+    local loForm, vp_cPlc_PK, loQ
+
+    * Query available panels:
+    loQ = createobject("AisPnlQuery") 
+    with loQ
+      .cAlias = "Available_Panels_"
+      .lHasLocation = .f.
+      .Execute()
+    endwith 
+    this.assert(loQ.nTally > 0, "No available panels remain.")
+
+    vp_cPlc_PK = space(32)
+    use V_PanelLocation in select("V_PanelLocation")
+    cursorsetprop("Buffering", 5, "V_PanelLocation")
+    loForm = this.createForm('aisLocAssignForm', this.cUrlC)
+    with loForm
+      .cTitle = this.cSubTitle 
+      .AddControls()
+      .DoEvents() 
+
+      if .Valid()
+        select V_PanelLocation
+        append blank
+        replace Plc_Loc_FK with this.cLoc ;
+          Plc_Orientation with this.cPage_Orient 
+
+        .UpdateControlSources()
+        select V_PanelLocation  && UpdateControlSources can alter work area
+        StampRec( CurrentUser, THIS.tNow )
+        scatter memo name loNewRec 
+        
+        * Now save the record using a transaction:
+        local loTrans, loExc, lcMailMessage, lcExcMessage, llSendEmail
+        llSendEmail = .f.  
+        loTrans = THIS.CreateTransaction()
+        loTrans.AddCursor("V_PanelLocation")
+
+        if loTrans.Save()  
+          select V_PanelLocation 
+          Response.Redirect(this.cCancelUrl)
+          return 
+        else 
+          this.ErrorMsg( "Database Failure Saving Record!", ;
+            "Error " + TRANSFORM( loTrans.aFailures[1, 1]) + [ :] + ;
+            loTrans.aFailures[1, 2] )
+          ** this.ServerError(textmerge('Database Failure Saving Record. Error <<loTrans.aFailures[1, 1]>>: <<loTrans.aFailures[1, 2]>>'))
+          return  
+        endif  && Save()
+        
+      endif 
+    endwith 
+    response.write(loForm.render())
+  endfunc 
+enddefine 
+
+*** ========================================================= ***
+define class aisLocAssignForm as AisForm
+  cTitle = "Assign Panel to Location Form"
+  * --------------------------------------------------------- *
+  function AddControls
+    with this
+      .AddObject("cboPnl_FK", "L7Popup")
+      with .cboPnl_FK
+        .cControlSource = "V_PanelLocation.Plc_Pnl_FK"
+        .lRequired = .t.
+        .cLabel = "Select Panel"
+        .lAutoRender = .T.
+        .nRowSourceType = L7_ROWSOURCETYPE_ALIAS
+        .cRowSource = "Available_Panels_"
+        *!* ex: .cFilterExpression = [Fac_Storage = .t.]
+        .cValueExpression = [Pnl_PK]
+        .cLabelExpression = [Pnl_ID]
+        .vFirstItemValue = space(32) && 0 for integer keys
+        .cFirstItemLabel = "[ select from choices below ]"
+      endwith 
+    endwith
+    return 
+  endfunc 
+enddefine 
 
 *** ===================================================== ***
 define class AisPlcQuery as L7Query
