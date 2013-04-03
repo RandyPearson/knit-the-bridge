@@ -426,6 +426,7 @@ define class aisPage as L7Page
     ** this.addMenuItem(m.lcMenu, 'Bridge Locations', StuffUrl(this.cUrlA, 2, "LocList"))
     this.addMenuItem(m.lcMenu, 'Dahntahn Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Down"))
     this.addMenuItem(m.lcMenu, 'Uptahn Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Up"))
+    this.addMenuItem(m.lcMenu, 'Management Report', StuffUrl(this.cUrlA, 2, "Home"))
     
     ** this.addMenuItem(m.lcMenu, 'About', StuffUrl(this.cUrlA, 2, "About"), "About")
     if poContext.lAdmin

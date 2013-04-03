@@ -228,7 +228,7 @@ define class ais_FacForm as aisFacPage
       scatter memo name loOldRec
     endif 
     cursorsetprop("Buffering", 5, "V_Facility")
-    loForm = this.createForm('aisFacilityForm')
+    loForm = this.createForm('aisFacilityForm', this.cUrlC)
     with loForm
       .lNewRecord = THIS.lAdding
       .AddControls()

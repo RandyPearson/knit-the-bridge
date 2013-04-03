@@ -559,7 +559,7 @@ define class ais_PnlForm as aisPnlPage
       scatter memo name loOldRec
     endif 
     cursorsetprop("Buffering", 5, "V_Panel")
-    loForm = this.createForm('aisPanelForm')
+    loForm = this.createForm('aisPanelForm', this.cUrlC)
     with loForm
       .lNewRecord = THIS.lAdding
       .AddControls()

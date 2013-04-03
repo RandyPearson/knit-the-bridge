@@ -142,6 +142,7 @@ define class ais_ArtList as aisMultiArtPage
 
   cPage_Flags = null
   lPage_Approved = null
+  lPage_Response = null
   cSubTitle = "Artists N'At"
   cPage_Srch1 = null
   * --------------------------------------------------------- *
@@ -155,6 +156,9 @@ define class ais_ArtList as aisMultiArtPage
 
     lcStr = this.ReadQueryString("approved", .t., .t.)
     this.lPage_Approved = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+
+    lcStr = this.ReadQueryString("response", .t., .t.)
+    this.lPage_Response = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
     
     dodefault()  && required bubble-up
     return    
@@ -181,6 +185,7 @@ define class ais_ArtList as aisMultiArtPage
         .addMenuItem("main\This", "Approved and Not Approved", StuffUrl(.cUrlB, "Approved", .f.),, isnull(.lPage_Approved))
 
         .addMenuItem("main\This", "Process Approvals", StuffUrl(.cUrlB, 2, "BrowseUnapproved"))
+        .addMenuItem("main\This", "Response Needed", StuffUrl(.cUrlB, "Response", "0", "fields", "registry,contact,part"),, !isnull(.lPage_Response))
         .addMenuItem("main\This", "New Sign-Up...", StuffUrl(.cUrlA, 2, "ArtNew"))
       endif 
       .addMenuItem("main\Reports", "Contact Listing", StuffUrl(.cUrlB, "order", "name", "fields", "names,contact"))
@@ -209,6 +214,7 @@ define class ais_ArtList as aisMultiArtPage
           store .t. to loQry.&lcProp
         endif 
       next 
+      .lKtbResponse = this.lPage_Response
       .lAccountInactive = this.lPage_Approved
       .cSrch1 = this.cPage_Srch1
       
@@ -263,11 +269,11 @@ define class ais_ArtList as aisMultiArtPage
       endif 
 
       if this.oPage_Fields.getkey("part") > 0
-        loCol = .addCursorColumn("Art_Help_Other", "Participation", [aisFormatParticipation(THISRECORD)])
+        loCol = .addCursorColumn("Art_Help_Other", "Participation", [L7ParseOnView(aisFormatParticipation(THISRECORD))])
       endif
 
       if this.oPage_Fields.getkey("registry") > 0
-        loCol = .addCursorColumn("Art_Participation", "Participation")
+        loCol = .addCursorColumn("Art_Participation", "Participation (original from blog)")
         loCol = .addCursorColumn("Art_Register_Time", "Sign-Up Time", [ttoc(Art_Register_Time,3) + "<br>" + L7TimeDiff(Art_Register_Time)])
         loCol = .addCursorColumn("Art_KTB_Response", "Response")
         loCol = .addCursorColumn("Art_Approved", "Approved?")
@@ -302,7 +308,7 @@ define class Ais_ArtBrowse as aisMultiArtPage
     use (m.lcAlias) in select(m.lcAlias)
     cursorsetprop("Buffering", 5, m.lcAlias)
     select (m.lcAlias)
-    loForm = this.CreateForm("AisArtBrowseForm")
+    loForm = this.CreateForm("AisArtBrowseForm", this.cUrlC)
     with loForm
       .lCustom_Location = this.oPage_Fields.getkey("location") > 0
       .lCustom_Names = this.oPage_Fields.getkey("names") > 0 
@@ -875,8 +881,20 @@ define class aisRegisterForm AS aisArtistForms
         .cGroupID = "comments"
         .cControlSource = "V_artist.Art_Comments"
         .cLabel = "Additional Comments"
-        .nRows = 3
+        .nRows = 2
       endwith
+
+      if poContext.lAdmin
+        .AddObject("edtKtb_Response", "L7Textarea")
+        with .edtKtb_Response
+          .cGroupID = "comments"
+          .cControlSource = "V_artist.Art_Ktb_Response"
+          .cLabel = "KtB Response"
+          .cInstructions = "To be completed after response has been sent. If no response needed, enter: n/a"
+          .nRows = 2
+          .cCssClass = "FormControlPrivate"
+        endwith
+      endif
     endwith
     return 
   endfunc  && addControls
@@ -1193,7 +1211,7 @@ define class Ais_BrowseUnapproved as AisArtPage
     use (m.lcAlias) in select(m.lcAlias)
     cursorsetprop("Buffering", 5, m.lcAlias)
     select (m.lcAlias)
-    loForm = this.CreateForm("AisArtBrowseForm")
+    loForm = this.CreateForm("AisArtBrowseForm", this.cUrlC)
     with loForm
       .lCustom_Registry = .t. 
       .lCustom_Names = .t. 
@@ -1395,6 +1413,7 @@ define class AisArtQuery AS L7Query
   lUser = NULL
   lAccountInactive = null && surrogate is "approved"
   lPanelsSubmitted = null 
+  lKtbResponse = null
   
   * Types of people:
   lAdmin = .F.
@@ -1462,6 +1481,10 @@ define class AisArtQuery AS L7Query
 
       if !isnull( .lHidden)
         .cWhereClause = .cWhereClause + [ AND Art_Hidden = ] + IIF(.lHidden, [.T.], [.F.])
+      endif 
+
+      if !isnull( .lKtbResponse)
+        .cWhereClause = .cWhereClause + [ AND ] + IIF(.lKtbResponse, [!], []) + [empty(Art_KTB_Response)]
       endif 
 
       if !isnull(.lPanelsSubmitted)
