@@ -347,6 +347,46 @@ define class Ais_ArtBrowse as aisMultiArtPage
 enddefine  && Ais_ArtBrowse 
 
 *** ========================================================= ***
+define class ais_NeighborhoodSumList as aisArtPage 
+  lArtRequired = .f.
+  cSubTitle = "Neighborhood Summary Report"
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    local loQry, loTbl, loCol, loGrp
+       
+    loQry = createobject("AisArtQuery")
+    with loQry
+      
+      .lOldEngineBehavior = .t. 
+      .AddOrderBy("Art_Neighborhood",, .f.)
+      .nGrouping = 1
+      .ClearFields()
+      
+      .AddFields("Art_Neighborhood, count(*) as Count_")
+      
+      .execute()
+    endwith 
+    
+    loTbl = createobject("AisTable")
+    with loTbl
+      .cTableCaption = this.cSubTitle 
+      .cGrandRowClass      = "GrandRow sortbottom"  
+      
+      loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
+
+      loCol = .addCursorColumn("Art_Neighborhood", "Neighborhood")
+
+      loCol = .addCursorColumn("Count_", "Count")
+      loCol.nCalcType = L7_CALCTYPE_SUM
+      
+      response.write(.render())
+    endwith 
+    
+    return 
+  endfunc 
+enddefine && ais_NeighborhoodSumList 
+
+*** ========================================================= ***
 define class ais_ArtHome as aisArtPage 
   * ----------------------------------------------------- *  
   function AddDefaultMenu
