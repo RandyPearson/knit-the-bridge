@@ -71,6 +71,10 @@ ul.contextMenu { margin-left: 0px; padding-left: 0; list-style-type: none; margi
 
 p.break { margin-bottom: 5em }
 
+table.mgmt-report{border: 0;}
+.mgmt-report th{font-weight: normal; color: brown; text-align: right;}
+.mgmt-report td{text-align: right;}
+
 /* Data record and tables display */
 table, table th, table td {border: 1px solid #c6c; border-collapse: collapse;}
 

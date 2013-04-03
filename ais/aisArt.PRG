@@ -1394,7 +1394,8 @@ define class AisArtQuery AS L7Query
   * Account-based params:
   lUser = NULL
   lAccountInactive = null && surrogate is "approved"
-
+  lPanelsSubmitted = null 
+  
   * Types of people:
   lAdmin = .F.
   lCore = .F.
@@ -1461,6 +1462,11 @@ define class AisArtQuery AS L7Query
 
       if !isnull( .lHidden)
         .cWhereClause = .cWhereClause + [ AND Art_Hidden = ] + IIF(.lHidden, [.T.], [.F.])
+      endif 
+
+      if !isnull(.lPanelsSubmitted)
+        .cWhereClause = .cWhereClause + [ and Art_PK] + iif(.lPanelsSubmitted, [ in ], [ not in ]) + ;
+          [(select Pce_Art_FK from Piece where !Pce_Inactive and Pce_Whole_Panel)]
       endif 
 
       loFlags = AisArtQueryFlags()
