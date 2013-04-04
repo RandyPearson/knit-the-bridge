@@ -149,6 +149,7 @@ define class ais_PceList as aisPcePage
     urls.add(StuffUrl(this.cUrlA, 2, "PceForm"), "PceForm")
     urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
     urls.add(StuffUrl(this.cUrlA, 2, "FacHome"), "FacHome")
+    urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
 
     loTbl = createobject("AisTable")
     with loTbl
@@ -160,7 +161,7 @@ define class ais_PceList as aisPcePage
       case this.cPage_Order = "fac"
         .addGroup('Pce_Fac_FK', 'Facility: ', .t., ["Facility: " + Fac_Name])
       case this.cPage_Order = "pnl"
-        .addGroup('Pnl_ID', 'Panel: ', .t., ["Panel: " + Pnl_ID])
+        .addGroup('Pnl_ID', 'Panel: ', .t., ["Panel: " + HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pce_Pnl_FK), Pnl_ID)])
       otherwise 
         = .f. && no grouping
       endcase
