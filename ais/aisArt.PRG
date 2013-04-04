@@ -924,17 +924,6 @@ define class aisRegisterForm AS aisArtistForms
         .nRows = 2
       endwith
 
-      if poContext.lAdmin
-        .AddObject("edtKtb_Response", "L7Textarea")
-        with .edtKtb_Response
-          .cGroupID = "comments"
-          .cControlSource = "V_artist.Art_Ktb_Response"
-          .cLabel = "KtB Response"
-          .cInstructions = "To be completed after response has been sent. If no response needed, enter: n/a"
-          .nRows = 2
-          .cCssClass = "FormControlPrivate"
-        endwith
-      endif
     endwith
     return 
   endfunc  && addControls
