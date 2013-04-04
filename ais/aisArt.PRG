@@ -225,7 +225,7 @@ define class ais_ArtList as aisMultiArtPage
         .addParticipationFields()
       endif 
       if this.oPage_Fields.getkey("registry") > 0
-        .addFields("Art_Register_Time, Art_KTB_Response, Art_Participation")
+        .addFields("Art_Register_Time, Art_KTB_Response, Art_Participation, Art_Notes")
       endif 
       if this.oPage_Fields.getkey("contact") > 0
         .addFields("Art_Email, Art_Phone, Art_Contact_Orig")
@@ -276,7 +276,7 @@ define class ais_ArtList as aisMultiArtPage
         loCol = .addCursorColumn("Art_Participation", "Participation (original from blog)")
         loCol = .addCursorColumn("Art_Register_Time", "Sign-Up Time", [ttoc(Art_Register_Time,3) + "<br>" + L7TimeDiff(Art_Register_Time)])
         loCol = .addCursorColumn("Art_KTB_Response", "Response")
-        loCol = .addCursorColumn("Art_Approved", "Approved?")
+        loCol = .addCursorColumn("Art_Notes", "Notes")
       endif
 
       if poContext.lCore
@@ -1397,6 +1397,13 @@ define class AisArtBrowseForm AS AisForm
             .nRows = 2
             .cCssClass = "FormControlPrivate"
           endwith
+
+          .AddObject("lblNotes", "L7Label")
+          with .lblNotes
+            .cFieldType = "C"
+            .cControlSource = this.cAlias + ".Art_Notes"
+            .cLabel = "Notes"
+          endwith 
 
           .AddObject("chkInactive", "L7Checkbox")
           with .chkInactive
