@@ -195,9 +195,10 @@ define class ais_PceList as aisPcePage
           [)])
         
       endif 
-      if poContext.lCore
+      if poContext.lAdmin
         loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
-          'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit Piece...]")')
+          'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit Piece...]")', 'no-print')
+        loCol.cHeadingClass = "nosort no-print" 
       endif 
       response.write(.render())
       

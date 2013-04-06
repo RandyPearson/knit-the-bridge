@@ -163,8 +163,13 @@ define class ais_PnlList as aisPnlPage
       loCol = .addCursorColumn("Plc_Orientation", "Bridge<br>Location", ;
         [<<trim(Loc_Side)>>-<<Loc_No>> (<<Plc_Orientation>>)], 'location')
       loCol.lDisplayTextmerge = .t. 
-      loCol = .addCursorColumn("Pnl_PK", "Edit Panel", ;
-        'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit Panel...]")', 'panel')
+
+      if poContext.lAdmin
+        loCol = .addCursorColumn("Pnl_PK", "Edit Panel", ;
+          'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit Panel...]")', 'panel', "no-print")
+        loCol.cHeadingClass = "nosort no-print" 
+      endif 
+
       response.write(.render())
     endwith 
     

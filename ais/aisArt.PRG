@@ -285,8 +285,8 @@ define class ais_ArtList as aisMultiArtPage
         endif
 
         loCol = .addCursorColumn("Art_PK", "Edit Artist", ;
-          'HTLink(StuffUrl(urls.item("ArtForm"), "art", Art_PK), "[Edit Artist...]")')
-        loCol.cHeadingClass = "nosort" 
+          'HTLink(StuffUrl(urls.item("ArtForm"), "art", Art_PK), "[Edit Artist...]")', 'no-print')
+        loCol.cHeadingClass = "nosort no-print" 
       endif 
       response.write(.render())
 
