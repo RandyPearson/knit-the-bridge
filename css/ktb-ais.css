@@ -57,9 +57,10 @@ a:active  { color: green; text-decoration: underline; }
 .artist, .artist a:link, .artist a:visited {color: darkgreen !important;}
 .piece, .piece a:link, .piece a:visited {color: purple !important;}
 .panel, .panel a:link, .panel a:visited  {color: brown !important;}
-.location, .location a:link, .location a:visited  {color: orange !important;}
+.location, .location a:link, .location a:visited  {color: navy !important;}
+.facility, .facility a:link, .facility a:visited  {color: #EE7722 !important;}
 
-.id-field {font-weight: bold; font-size: 11px; }
+.id-field {font-weight: bold; font-size: 110%; }
 .private td {background-color: #eef;}
 .admin td {color: brown; background-color: #fee;}
 .hidden {display: none;}

@@ -418,7 +418,7 @@ define class ais_ArtHome as aisArtPage
   * ----------------------------------------------------- *  
   function ProcessRequest
     this.cSubTitle = AisArtistName(this.oArt) + ;
-      iif(this.oArt.Art_Approved, ", ID: " + this.oArt.Art_ID, ", No ID (still not approved)")
+      iif(this.oArt.Art_Approved, ", ID: " + HTWrap(this.oArt.Art_ID, 'span',, 'id-field artist'), ", No ID (still not approved)")
     
     response.write(this.page_getMainRecord())
     return 
@@ -533,8 +533,16 @@ define class ais_ArtHome as aisArtPage
         loCol = .AddCursorColumn('Pce_Dim_2', 'Dim 2')
         loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
         loCol = .AddCursorColumn('Pce_Received', 'Received')
-        loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
-          [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pce_Fac_FK), trim(Fac_Name), , "piece")])
+
+        loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;  
+          [iif(empty(Pce_Pnl_FK), ] + ;
+          [HTLink(StuffUrl(urls.item('FacHome'), 'fac', Pce_Fac_FK), AisFacilityName(Pce_Fac_FK), "go to facility", "facility")] + [, ] + ;
+          ["(panel) " + HTLink(StuffUrl(urls.item('FacHome'), 'fac', Pnl_Fac_FK), AisFacilityName(Pnl_Fac_FK), "go to facility", "facility")] + ;
+          [)])
+
+        *!*          loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
+        *!*            [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pce_Fac_FK), trim(Fac_Name), , "piece")])
+
         loCol = .addCursorColumn('Pce_Pnl_FK', "Bridge<br>Location", ;
           [aisFormatPanelLocation(Pce_Pnl_FK)])
         loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;

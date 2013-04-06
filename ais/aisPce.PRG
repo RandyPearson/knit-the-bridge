@@ -161,21 +161,22 @@ define class ais_PceList as aisPcePage
       case this.cPage_Order = "fac"
         .addGroup('Pce_Fac_FK', 'Facility: ', .t., ["Facility: " + Fac_Name])
       case this.cPage_Order = "pnl"
-        .addGroup('Pnl_ID', 'Panel: ', .t., ["Panel: " + HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pce_Pnl_FK), Pnl_ID)])
+        .addGroup('Pnl_ID', 'Panel: ', .t., ["Panel: " + HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pce_Pnl_FK), Pnl_ID, "go to panel", "id-field panel")])
       otherwise 
         = .f. && no grouping
       endcase
 
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Pce_ID", "Piece ID", ;
-        [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)])
+        [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)], "id-field piece")
       loCol = .addCursorColumn("Pce_Type", "Type")
       loCol = .addCursorColumn("Art_ID", "Artist ID", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), Art_ID)], "id-field artist")
       loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), aisArtistName(THISRECORD))], "artist")
       ** loCol = .addCursorColumn("Art_First_Name", "First Name")
-      loCol = .addCursorColumn("Pnl_Id", "Panel", , "id-field panel")
+      loCol = .addCursorColumn("Pnl_Id", "Panel", ;
+        [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pce_Pnl_FK), Pnl_ID)], "id-field panel")
       loCol = .addCursorColumn("Pce_Whole_Panel", "Whole Panel?")
       loCol = .addCursorColumn("Pce_Dim_1", "Dim 1")
       loCol = .addCursorColumn("Pce_Dim_2", "Dim 2")
@@ -183,8 +184,16 @@ define class ais_PceList as aisPcePage
       if isnull(loQry.lOrphans) or loQry.lOrphans
         loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
         loCol = .AddCursorColumn('Pce_Received', 'Received')
-        loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
-          [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pce_Fac_FK), trim(Fac_Name))])
+
+        *!*          loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
+        *!*            [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pce_Fac_FK), trim(Fac_Name))])
+
+        loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;  
+          [iif(empty(Pce_Pnl_FK), ] + ;
+          [HTLink(StuffUrl(urls.item('FacHome'), 'fac', Pce_Fac_FK), AisFacilityName(Pce_Fac_FK))] + [, ] + ;
+          ["(panel) " + HTLink(StuffUrl(urls.item('FacHome'), 'fac', Pnl_Fac_FK), AisFacilityName(Pnl_Fac_FK), "go to facility", "facility")] + ;
+          [)])
+        
       endif 
       if poContext.lCore
         loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
@@ -257,7 +266,7 @@ define class ais_PceHome as aisPcePage
   endfunc 
   * ----------------------------------------------------- *  
   function ProcessRequest
-    this.cSubTitle = "Piece " + this.oPce.Pce_ID + " from " + AisArtistName(Page.oArt.Art_PK) 
+    this.cSubTitle = "Piece " + HTWrap(this.oPce.Pce_ID, 'span',, 'id-field piece') + " from " + AisArtistName(Page.oArt.Art_PK) 
     response.write(this.page_getMainRecord())
 
     if poContext.lAdmin

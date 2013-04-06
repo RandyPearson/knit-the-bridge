@@ -151,20 +151,20 @@ define class ais_PnlList as aisPnlPage
       
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Pnl_ID", "Panel ID", ;
-        [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), Pnl_ID)])
+        [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), Pnl_ID)], 'id-field panel')
       loCol = .addCursorColumn("Pnl_Single_Piece", "Single-Piece?")
       loCol = .addCursorColumn("Pnl_Dim_1", "Dimension 1")
       loCol = .addCursorColumn("Pnl_Dim_2", "Dimension 2")
       loCol = .addCursorColumn("Pnl_Completed", "Completed?")
       loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
-        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pnl_Stitcher_Art_FK), aisArtistName(THISRECORD))])
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pnl_Stitcher_Art_FK), aisArtistName(THISRECORD))], 'artist')
       loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
-        [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pnl_Fac_FK), trim(Fac_Name))])
+        [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pnl_Fac_FK), trim(Fac_Name))], 'facility')
       loCol = .addCursorColumn("Plc_Orientation", "Bridge<br>Location", ;
-        [<<trim(Loc_Side)>>-<<Loc_No>> (<<Plc_Orientation>>)])
+        [<<trim(Loc_Side)>>-<<Loc_No>> (<<Plc_Orientation>>)], 'location')
       loCol.lDisplayTextmerge = .t. 
       loCol = .addCursorColumn("Pnl_PK", "Edit Panel", ;
-        'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit Panel...]")')
+        'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit Panel...]")', 'panel')
       response.write(.render())
     endwith 
     
@@ -431,7 +431,7 @@ define class ais_PnlHome as aisPnlPage
   endfunc 
   * ----------------------------------------------------- *  
   function ProcessRequest
-    this.cSubTitle = "Panel " + this.oPnl.Pnl_ID
+    this.cSubTitle = "Panel " + htWrap(this.oPnl.Pnl_ID, 'span',, 'id-field panel')
     response.write(this.page_getMainRecord())
 
     if poContext.lAdmin
@@ -451,7 +451,7 @@ define class ais_PnlHome as aisPnlPage
       .cCaption = this.cSubTitle
       .AddHeading('Key Information')
       
-      .AddRow("Panel ID", loData.Pnl_ID,, "id-field" )
+      .AddRow("Panel ID", loData.Pnl_ID,, "id-field panel" )
 
       .AddRow("Single-Piece?", loData.Pnl_Single_Piece)
 
@@ -463,7 +463,7 @@ define class ais_PnlHome as aisPnlPage
       .AddRow("Artist Name", ;
         HTLink(StuffUrl(this.cUrlA, 2, "ArtHome", "art", loData.Pnl_Stitcher_Art_FK), aisArtistName(loData.Pnl_Stitcher_Art_FK)))
       .AddRow("Current Storage Facility", ;
-        HTLink(StuffUrl(this.cUrlA, 2, "FacHome", "fac", loData.Pnl_Fac_FK), aisFacilityName(loData.Pnl_Fac_FK)))
+        HTLink(StuffUrl(this.cUrlA, 2, "FacHome", "fac", loData.Pnl_Fac_FK), aisFacilityName(loData.Pnl_Fac_FK)),,'facility')
             
       loRow.clear()
       loRow.cLabel = "Bridge Location"

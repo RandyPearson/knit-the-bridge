@@ -99,7 +99,7 @@ define class ais_LocList as aisLocPage
         lcOrient = iif(m.lnOrient = 1, "Inner", "Outer")
         loCol = .addCursorColumn("Loc_PK", m.lcOrient + "<br>Panel", ;
           [iif(seek(Loc_PK + "] + m.lcOrient + [", "PlcQuery_"),] + ;
-            [ HTLink(StuffUrl(Urls.item("PnlHome"), "pnl", PlcQuery_.Plc_Pnl_FK), PlcQuery_.Pnl_ID)] + [, ] + ;
+            [ HTLink(StuffUrl(Urls.item("PnlHome"), "pnl", PlcQuery_.Plc_Pnl_FK), PlcQuery_.Pnl_ID, "go to panel", "id-field panel")] + [, ] + ;
             [ HTLink(StuffUrl(Urls.item("LocAssign"), "loc", Loc_PK, "orient", "] + m.lcOrient + ["), "--", "assign panel...")] + ;
           [)])
       next 

@@ -92,7 +92,7 @@ define class ais_FacList as aisFacPage
     with loTbl
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Fac_ID", "Facility ID", ;
-        [HTLink(StuffUrl(urls.item("FacHome"), "Fac", Fac_PK), Fac_ID)])
+        [HTLink(StuffUrl(urls.item("FacHome"), "Fac", Fac_PK), Fac_ID)], 'id-field facility')
       loCol = .addCursorColumn("Fac_Name", "Facility Name")
       loCol = .addCursorColumn("Fac_DropOff", "Drop-Off?", [iif(Fac_DropOff, "Drop-Off", "--")])
       loCol = .addCursorColumn("Fac_Storage", "Storage?", [iif(Fac_Storage, "Storage", "--")])
@@ -119,7 +119,7 @@ define class ais_FacHome as aisFacPage
   endfunc 
   * ----------------------------------------------------- *  
   function ProcessRequest
-    this.cSubTitle = "Facility " + this.oFac.Fac_ID + " - " + trim(this.oFac.Fac_Name) 
+    this.cSubTitle = "Facility " + HTWrap(this.oFac.Fac_ID, 'span',,'id-field facility') + " - " + trim(this.oFac.Fac_Name) 
     response.write(this.page_getMainRecord())
 
     if poContext.lAdmin
@@ -191,12 +191,12 @@ define class ais_FacHome as aisFacPage
     with loTbl
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Pnl_ID", "Panel ID", ;
-        [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), Pnl_ID)])
+        [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), Pnl_ID)], "id-field panel")
       loCol = .addCursorColumn("Pnl_Single_Piece", "Single-Piece?")
       loCol = .addCursorColumn("Pnl_Dim_1", "Dim 1")
       loCol = .addCursorColumn("Pnl_Dim_2", "Dim 2")
       loCol = .addCursorColumn("Pnl_PK", "Edit Panel", ;
-        'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit Panel...]")')
+        'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit Panel...]")',"panel")
       return .render()
     endwith 
     
