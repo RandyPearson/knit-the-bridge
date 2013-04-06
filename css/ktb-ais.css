@@ -1,7 +1,6 @@
-body { margin: 0; font-family: Tahoma, Arial; cursor: default; overflow: hidden /* for status bar, WHY NOT 17?! */ }
+body { margin: 0; font-family: Tahoma, Arial; }
 
 /* Header */
-a { text-decoration: underline }
 #header { position: absolute; top: 0; left: 0; right: 0; height: 57px;  padding: 5px 0 0 0; z-index: 200 }
 #header h1 { font-weight: normal; font-face: Tahoma, Arial; font-size: 18px; margin: 0;}
 #header h2 { font-weight: normal; font-face: Tahoma, Arial; font-size: 16px; margin: 0;}
@@ -46,12 +45,17 @@ a { text-decoration: underline }
 #content {font-family: Tahoma, Arial; font-size: 11px;}
 
 @media print {
-	#header {display: none;}
-  #sidebar {display: none; position: relative;}
+	#header {position: relative; color: black; background-color: white; background: inherit; }
+	#header .user, #header #signOut {display: none;}
+  #sidebar {display: none; }
   #content {position: relative; padding: 5px; overflow: visible;}
   #status_bar {display: none; position: relative;}
+  #server-override-notice-content {display: none;}
   .admin {display: none;}
   .no-print{display: none;}
+  body, #content {font-size: 12pt;}
+  h1 {font-size: 13pt;}
+  h2 {font-size: 14pt;}
 }
 /* Ubiquitous */
 
