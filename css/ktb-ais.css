@@ -46,17 +46,23 @@ a { text-decoration: underline }
 #content {font-family: Tahoma, Arial; font-size: 11px;}
 
 /* Ubiquitous */
-.id-field {font-weight: bold; font-size: 12px; color: brown;}
-.private td {background-color: #eef;}
-.admin td {color: brown; background-color: #fee;}
-.hidden {display: none;}
 
 /* Plain links in text: */
 a { text-decoration: none; }
-a:link    { color: blue;    text-decoration: none; }
-a:visited { color: blue;    text-decoration: none; }
-a:hover   { color: red;  text-decoration: underline; }
-a:active  { color: green;   text-decoration: underline; }
+a:link    { color: blue;  text-decoration: none; }
+a:visited { color: blue;  text-decoration: none; }
+a:hover   { color: red;   text-decoration: underline; }
+a:active  { color: green; text-decoration: underline; }
+
+.artist, .artist a:link, .artist a:visited {color: darkgreen !important;}
+.piece, .piece a:link, .piece a:visited {color: purple !important;}
+.panel, .panel a:link, .panel a:visited  {color: brown !important;}
+.location, .location a:link, .location a:visited  {color: orange !important;}
+
+.id-field {font-weight: bold; font-size: 11px; }
+.private td {background-color: #eef;}
+.admin td {color: brown; background-color: #fee;}
+.hidden {display: none;}
 
 a.action { color: #999; text-decoration: underline; font-weight: normal }
 a.action:hover { color: #c00; cursor: pointer }

@@ -198,7 +198,7 @@ define class ais_ArtList as aisMultiArtPage
     endwith
     dodefault()
     return 
-  endfunc 
+  endfunc  && AddDefaultMenu
   * ----------------------------------------------------- *  
   function ProcessRequest
     local loQry, loFlags, lnIdx, loItem, lcWord, lcProp, loFields, ;
@@ -228,7 +228,7 @@ define class ais_ArtList as aisMultiArtPage
         .addFields("Art_Register_Time, Art_KTB_Response, Art_Participation, Art_Notes")
       endif 
       if this.oPage_Fields.getkey("contact") > 0
-        .addFields("Art_Email, Art_Phone, Art_Contact_Orig")
+        .addFields("Art_Email, Art_Phone, Art_Contact_Orig, Art_Notes")
       endif 
       
       do case
@@ -255,7 +255,7 @@ define class ais_ArtList as aisMultiArtPage
       endcase
 
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
-      loCol = .addCursorColumn("Art_ID", "Artist ID",, "id-field")
+      loCol = .addCursorColumn("Art_ID", "Artist ID",, "id-field artist")
       loCol = .addCursorColumn("Art_Last_Name", "Name", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), aisArtistName(THISRECORD))])
 
@@ -276,23 +276,26 @@ define class ais_ArtList as aisMultiArtPage
         loCol = .addCursorColumn("Art_Participation", "Participation (original from blog)")
         loCol = .addCursorColumn("Art_Register_Time", "Sign-Up Time", [ttoc(Art_Register_Time,3) + "<br>" + L7TimeDiff(Art_Register_Time)])
         loCol = .addCursorColumn("Art_KTB_Response", "Response")
-        loCol = .addCursorColumn("Art_Notes", "Notes")
       endif
 
-      if poContext.lCore
+      if poContext.lAdmin
+        if this.oPage_Fields.getkey("registry") > 0 or this.oPage_Fields.getkey("contact") > 0
+          loCol = .addCursorColumn("Art_Notes", "Notes")
+        endif
+
         loCol = .addCursorColumn("Art_PK", "Edit Artist", ;
           'HTLink(StuffUrl(urls.item("ArtForm"), "art", Art_PK), "[Edit Artist...]")')
         loCol.cHeadingClass = "nosort" 
       endif 
       response.write(.render())
 
-      if poContext.lCore
+      if poContext.lDeveloper
         Response.Write(HTWrap(loQry.cSqlStatement, 'div,p', 'admin,debug'))
       endif
     endwith 
-    
-  endfunc 
-enddefine 
+    return 
+  endfunc && ProcessRequest
+enddefine && ais_ArtList 
 
 *** ===================================================== ***
 define class Ais_ArtBrowse as aisMultiArtPage 
@@ -356,14 +359,11 @@ define class ais_NeighborhoodSumList as aisArtPage
        
     loQry = createobject("AisArtQuery")
     with loQry
-      
       .lOldEngineBehavior = .t. 
       .AddOrderBy("Art_Neighborhood",, .f.)
       .nGrouping = 1
       .ClearFields()
-      
       .AddFields("Art_Neighborhood, count(*) as Count_")
-      
       .execute()
     endwith 
     
@@ -373,15 +373,12 @@ define class ais_NeighborhoodSumList as aisArtPage
       .cGrandRowClass      = "GrandRow sortbottom"  
       
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
-
       loCol = .addCursorColumn("Art_Neighborhood", "Neighborhood")
-
       loCol = .addCursorColumn("Count_", "Count")
       loCol.nCalcType = L7_CALCTYPE_SUM
       
       response.write(.render())
     endwith 
-    
     return 
   endfunc 
 enddefine && ais_NeighborhoodSumList 
@@ -436,7 +433,7 @@ define class ais_ArtHome as aisArtPage
       .cCaption = AisArtistName(m.loData) + " Data"
       .AddHeading('Key Information')
       
-      .AddRow("ID", loData.ART_ID,, "id-field" )
+      .AddRow("ID", loData.ART_ID,, "id-field artist" )
       .AddRow("Approved", loData.ART_APPROVED)
 
       .AddRow("Name", AisArtistName(m.loData, .t.))
@@ -525,10 +522,10 @@ define class ais_ArtHome as aisArtPage
       with loTbl
         loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
         loCol = .addCursorColumn("Pce_ID", "Piece ID", ;
-          [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)], "id-field")
+          [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)], "id-field piece")
         loCol = .addCursorColumn("Pce_Type", "Type")
         loCol = .addCursorColumn("Pnl_Id", "Panel", ;
-          [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pce_Pnl_FK), Pnl_ID)], "id-field")
+          [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pce_Pnl_FK), Pnl_ID)], "id-field panel")
 
         loCol = .AddCursorColumn('Pce_Whole_Panel', 'Whole Panel?')
         loCol = .AddCursorColumn('Pce_Dim_1', 'Dim 1')
@@ -536,7 +533,7 @@ define class ais_ArtHome as aisArtPage
         loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
         loCol = .AddCursorColumn('Pce_Received', 'Received')
         loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
-          [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pce_Fac_FK), trim(Fac_Name))])
+          [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pce_Fac_FK), trim(Fac_Name), , "piece")])
         loCol = .addCursorColumn('Pce_Pnl_FK', "Bridge<br>Location", ;
           [aisFormatPanelLocation(Pce_Pnl_FK)])
         loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
@@ -649,6 +646,7 @@ define class ais_ArtForm as aisArtPage
         Event........: Person Created by <<CurrentUser.getUserName()>>
         Entry Time...: <<datetime()>> GMT
         Name.........: <<m.lcName>>
+        Artist ID....: <<loRec.Art_ID>> 
         Email........: <<trim(loRec.Art_Email)>> <<trim(loRec.Art_Phone)>>
         Neighborhood.: <<trim(loRec.Art_Neighborhood)>> 
         Participation: 
@@ -662,7 +660,7 @@ define class ais_ArtForm as aisArtPage
       endtext
 
       lcExcMessage = ""
-      lcSubject = textmerge([New Person Added: <<m.lcName>>])
+      lcSubject = textmerge([New Person Added: <<m.lcName>> (ID: <<loRec.Art_ID>>)])
       lcMailMessage = textmerge(m.lcMailMessage)
       * Send the Email:
       this.oApp.QueueMessage( ;
@@ -886,6 +884,18 @@ define class aisRegisterForm AS aisArtistForms
         .cCaption = "OK to Release Name"
         .cFalseCaption = "DO NOT Release Name"
       endwith
+
+      .AddObject("cboAge_Range", "L7Popup")
+      with .cboAge_Range
+        .cGroupID  ="name"
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_Age_Range"
+        .cLabel = "Age Range"
+        .nStyle = L7_MULTISTYLE_VERTICAL
+        .nRowSourceType = L7_ROWSOURCETYPE_VALUE
+        .cRowSource = THISAPP_AGE_RANGES
+      endwith
+
       .AddObject("txtEmail", "L7Textbox")
       with .txtEmail
         .cGroupID = "cont"
@@ -1482,7 +1492,7 @@ define class AisArtQuery AS L7Query
   endfunc
   * --------------------------------------------------------- *
   function BuildWhereClause
-    local lcStr, lcInnerWhere, loFlags, lnFlag, loFlag, lcField
+    local lcStr, lcInnerWhere, loFlags, lnFlag, loFlag, lcField, lnWords, lcWord1, lcWord2
     store "" to lcInnerWhere
 
     WITH this 
@@ -1495,7 +1505,16 @@ define class AisArtQuery AS L7Query
 
       if !empty(.cSrch1)
         lcStr = lower(.cSrch1)
-        .cWhereClause = .cWhereClause + [ AND '] + m.lcStr + [' $ lower(Art_Last_Name + Art_First_Name + Art_Full_Name + Art_Email + Art_Access_Token + Art_PK + Art_ID + Art_Notes + Art_Participation)]
+        lnWords = getwordcount(m.lcStr)
+        if m.lnWords = 2
+          lcWord1 = alltrim(getwordnum(m.lcStr, 1))
+          lcWord2 = alltrim(getwordnum(m.lcStr, 2))
+          .cWhereClause = .cWhereClause + [ AND ('] + m.lcWord1 + [' $ lower(Art_Last_Name + Art_First_Name + Art_Full_Name + Art_Email + Art_ID + Art_Notes + Art_Participation)] + ;
+            [ OR '] + m.lcWord2 + [' $ lower(Art_Last_Name + Art_First_Name + Art_Full_Name + Art_Email + Art_ID + Art_Notes + Art_Participation)] + [)]
+        else
+          lcWord1 = m.lcStr
+          .cWhereClause = .cWhereClause + [ AND '] + m.lcWord1 + [' $ lower(Art_Last_Name + Art_First_Name + Art_Full_Name + Art_Email + Art_ID + Art_Notes + Art_Participation)]
+        endif
       endif 
       if !empty(.cUser_Id)
         .cWhereClause = .cWhereClause + ;

@@ -171,11 +171,11 @@ define class ais_PceList as aisPcePage
         [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)])
       loCol = .addCursorColumn("Pce_Type", "Type")
       loCol = .addCursorColumn("Art_ID", "Artist ID", ;
-        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), Art_ID)],"id-field")
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), Art_ID)], "id-field artist")
       loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
-        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), aisArtistName(THISRECORD))])
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), aisArtistName(THISRECORD))], "artist")
       ** loCol = .addCursorColumn("Art_First_Name", "First Name")
-      loCol = .addCursorColumn("Pnl_Id", "Panel",, "id-field")
+      loCol = .addCursorColumn("Pnl_Id", "Panel", , "id-field panel")
       loCol = .addCursorColumn("Pce_Whole_Panel", "Whole Panel?")
       loCol = .addCursorColumn("Pce_Dim_1", "Dim 1")
       loCol = .addCursorColumn("Pce_Dim_2", "Dim 2")
@@ -267,17 +267,18 @@ define class ais_PceHome as aisPcePage
   endfunc 
   * ----------------------------------------------------- *  
   function page_getMainRecord()
-    local loElem, loRow, lcRet, loData
+    local loElem, loRow, lcRet, loData, llPanel
     lcRet = ""
     loData = this.oPce
+    llPanel = !empty(loData.Pce_Pnl_FK)
     loElem = createobject("aisRecordElement")
     with loElem
       loRow = .getRowObject()
       .cCaption = this.cSubTitle
       .AddHeading('Key Information')
       
-      .AddRow("Piece ID", loData.Pce_ID,, "id-field" )
-      .AddRow("Artist ID", this.oArt.ART_ID,, "id-field" )
+      .AddRow("Piece ID", loData.Pce_ID,, "id-field piece" )
+      .AddRow("Artist ID", this.oArt.ART_ID,, "id-field artist" )
       .AddRow("Artist's Name", HtLink(StuffUrl(this.cUrlA, 2, "ArtHome", "art", this.oArt.ART_PK), AisArtistName(this.oArt.ART_PK)))
       .AddRow("Type", loData.Pce_Type)
       .AddRow("Dimension 1", loData.Pce_Dim_1)
@@ -286,7 +287,7 @@ define class ais_PceHome as aisPcePage
         .AddRow("Whole-Panel Piece?", loData.Pce_Whole_Panel)
         .AddRow("Assigned to Panel?", iif(empty(m.loData.Pce_Pnl_FK), ;
           "No (see menu options)", ;
-          "Yes: " + HtWrap(this.oPnl.Pnl_Id, 'span', ,'id-field') + SP + HTLink(StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", loData.Pce_Pnl_FK), "View Panel Page...")))
+          "Yes: " + HtWrap(this.oPnl.Pnl_Id, 'span', ,'id-field panel') + SP + HTLink(StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", loData.Pce_Pnl_FK), "View Panel Page...")))
       endif
       .AddRow("Comments", L7ParseOnView(loData.Pce_COMMENTS))
 
@@ -295,7 +296,7 @@ define class ais_PceHome as aisPcePage
       .AddRow("Ship/Delivery Date", loData.Pce_Ship_Date)
       .AddRow("Received?", loData.Pce_RECEIVED)
       .AddRow("Acknowledged?", loData.Pce_Acknowledged)
-      .AddRow("Current Storage Facility", AisFacilityName(loData.Pce_Fac_FK))
+      .AddRow("Current Storage Facility", iif(m.llPanel, "(panel) " + AisFacilityName(this.oPnl.Pnl_Fac_FK), AisFacilityName(loData.Pce_Fac_FK)))
       if poContext.lCore
         .AddRow("Notes", L7ParseOnView(loData.Pce_NOTES), .F., "private")
       endif
@@ -549,7 +550,8 @@ define class aisPieceForm as AisForm
       with .cboLoc_FK
         .cControlSource = "V_Piece.Pce_Fac_FK"
         .lRequired = .F.
-        .cLabel = "Current Location"
+        .cLabel = "Piece Location"
+        .cInstructions = "Not applicable once panel exists. Track panel location instead." 
         .lAutoRender = .T.
         .nRowSourceType = L7_ROWSOURCETYPE_ALIAS
         .cRowSource = goL7App.cFacAlias  
@@ -656,7 +658,7 @@ define class AisPceQuery as L7Query
         .aJoins[.nJoins, 1] = "Panel"
         .aJoins[.nJoins, 2] = "Pce_Pnl_FK = Pnl_PK"
         .aJoins[.nJoins, 3] = "LEFT OUTER"
-        .AddFields("Pnl_ID, Pnl_Fac_FK")
+        .AddFields("Pnl_ID, Pnl_Fac_FK, Pnl_Loc_FK")
       endif 
 
       if !isnull(.cArt)
