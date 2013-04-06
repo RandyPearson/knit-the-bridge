@@ -45,7 +45,7 @@ body { margin: 0; font-family: Tahoma, Arial; }
 #content {font-family: Tahoma, Arial; font-size: 11px;}
 
 @media print {
-	#header {position: relative; color: black; background-color: white; background: inherit; }
+	#header {position: relative; height: auto; color: black; background-color: white; background: inherit; }
 	#header .user, #header #signOut {display: none;}
   #sidebar {display: none; }
   #content {position: relative; padding: 5px; overflow: visible;}
@@ -53,9 +53,9 @@ body { margin: 0; font-family: Tahoma, Arial; }
   #server-override-notice-content {display: none;}
   .admin {display: none;}
   .no-print{display: none;}
-  body, #content {font-size: 12pt;}
+  body, #content {font-size: 11pt; margin: 0;}
   h1 {font-size: 13pt;}
-  h2 {font-size: 14pt;}
+  h2 {font-size: 12pt;}
 }
 /* Ubiquitous */
 
