@@ -513,9 +513,9 @@ define class ais_PnlHome as aisPnlPage
     with loTbl
       ** loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Pce_ID", "Piece ID", ;
-        [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)])
+        [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)], "id-field piece")
       loCol = .addCursorColumn("Art_ID", "Artist ID", ;
-        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), Art_ID)])
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), Art_ID)], "id-field artist")
       loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), aisArtistName(THISRECORD))])
       loCol = .AddCursorColumn('Pce_Whole_Panel', 'Whole Panel?')
@@ -523,8 +523,10 @@ define class ais_PnlHome as aisPnlPage
       loCol = .AddCursorColumn('Pce_Dim_2', 'Dim 2')
       loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
       loCol = .AddCursorColumn('Pce_Received', 'Received')
-      loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
-        [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pce_Fac_FK), trim(Fac_Name))])
+
+      *!*        loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
+      *!*          [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pce_Fac_FK), trim(Fac_Name))])
+
       loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
         'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit Piece...]")')
 

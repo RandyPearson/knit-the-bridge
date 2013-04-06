@@ -278,7 +278,7 @@ define class ais_PceHome as aisPcePage
       .AddHeading('Key Information')
       
       .AddRow("Piece ID", loData.Pce_ID,, "id-field piece" )
-      .AddRow("Artist ID", this.oArt.ART_ID,, "id-field artist" )
+      .AddRow("Artist ID", HtLink(StuffUrl(this.cUrlA, 2, "ArtHome", "art", this.oArt.ART_PK), this.oArt.ART_ID),, "id-field artist" )
       .AddRow("Artist's Name", HtLink(StuffUrl(this.cUrlA, 2, "ArtHome", "art", this.oArt.ART_PK), AisArtistName(this.oArt.ART_PK)))
       .AddRow("Type", loData.Pce_Type)
       .AddRow("Dimension 1", loData.Pce_Dim_1)
@@ -287,7 +287,7 @@ define class ais_PceHome as aisPcePage
         .AddRow("Whole-Panel Piece?", loData.Pce_Whole_Panel)
         .AddRow("Assigned to Panel?", iif(empty(m.loData.Pce_Pnl_FK), ;
           "No (see menu options)", ;
-          "Yes: " + HtWrap(this.oPnl.Pnl_Id, 'span', ,'id-field panel') + SP + HTLink(StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", loData.Pce_Pnl_FK), "View Panel Page...")))
+          HtWrap(HTLink(StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", loData.Pce_Pnl_FK), this.oPnl.Pnl_Id), 'span', ,'id-field panel')))
       endif
       .AddRow("Description and Comments", L7ParseOnView(loData.Pce_COMMENTS))
 
@@ -658,7 +658,7 @@ define class AisPceQuery as L7Query
         .aJoins[.nJoins, 1] = "Panel"
         .aJoins[.nJoins, 2] = "Pce_Pnl_FK = Pnl_PK"
         .aJoins[.nJoins, 3] = "LEFT OUTER"
-        .AddFields("Pnl_ID, Pnl_Fac_FK, Pnl_Loc_FK")
+        .AddFields("Pnl_ID, Pnl_Fac_FK")
       endif 
 
       if !isnull(.cArt)

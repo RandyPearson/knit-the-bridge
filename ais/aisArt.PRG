@@ -255,7 +255,8 @@ define class ais_ArtList as aisMultiArtPage
       endcase
 
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
-      loCol = .addCursorColumn("Art_ID", "Artist ID",, "id-field artist")
+      loCol = .addCursorColumn("Art_ID", "Artist ID", ;
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), Art_ID)], "id-field artist")
       loCol = .addCursorColumn("Art_Last_Name", "Name", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), aisArtistName(THISRECORD))])
 
