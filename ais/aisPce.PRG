@@ -289,7 +289,7 @@ define class ais_PceHome as aisPcePage
           "No (see menu options)", ;
           "Yes: " + HtWrap(this.oPnl.Pnl_Id, 'span', ,'id-field panel') + SP + HTLink(StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", loData.Pce_Pnl_FK), "View Panel Page...")))
       endif
-      .AddRow("Comments", L7ParseOnView(loData.Pce_COMMENTS))
+      .AddRow("Description and Comments", L7ParseOnView(loData.Pce_COMMENTS))
 
       .AddHeading('Logistical Information')
       .AddRow("Shipped/Delivered?", loData.Pce_Shipped)
@@ -298,7 +298,7 @@ define class ais_PceHome as aisPcePage
       .AddRow("Acknowledged?", loData.Pce_Acknowledged)
       .AddRow("Current Storage Facility", iif(m.llPanel, "(panel) " + AisFacilityName(this.oPnl.Pnl_Fac_FK), AisFacilityName(loData.Pce_Fac_FK)))
       if poContext.lCore
-        .AddRow("Notes", L7ParseOnView(loData.Pce_NOTES), .F., "private")
+        .AddRow("Internal KtB Notes", L7ParseOnView(loData.Pce_NOTES), .F., "private")
       endif
 
       if poContext.lCore
@@ -518,7 +518,7 @@ define class aisPieceForm as AisForm
       with .edtComments
         * .cGroupID = "NOTES"
         .cControlSource = "V_piece.Pce_Comments"
-        .cLabel = "Comments about Piece"
+        .cLabel = "Description and Comments"
         .nRows = 2
       endwith 
 

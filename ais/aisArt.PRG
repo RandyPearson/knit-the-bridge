@@ -280,7 +280,7 @@ define class ais_ArtList as aisMultiArtPage
 
       if poContext.lAdmin
         if this.oPage_Fields.getkey("registry") > 0 or this.oPage_Fields.getkey("contact") > 0
-          loCol = .addCursorColumn("Art_Notes", "Notes")
+          loCol = .addCursorColumn("Art_Notes", "KtB Notes")
         endif
 
         loCol = .addCursorColumn("Art_PK", "Edit Artist", ;
@@ -462,11 +462,11 @@ define class ais_ArtHome as aisArtPage
       
       .AddRow("Participation (from blog)", L7ParseOnView(loData.ART_PARTICIPATION), .t., "private")
 
-      .AddRow("Comments", L7ParseOnView(loData.ART_COMMENTS))
+      .AddRow("Description and Comments", L7ParseOnView(loData.ART_COMMENTS))
       .AddRow("Register Time", loData.ART_REGISTER_TIME, .F.)
       .AddRow("Ktb Response", L7ParseOnView(loData.ART_KTB_RESPONSE))
       if poContext.lCore
-        .AddRow("Notes", L7ParseOnView(loData.ART_NOTES), .t., "private")
+        .AddRow("Internal KtB Notes", L7ParseOnView(loData.ART_NOTES), .t., "private")
       endif
       
       .AddHeading('Other Historical Info (from Google doc)')
@@ -930,7 +930,7 @@ define class aisRegisterForm AS aisArtistForms
       with .edtComments
         .cGroupID = "comments"
         .cControlSource = "V_artist.Art_Comments"
-        .cLabel = "Additional Comments"
+        .cLabel = "Description and Comments"
         .nRows = 2
       endwith
 
@@ -1106,7 +1106,7 @@ define class aisArtistForm AS aisArtistForms
       with .edtComments
         .cGroupID = "notes"
         .cControlSource = "V_artist.Art_Comments"
-        .cLabel = "Comments"
+        .cLabel = "Description and Comments"
         .nRows = 3
       endwith
 
@@ -1126,7 +1126,7 @@ define class aisArtistForm AS aisArtistForms
       with .edtNotes
         .cGroupID = "notes"
         .cControlSource = "V_artist.Art_Notes"
-        .cLabel = "KtB Internal Notes"
+        .cLabel = "Internal KtB Notes"
         .nRows = 3
         .cCssClass = "FormControlPrivate"
       endwith
@@ -1412,7 +1412,7 @@ define class AisArtBrowseForm AS AisForm
           with .lblNotes
             .cFieldType = "C"
             .cControlSource = this.cAlias + ".Art_Notes"
-            .cLabel = "Notes"
+            .cLabel = "Internal KtB Notes"
           endwith 
 
           .AddObject("chkInactive", "L7Checkbox")

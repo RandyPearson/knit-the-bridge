@@ -457,7 +457,7 @@ define class ais_PnlHome as aisPnlPage
 
       .AddRow("Dimension 1", loData.Pnl_Dim_1)
       .AddRow("Dimension 2", loData.Pnl_Dim_2)
-      .AddRow("Comments", L7ParseOnView(loData.Pnl_COMMENTS), .t.)
+      .AddRow("Description and Comments", L7ParseOnView(loData.Pnl_COMMENTS), .t.)
 
       .AddRow("Completed?", loData.Pnl_Completed)
       .AddRow("Artist Name", ;
@@ -474,7 +474,7 @@ define class ais_PnlHome as aisPnlPage
       .AddRow(null, this.page_getPieceInfo())
 
       if poContext.lCore
-        .AddRow("Notes", L7ParseOnView(loData.Pnl_NOTES), .t., "private")
+        .AddRow("Internal KtB Notes", L7ParseOnView(loData.Pnl_NOTES), .t., "private")
       endif
 
       if poContext.lCore
@@ -695,7 +695,7 @@ define class aisPanelForm as AisForm
       with .edtComments
         .cGroupID = "NOTES"
         .cControlSource = "V_Panel.Pnl_Comments"
-        .cLabel = "Comments about Panel"
+        .cLabel = "Description and Comments"
         .nRows = 3
       endwith 
 
