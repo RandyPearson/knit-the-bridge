@@ -166,7 +166,7 @@ define class ais_FacHome as aisFacPage
         .AddRow("Last Modified", TRANSFORM(loData.Fac_REV_TIME) + [ by ] + AisArtistName(loData.Fac_Rev_Art_FK), .F., "private")
       endif
 
-      lcRet = lcRet + .Render()
+      lcRet = m.lcRet + .Render()
 
     endwith 
     return m.lcRet

@@ -1285,7 +1285,6 @@ define class Ais_BrowseUnapproved as AisArtPage
         endscan 
         lcXml = ''
         this.AssertTransaction(m.lcAlias, @lcXml)
-        *!* this.oApp.NotifyAdmin("Project Multi-File Update by " + CurrentUser.GetUserName(), HTWrap(m.lcXml, 'pre'))
         Response.Redirect(this.cCancelUrl)
         return 
       endif 

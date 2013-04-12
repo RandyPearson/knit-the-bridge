@@ -47,6 +47,9 @@ define class aisLocPage as aisPage
       .addMenuItem(m.lcMenu, 'Dahntahn Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Down"))
       .addMenuItem(m.lcMenu, 'Uptahn Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Up"))
       .addMenuItem(m.lcMenu, 'All Bridge Locations', StuffUrl(.cUrlA, 2, "LocList"))
+      if poContext.lDeveloper
+        .addMenuItem(m.lcMenu, "Edit All Locations...", StuffUrl(.cUrlB, 2, "LocBrowse"))
+      endif
       .addMenuItem(m.lcMenu, 'Panel Requirements', StuffUrl(.cUrlA, 2, "LocSumList"))
     endwith 
     dodefault()
@@ -88,25 +91,32 @@ define class ais_LocList as aisLocPage
 
     loTbl = createobject("AisTable")
     with loTbl
-      loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
+      * loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
 
-      loCol = .addCursorColumn("Loc_Side", "Side")
-      loCol = .addCursorColumn("Loc_No", "No")
+      *!*        loCol = .addCursorColumn("Loc_Side", "Side")
+      *!*        loCol = .addCursorColumn("Loc_No", "No")
+      
+      loCol = .addCursorColumn("Loc_No", "Side-No", [left(Loc_Side,1) + padl(transform(Loc_No), 3, "0")] )
+      
       loCol = .addCursorColumn("Loc_H1", "Height-L")
       loCol = .addCursorColumn("Loc_W1", "Width")
       loCol = .addCursorColumn("Loc_H2", "Height-R")
       for lnOrient = 1 to 2
         lcOrient = iif(m.lnOrient = 1, "Inner", "Outer")
         loCol = .addCursorColumn("Loc_PK", m.lcOrient + "<br>Panel", ;
-          [iif(seek(Loc_PK + "] + m.lcOrient + [", "PlcQuery_"),] + ;
-            [ HTLink(StuffUrl(Urls.item("PnlHome"), "pnl", PlcQuery_.Plc_Pnl_FK), PlcQuery_.Pnl_ID, "go to panel", "id-field panel")] + [, ] + ;
-            [ HTLink(StuffUrl(Urls.item("LocAssign"), "loc", Loc_PK, "orient", "] + m.lcOrient + ["), "--", "assign panel...")] + ;
-          [)])
+          [iif(Loc_Skip, "skip", (] + ;
+            [iif(seek(Loc_PK + "] + m.lcOrient + [", "PlcQuery_"),] + ;
+              [ HTLink(StuffUrl(Urls.item("PnlHome"), "pnl", PlcQuery_.Plc_Pnl_FK), PlcQuery_.Pnl_ID, "go to panel", "id-field panel")] + [, ] + ;
+              [ HTLink(StuffUrl(Urls.item("LocAssign"), "loc", Loc_PK, "orient", "] + m.lcOrient + ["), "--", "assign panel...")] + ;
+            [)))])
       next 
 
-      loCol = .addCursorColumn("Loc_Notes", "Notes", [L7ParseOnView(Loc_Notes)])
       loCol = .addCursorColumn("Loc_Marker", "Marker")
+      loCol = .addCursorColumn("Loc_Notes", "Description", [L7ParseOnView(Loc_Comments)])
+      loCol = .addCursorColumn("Loc_Notes", "Notes", [L7ParseOnView(Loc_Notes)])
       
+      loCol = .addCursorColumn("Loc_No", "Side-No", [left(Loc_Side,1) + padl(transform(Loc_No), 3, "0")] )
+
       if empty(this.cPage_Side) or "Down" $ this.cPage_Side
         .cFilter = [Loc_Side = "Down"]
         .cTableCaption = "Dahntahn List"
@@ -280,6 +290,146 @@ define class aisLocAssignForm as AisForm
     return 
   endfunc 
 enddefine 
+
+*** ===================================================== ***
+define class Ais_LocBrowse as AisLocPage
+  lLocRequired = .f.
+  * --------------------------------------------------------- *
+  function ProcessRequest
+    this.cCancelUrl = StuffUrl(this.cUrlA, 2, "LocList")
+    local loForm, lcXml, lcAlias, lcFldState, lcStub
+    lcAlias = "V_All_Locations"
+    use (m.lcAlias) in select(m.lcAlias)
+    cursorsetprop("Buffering", 5, m.lcAlias)
+    select (m.lcAlias)
+    loForm = this.CreateForm("AisLocBrowseForm", this.cUrlC)
+    with loForm
+      .cAlias = m.lcAlias
+      .AddControls()
+      .DoEvents()
+      if .Valid()
+        .UpdateControlSources()
+        select (m.lcAlias)
+        scan   
+          lcFldState = getfldstate(-1)
+          if empty( strtran( m.lcFldState, "1"))  && no change
+            loop 
+          endif 
+          StampRec( CurrentUser, THIS.tNow )
+        endscan 
+        lcXml = ''
+        this.AssertTransaction(m.lcAlias, @lcXml)
+        Response.Redirect(this.cCancelUrl)
+        return 
+      endif 
+      Response.Write(.Render())
+    endwith 
+    return   
+  endfunc 
+  
+enddefine  && Ais_LocBrowse
+
+*** ========================================================= ***
+define class AisLocBrowseForm AS AisForm
+  cTitle = "Location Edit Form"
+  cAlias = null && client should set 
+  cCssStyle = "width: 100%;"
+  * --------------------------------------------------------- *
+  function AddControls
+    with this
+      .AddObject('grdBrowse', 'L7Grid')
+      with .grdBrowse
+        .cChildAlias = this.cAlias
+        .cChildKeyExpression = this.cAlias + ".Loc_PK"
+        .nExtraRows = 0 && don't permit adds 
+        .cGridTableCssClass = "sortable " + .cGridTableCssClass 
+        .cColumnHeaderCssClass = "nosort" && sortable doesn't work for live controls, so override on specific labels
+      
+        .AddObject("lblId", "L7Label")
+        with .lblId
+          .cFieldType = "C"
+          .cControlSource = this.cAlias + ".Loc_Side"
+          .cShowExpression = this.cAlias + [.Loc_Side + transform(] + this.cAlias + [.Loc_No)]
+          .cLabel = "Side"
+          .cColumnHeaderCssClass = "sort" 
+        endwith 
+
+        .AddObject("txtH1", "L7Textbox")
+        with .txtH1
+          .cControlSource = this.cAlias + ".Loc_H1"
+          .cFieldType = "N"
+          .cLabel = "Height-L"
+        endwith
+
+        .AddObject("txtW1", "L7Textbox")
+        with .txtW1
+          .cControlSource = this.cAlias + ".Loc_W1"
+          .cFieldType = "N"
+          .cLabel = "Width"
+        endwith
+
+        .AddObject("txtH2", "L7Textbox")
+        with .txtH2
+          .cControlSource = this.cAlias + ".Loc_H2"
+          .cFieldType = "N"
+          .cLabel = "Height-R"
+          .cInstructions = "Leave blank (0) for rectangles!"
+        endwith
+
+        .AddObject("txtMarker", "L7Textbox")
+        with .txtMarker 
+          .cControlSource = this.cAlias + ".Loc_Marker"
+          .cLabel = "Marker"
+        endwith
+
+        .AddObject("edtComments", "L7Textarea")
+        with .edtComments
+          .cControlSource = this.cAlias + ".Loc_Comments"
+          .cLabel = "Description and Comments"
+          .nRows = 2
+        endwith
+
+        .AddObject("edtNotes", "L7Textarea")
+        with .edtNotes 
+          .cControlSource = this.cAlias + ".Loc_Notes"
+          .cLabel = "Internal KtB Notes"
+          .nRows = 2
+          .cCssClass = "FormControlPrivate"
+        endwith
+
+        .AddObject("lblId2", "L7Label") && << -- REPEATED FOR CONVENIENCE
+        with .lblId2
+          .cFieldType = "C"
+          .cControlSource = this.cAlias + ".Loc_Side"
+          .cShowExpression = this.cAlias + [.Loc_Side + transform(] + this.cAlias + [.Loc_No)]
+          .cLabel = "Side"
+          .cColumnHeaderCssClass = "sort" 
+        endwith 
+
+        .AddObject("chkSkip", "L7Checkbox")
+        with .chkSkip
+          .cControlSource = this.cAlias + ".Loc_Skip"
+          .cLabel = "Skip?"
+          .lDisabled = !m.poContext.lAdmin
+          .cCaption = "SKIPPED"
+          .cCssClass = "FormControlPrivate"
+          .cInstructions = "Check locations where panels will NOT be installed."
+        endwith
+
+        .AddObject("chkInactive", "L7Checkbox")
+        with .chkInactive
+          .cControlSource = this.cAlias + ".Loc_Inactive"
+          .cLabel = "Delete?"
+          .lDisabled = !m.poContext.lDeveloper
+          .cCaption = "DELETE"
+          .cCssClass = "FormControlPrivate"
+        endwith
+
+      endwith && grid 
+    endwith && form
+    return 
+  endfunc  && AddControls
+enddefine && LocBrowseForm 
 
 *** ===================================================== ***
 define class AisPlcQuery as L7Query

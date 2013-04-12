@@ -116,8 +116,8 @@ td ul, td p{ margin: 0;}
 td p+p, td ul+p, td p+ul{margin: 10px 0 0 0;}
 
 /* Ledger row classes */
-table tr.oddX { background-color: #ddffdd;}
-table tr.evenX{	background-color: #eeffee;}
+table tr.oddX { background-color: #eeffee;}
+table tr.evenX{	background-color: #ffffff;}
 
 /* DataTables sorting */
 .sorting_asc  { background: url('../icons/SortTableUp.gif'); no-repeat center right;	background-color: #f5f5f5;}

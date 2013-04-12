@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     18
+#DEFINE THISAPP_DATABASE_REVISION     19
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -404,6 +404,9 @@ define class AisApp AS KtbApp
       do CreateTable ;
         with "PanelLocation", this.cDataPath, this.cDataBase
       use in select("PanelLocation")
+
+    case m.lnRev = 19
+      * no changes--force view creation 
 
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
@@ -1148,6 +1151,9 @@ FUNCTION CreateViews(lcOneTable, lcDataPath, lcDataBase)
     do CreateAllRecordsView WITH "V_Artists_by_Name",     "Artist", "Art_PK", [!Art_Inactive and !empty(Art_ID) and !Art_Hidden], [Art_Last_Name, Art_First_Name]
     do CreateAllRecordsView WITH "V_Artists_by_Location", "Artist", "Art_PK", [!Art_Inactive and !empty(Art_ID) and !Art_Hidden], [Art_Neighborhood]
     do CreateAllRecordsView WITH "V_Artists_by_Reg_Time", "Artist", "Art_PK", [!Art_Inactive and !empty(Art_ID) and !Art_Hidden], [Art_Register_Time]
+
+    do CreateAllRecordsView WITH "V_All_Locations",  "Location", "Loc_PK", [!Loc_Inactive], [Loc_Side, Loc_No]
+    do CreateAllRecordsView WITH "V_All_Facilities", "Facility", "Fac_PK", [!Fac_Inactive], [Fac_Name]
 
   endif 
   return 
