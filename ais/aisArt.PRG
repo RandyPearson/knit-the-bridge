@@ -190,8 +190,11 @@ define class ais_ArtList as aisMultiArtPage
       endif 
       .addMenuItem("main\Reports", "Contact Listing", StuffUrl(.cUrlB, "order", "name", "fields", "names,contact"))
       .addMenuItem("main\Reports", "Neighborhood Listing", StuffUrl(.cUrlB, "order", "location", "fields", "contact,location"))
+      if poContext.lAdmin
+        .addMenuItem("main\Reports", "Age Demographics", StuffUrl(.cUrlA, 2, "AgeSumList"))
+      endif 
       .addMenuItem("main\Reports", "Sign-Up Listing", StuffUrl(.cUrlB, "order", "reg_time", "fields", "names,contact,registry"))
-      
+            
       if poContext.lAdmin and empty(this.cPage_Flags) and empty(this.cPage_Srch1) && not a special query
         .addMenuItem("main\Reports", "Edit All...", StuffUrl(.cUrlB, 2, "ArtBrowse", "order", this.cPage_Order, "fields", this.cPage_Fields))
       endif       
@@ -383,6 +386,40 @@ define class ais_NeighborhoodSumList as aisArtPage
     return 
   endfunc 
 enddefine && ais_NeighborhoodSumList 
+
+*** ========================================================= ***
+define class ais_AgeSumList as aisArtPage 
+  lArtRequired = .f.
+  cSubTitle = "Age Demographics Report"
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    local loQry, loTbl, loCol, loGrp
+       
+    loQry = createobject("AisArtQuery")
+    with loQry
+      .lOldEngineBehavior = .t. 
+      .AddOrderBy("Art_Age_Range",, .f.)
+      .nGrouping = 1
+      .ClearFields()
+      .AddFields("Art_Age_Range, count(*) as Count_")
+      .execute()
+    endwith 
+    
+    loTbl = createobject("AisTable")
+    with loTbl
+      .cTableCaption = this.cSubTitle 
+      .cGrandRowClass      = "GrandRow sortbottom"  
+      
+      loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
+      loCol = .addCursorColumn("Art_Age_Range", "Age Range")
+      loCol = .addCursorColumn("Count_", "Count")
+      loCol.nCalcType = L7_CALCTYPE_SUM
+      
+      response.write(.render())
+    endwith 
+    return 
+  endfunc 
+enddefine && ais_AgeSumList 
 
 *** ========================================================= ***
 define class ais_ArtHome as aisArtPage 
