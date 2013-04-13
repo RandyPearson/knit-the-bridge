@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     19
+#DEFINE THISAPP_DATABASE_REVISION     20
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -407,6 +407,15 @@ define class AisApp AS KtbApp
 
     case m.lnRev = 19
       * no changes--force view creation 
+
+    case m.lnRev = 20
+      * drop and re-create Files table--not used yet 
+      if indbc("Files","TABLE")
+        drop table Files 
+      endif 
+      do CreateTable ;
+        with "Files", this.cDataPath, this.cDataBase
+      use in select("Files")
 
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
@@ -875,28 +884,26 @@ function CreateFilesTable
     ( ;
       Fil_PK C(32) PRIMARY KEY DEFAULT GetGuid32(), ;
       Fil_Inactive L DEFAULT .F., ;
+      Fil_Type C(9) DEFAULT "File     ", ; 
+      Fil_Base_Fil_FK c(32), ;
+      Fil_Main L, ;
+      Fil_Thumb L, ;
+      Fil_Thumb_R L, ;
       Fil_Art_FK C(32), ;
       Fil_Pce_FK C(32), ;  
       Fil_Pnl_FK C(32), ;  
-      Fil_Type C(9) DEFAULT "File     ", ; 
-      Fil_Ref_Fil_FK C(32), ; 
-      Fil_Superseded L, ;  
-      Fil_Superseded_Date D, ;  
-      Fil_Download_Only L, ; 
-      Fil_Unlisted L, ;  
       Fil_Core L DEFAULT .T., ;
       Fil_Artist L DEFAULT .T., ;
       Fil_Public L DEFAULT .F., ;
-      Fil_Name C(160), ;  
-      Fil_URL M, ;
+      Fil_Height I, ;
+      Fil_Width I, ;
+      Fil_Resolution I, ;
       Fil_Size I, ;
-      Fil_Date D, ;
-      Fil_Time T, ;
+      Fil_Comments M, ;
       Fil_Upload_Art_FK C(32), ;  
       Fil_Upload_Time T, ;
-      Fil_Scanned L, ;
-      Fil_Summary M, ;
-      Fil_Details M, ;
+      Fil_Upload_Name M, ;
+      Fil_URL M, ;
       Fil_Notes M, ;
       Fil_Orig_Art_FK C(32), ;
       Fil_Orig_Time T, ;
@@ -904,14 +911,34 @@ function CreateFilesTable
       Fil_Rev_Time T, ;
       Fil_Revision I NOT NULL DEFAULT 0 ;
     )
+
+* dropped in Rev 20:
+*!*        Fil_Time T, ;
+*!*        Fil_Date D, ;
+*!*        Fil_Name C(160), ;  
+*!*        Fil_Ref_Fil_FK C(32), ; 
+*!*        Fil_Superseded L, ;  
+*!*        Fil_Superseded_Date D, ;  
+*!*        Fil_Download_Only L, ; 
+*!*        Fil_Unlisted L, ;  
+*!*        Fil_Scanned L, ;
+*!*        Fil_Summary M, ;
+*!*        Fil_Details M, 
+
   * Standard 2 Indexes:
-  INDEX ON DELETED() TAG Deleted
-  INDEX ON Fil_Inactive TAG Inactive
+  index on deleted() tag Deleted
+  index on Fil_Inactive TAG Inactive
   * Foreign Keys:
+  index on Fil_Base_Fil_FK tag base_Fil
   index on Fil_Art_FK tag Art_FK
   index on Fil_Pce_FK tag Pce_FK
   index on Fil_Pnl_FK tag Pnl_FK
   * Other Keys:
+  index on Fil_Type tag type 
+  index on Fil_Main tag main 
+  index on Fil_Thumb tag Thumb 
+  index on Fil_Thumb_R tag Thumb_R
+  
   * Comment:
   dbsetprop( "Files", "Table", "Comment", ;
     [One record per file. ])
