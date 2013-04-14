@@ -411,6 +411,8 @@ define class ais_PnlHome as aisPnlPage
 
       if poContext.lAdmin
         .addMenuItem("main\This,page", "Edit Panel...", StuffUrl(.cUrlA, 2, "PnlForm", "pnl", .cPnl))
+        .addMenuItem("main\This,page", "Upload Panel File...", StuffUrl(.cUrlA, 2, "PnlFilNew", "pnl", .cPnl))
+        
         if .oPnl.Pnl_Single_Piece = .f. and !.oPnl.Pnl_Completed 
           .addMenuItem("main\This,page", "Add Piece to Panel...", ;
             StuffUrl(.cUrlA, 2, "PnlAddPiece", "pnl", .cPnl))
@@ -605,6 +607,7 @@ define class ais_PnlForm as aisPnlPage
 
     endwith 
     response.write(loForm.render())
+    return 
   endfunc 
 enddefine && ais_PnlForm
 

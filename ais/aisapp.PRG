@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     20
+#DEFINE THISAPP_DATABASE_REVISION     21
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -416,6 +416,9 @@ define class AisApp AS KtbApp
       do CreateTable ;
         with "Files", this.cDataPath, this.cDataBase
       use in select("Files")
+
+    case m.lnRev = 21
+      * no changes--force view creation 
 
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
@@ -1170,8 +1173,12 @@ FUNCTION CreateViews(lcOneTable, lcDataPath, lcDataBase)
   * Add app-specific child record views:
   if empty( m.lcOneTable)
 
+    * Sub-sets:
     do CreateChildView WITH "V_Artist_Piece_Set", "Piece", "Pce_Art_FK", "Artist", [Pce_Inactive=.F.]
-    do CreateChildView WITH "V_Panel_Piece_Set", "Piece", "Pce_Pnl_FK", "Panel", [Pce_Inactive=.F.]
+    do CreateChildView WITH "V_Panel_Piece_Set", "Piece", "Pce_Pnl_FK", "Panel",  [Pce_Inactive=.F.]
+    do CreateChildView WITH "V_Panel_File_Set",  "Files", "Fil_Pnl_FK", "Panel",  [Fil_Inactive=.F.]
+    do CreateChildView WITH "V_Piece_File_Set",  "Files", "Fil_Pce_FK", "Piece",  [Fil_Inactive=.F.]
+    do CreateChildView WITH "V_Artist_File_Set", "Files", "Fil_Art_FK", "Artist", [Fil_Inactive=.F.]
 
     * All-record views (for master "browse" forms):
     do CreateAllRecordsView WITH "V_Unapproved_Artists",  "Artist", "Art_PK", [!Art_Inactive and !Art_Approved]
