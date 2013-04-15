@@ -79,22 +79,22 @@ define class aisPnlPage as aisPage
   cPnl = ""
   oPnl = null
   lPnlRequired = .t.
-  * --------------------------------------------------------- *
-  function BeforeProcessRequest
-    if this.lPnlRequired
-      this.cPnl = evl(this.cPnl, this.StripUrl("pnl", .f., .t.))
-      if empty(this.cPnl)  && Item required, but not found in URL.
-        this.NotFound()
-      else 
-        this.VerifyPanel()
-        if !isnull(this.oPnl)
-          * derived parent properties set here
-        endif
-      endif 
-    endif 
-    dodefault()  && required bubble-up
-    return    
-  endfunc  
+*!*    * --------------------------------------------------------- *
+*!*    function BeforeProcessRequest
+*!*      if this.lPnlRequired
+*!*        this.cPnl = evl(this.cPnl, this.StripUrl("pnl", .f., .t.))
+*!*        if empty(this.cPnl)  && Item required, but not found in URL.
+*!*          this.NotFound()
+*!*        else 
+*!*          this.VerifyPanel()
+*!*          if !isnull(this.oPnl)
+*!*            * derived parent properties set here
+*!*          endif
+*!*        endif 
+*!*      endif 
+*!*      dodefault()  && required bubble-up
+*!*      return    
+*!*    endfunc  
 enddefine && AisPnlPage
 
 *** ========================================================= ***

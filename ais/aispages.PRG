@@ -40,6 +40,17 @@ define class aisPage as L7Page
   lPnlRequired = .f.
   * --------------------------------------------------------- *
   function BeforeProcessRequest
+    if this.lPnlRequired
+      this.cPnl = evl(this.cPnl, this.StripUrl("pnl", .f., .t.))
+      if empty(this.cPnl)  && Item required, but not found in URL.
+        this.NotFound()
+      else 
+        this.VerifyPanel()
+        if !isnull(this.oPnl)
+          * derived parent properties set here
+        endif
+      endif 
+    endif 
     if this.lArtRequired
       if empty(this.cArt)
         this.cArt = evl(this.cArt, this.StripUrl("art", .f., .t.))

@@ -11,6 +11,8 @@
 #DEFINE THISAPP_ANON_PK          "33333333333333333333333333333333"  && basic anonymous users
 #DEFINE THISAPP_USER_DEV         "NOBODY01"
 
+#DEFINE THISAPP_VALID_LIBRARY_FILETYPES "doc,docx,pdf,xls,xlsx,ppt,pptx,txt,zip,gif,jpg,jpeg,png,tif,tiff,htm,html,wav,avi,mpg,mov"
+
 #DEFINE THISAPP_LENGTH_STATUS      12
 #DEFINE THISAPP_LENGTH_UNIQUE_NAME 10
 #DEFINE THISAPP_LENGTH_ID_FIELDS   8
