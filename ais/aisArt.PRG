@@ -364,6 +364,7 @@ define class ais_NeighborhoodSumList as aisArtPage
     loQry = createobject("AisArtQuery")
     with loQry
       .lOldEngineBehavior = .t. 
+      .lNoCount = .f. && exclude non-person "group" entries 
       .AddOrderBy("Art_Neighborhood",, .f.)
       .nGrouping = 1
       .ClearFields()
@@ -398,6 +399,7 @@ define class ais_AgeSumList as aisArtPage
     loQry = createobject("AisArtQuery")
     with loQry
       .lOldEngineBehavior = .t. 
+      .lNoCount = .f. && exclude non-person "group" entries 
       .AddOrderBy("Art_Age_Range",, .f.)
       .nGrouping = 1
       .ClearFields()
@@ -1505,7 +1507,7 @@ enddefine && AisArtBrowseForm
 define class AisArtQuery AS L7Query
   cBaseTable = "Artist"
   cDefaultFieldList = ;
-    "Art_PK, Art_ID, Art_Access_Token, Art_Approved, Art_Starred, Art_Artist, Art_Anonymous, Art_Unknown, Art_Hidden" + ;
+    "Art_PK, Art_ID, Art_Access_Token, Art_Approved, Art_Group_Art_FK, Art_No_Count, Art_Starred, Art_Artist, Art_Anonymous, Art_Unknown, Art_Hidden" + ;
     ", Art_Full_Name, Art_Last_Name, Art_First_Name, Art_Title, Art_Release_Name, Art_Name_Orig" + ; 
     ", Art_Email, Art_Phone, Art_Neighborhood, Art_Age_Range" + ;
     ", Art_Register_Time, Art_KTB_Response" 
@@ -1513,8 +1515,11 @@ define class AisArtQuery AS L7Query
   * Account-based params:
   lUser = NULL
   lAccountInactive = null && surrogate is "approved"
+  
   lPanelsSubmitted = null 
   lKtbResponse = null
+  lNoCount = null 
+  cGroupArt = null 
   
   * Types of people:
   lAdmin = .F.
@@ -1600,6 +1605,14 @@ define class AisArtQuery AS L7Query
       if !isnull(.lPanelsSubmitted)
         .cWhereClause = .cWhereClause + [ and Art_PK] + iif(.lPanelsSubmitted, [ in ], [ not in ]) + ;
           [(select Pce_Art_FK from Piece where !Pce_Inactive and Pce_Whole_Panel)]
+      endif 
+
+      if !isnull( .lNoCount)
+        .cWhereClause = .cWhereClause + [ AND Art_No_Count = ] + IIF(.lNoCount, [.T.], [.F.])
+      endif 
+
+      if !isnull(.cGroupArt)
+        .cWhereClause = .cWhereClause + [ and Art_Group_Art_FK = '] + .cGroupArt + [']
       endif 
 
       loFlags = AisArtQueryFlags()
