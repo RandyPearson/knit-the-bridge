@@ -686,7 +686,8 @@ define class ais_ArtForm as aisArtPage
     local loExc, lcMailMessage, lcName, lcSubject, lcUrl, lcExcMessage
 
     try 
-      lcName = textmerge([<<TRIM(loRec.Art_First_Name)>> <<TRIM(loRec.Art_Last_Name)>>])
+      * lcName = textmerge([<<TRIM(loRec.Art_First_Name)>> <<TRIM(loRec.Art_Last_Name)>>])
+      lcName = aisArtistName(m.loRec)
       
       text to lcMailMessage noshow pretext 3
         Event........: Person Created by <<CurrentUser.getUserName()>>
@@ -940,6 +941,15 @@ define class aisRegisterForm AS aisArtistForms
         .nStyle = L7_MULTISTYLE_VERTICAL
         .nRowSourceType = L7_ROWSOURCETYPE_VALUE
         .cRowSource = THISAPP_AGE_RANGES
+      endwith
+
+      .AddObject("txtFull_Name", "L7Textbox")
+      with .txtFull_Name
+        .cGroupID = "name2"
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_Full_Name"
+        .cLabel = "Alternative Full Name"
+        .cInstructions = "(leave blank unless this entry needs to override First/Last name in listings)"
       endwith
 
       .AddObject("txtEmail", "L7Textbox")

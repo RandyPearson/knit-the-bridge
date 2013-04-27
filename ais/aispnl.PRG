@@ -411,8 +411,11 @@ define class ais_PnlHome as aisPnlPage
 
       if poContext.lAdmin
         .addMenuItem("main\This,page", "Edit Panel...", StuffUrl(.cUrlA, 2, "PnlForm", "pnl", .cPnl))
+
+if poContext.lDeveloper
         .addMenuItem("main\This,page", "Upload Panel File...", StuffUrl(.cUrlA, 2, "PnlFilNew", "pnl", .cPnl))
-        
+endif         
+
         if .oPnl.Pnl_Single_Piece = .f. and !.oPnl.Pnl_Completed 
           .addMenuItem("main\This,page", "Add Piece to Panel...", ;
             StuffUrl(.cUrlA, 2, "PnlAddPiece", "pnl", .cPnl))

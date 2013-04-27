@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     21
+#DEFINE THISAPP_DATABASE_REVISION     22
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -420,6 +420,14 @@ define class AisApp AS KtbApp
     case m.lnRev = 21
       * no changes--force view creation 
 
+    case m.lnRev = 22
+      alter table Artist add column Art_Group_Art_FK C(32)
+      alter table Artist add column Art_No_Count L
+      select Artist 
+      index on Art_Group_Art_FK tag Group_Art 
+      index on Art_No_Count tag no_count 
+      use in select("Artist")
+
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
@@ -579,6 +587,8 @@ function CreateArtistTable
       Art_Inactive L default .F., ;
       Art_ID C(8), ;
       Art_Approved L default .f., ;
+      Art_Group_Art_FK C(32), ; && Rev 22
+      Art_No_Count L, ;         && Rev 22 
       Art_Developer L default .f., ;
       Art_Admin L default .f., ;
       Art_Core L default .f., ;
@@ -644,7 +654,9 @@ function CreateArtistTable
   index on deleted() tag Deleted
   index on Art_Inactive tag Inactive
   * Foreign Keys:
+  index on Art_Group_Art_FK tag Group_Art && Rev 22
   * Other Keys:
+  index on Art_No_Count tag no_count && Rev 22 
   index on Art_Starred tag Starred  && Rev 10
   index on Art_Approved tag Approved
   index on Art_Hidden tag Hidden
@@ -1179,6 +1191,7 @@ FUNCTION CreateViews(lcOneTable, lcDataPath, lcDataBase)
     do CreateChildView WITH "V_Panel_File_Set",  "Files", "Fil_Pnl_FK", "Panel",  [Fil_Inactive=.F.]
     do CreateChildView WITH "V_Piece_File_Set",  "Files", "Fil_Pce_FK", "Piece",  [Fil_Inactive=.F.]
     do CreateChildView WITH "V_Artist_File_Set", "Files", "Fil_Art_FK", "Artist", [Fil_Inactive=.F.]
+    do CreateChildView WITH "V_Contributing_Artist_Set", "Artist", "Art_Group_Art_FK", "Artist", [Art_Inactive=.F.] 
 
     * All-record views (for master "browse" forms):
     do CreateAllRecordsView WITH "V_Unapproved_Artists",  "Artist", "Art_PK", [!Art_Inactive and !Art_Approved]
