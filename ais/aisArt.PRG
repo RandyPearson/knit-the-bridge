@@ -1013,16 +1013,6 @@ define class aisRegisterForm AS aisArtistForms
         .cFalseCaption = "DO NOT Release Name"
       endwith
 
-      .AddObject("cboAge_Range", "L7Popup")
-      with .cboAge_Range
-        .cGroupID  ="name"
-        .cFieldType = "C"
-        .cControlSource = "V_artist.Art_Age_Range"
-        .cLabel = "Age Range"
-        .nStyle = L7_MULTISTYLE_VERTICAL
-        .nRowSourceType = L7_ROWSOURCETYPE_VALUE
-        .cRowSource = THISAPP_AGE_RANGES
-      endwith
       if !this.lCustom_Contributing 
         .AddObject("txtFull_Name", "L7Textbox")
         with .txtFull_Name
@@ -1054,14 +1044,42 @@ define class aisRegisterForm AS aisArtistForms
         .cCssStyle = "width: 30%;"
       endwith
 
-      .AddObject("edtAddress", "L7Textarea")
-      with .edtAddress
-        .cGroupID  ="addr"
-        .cControlSource = "V_artist.Art_Address"
-        .nRows = 2
-        .cLabel = "Neighborhood or Township"
+      .AddObject("divDemo", "L7Divider")
+      with .divDemo
+        .cLabel = "Demograhic Information"
       endwith
-
+      .AddObject("cboAge_Range", "L7Popup")
+      with .cboAge_Range
+        .cGroupID  ="demo"
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_Age_Range"
+        .cLabel = "Age Range"
+        .nStyle = L7_MULTISTYLE_VERTICAL
+        .nRowSourceType = L7_ROWSOURCETYPE_VALUE
+        .cRowSource = THISAPP_AGE_RANGES
+      endwith
+      if !this.lCustom_Contributing 
+        * on Registration form, allow full address to be entered
+        .AddObject("edtAddress", "L7Textarea")
+        with .edtAddress
+          .cGroupID  ="demo"
+          .cControlSource = "V_artist.Art_Address"
+          .nRows = 2
+          .cLabel = "Neighborhood or Township"
+        endwith
+      else
+        .AddObject("txtNeighborhood", "L7Textbox")
+        with .txtNeighborhood
+          .cGroupID  ="demo"
+          .cFieldType = "C"
+          .cControlSource = "V_artist.Art_Neighborhood"
+          .cLabel = "Neighborhood"
+          if this.lNewRecord
+            .setValue(page.oArt.Art_Neighborhood)
+          endif
+        endwith
+      endif 
+      
       if this.lCustom_Participation
         .addParticipationControls()
       endif 
@@ -1225,25 +1243,13 @@ define class aisArtistForm AS aisArtistForms
         .cCssClass = "FormControlPrivate"
       endwith
 
-      .AddObject("txtNeighborhood", "L7Textbox")
-      with .txtNeighborhood
-        .cGroupID  ="addr"
-        .cFieldType = "C"
-        .cControlSource = "V_artist.Art_Neighborhood"
-        .cLabel = "Neighborhood"
+      .AddObject("divDemo", "L7Divider")
+      with .divDemo
+        .cLabel = "Demograhic Information"
       endwith
-      .AddObject("edtAddress", "L7Textarea")
-      with .edtAddress
-        .cGroupID  ="addr"
-        .cControlSource = "V_artist.Art_Address"
-        .nRows = 2
-        .cLabel = "Original Neighborhood (e.g., from blog)"
-        .cCssClass = "FormControlPrivate"
-      endwith
-
       .AddObject("cboAge_Range", "L7Popup")
       with .cboAge_Range
-        .cGroupID  ="addr"
+        .cGroupID  ="demo"
         .cFieldType = "C"
         .cControlSource = "V_artist.Art_Age_Range"
         .cLabel = "Age Range"
@@ -1251,6 +1257,22 @@ define class aisArtistForm AS aisArtistForms
         .nRowSourceType = L7_ROWSOURCETYPE_VALUE
         .cRowSource = THISAPP_AGE_RANGES
       endwith
+      .AddObject("txtNeighborhood", "L7Textbox")
+      with .txtNeighborhood
+        .cGroupID  ="demo"
+        .cFieldType = "C"
+        .cControlSource = "V_artist.Art_Neighborhood"
+        .cLabel = "Neighborhood"
+      endwith
+      .AddObject("edtAddress", "L7Textarea")
+      with .edtAddress
+        .cGroupID  ="demo"
+        .cControlSource = "V_artist.Art_Address"
+        .nRows = 2
+        .cLabel = "Original Neighborhood (e.g., from blog)"
+        .cCssClass = "FormControlPrivate"
+      endwith
+
 
       .AddParticipationControls()
       
