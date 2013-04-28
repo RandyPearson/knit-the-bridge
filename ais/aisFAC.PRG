@@ -140,9 +140,6 @@ define class ais_FacHome as aisFacPage
       
       .AddRow("Facility ID", loData.Fac_ID,, "id-field" )
       .AddRow("Name", loData.Fac_Name)
-      *!*        .AddRow("Contact", loData.Fac_Contact)
-      *!*        .AddRow("Email", loData.Fac_Email)
-      *!*        .AddRow("Phone", loData.Fac_Phone)
       .AddRow("Address", L7ParseOnView(loData.Fac_Address))
       .AddRow("Comments", L7ParseOnView(loData.Fac_Comments))
 
@@ -178,6 +175,7 @@ define class ais_FacHome as aisFacPage
     loQry = createobject("AisPnlQuery")
     with loQry
       .cFac = this.cFac 
+      .lJoinArtist = .t. 
       .execute()
       if .nTally = 0
         return "(none)"
@@ -186,6 +184,7 @@ define class ais_FacHome as aisFacPage
     
     urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
     urls.add(StuffUrl(this.cUrlA, 2, "PnlForm"), "PnlForm")
+    urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
 
     loTbl = createobject("AisTable")
     with loTbl
@@ -195,6 +194,8 @@ define class ais_FacHome as aisFacPage
       loCol = .addCursorColumn("Pnl_Single_Piece", "Single-Piece?")
       loCol = .addCursorColumn("Pnl_Dim_1", "Dim 1")
       loCol = .addCursorColumn("Pnl_Dim_2", "Dim 2")
+      loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pnl_Stitcher_Art_FK), aisArtistName(THISRECORD))], 'artist')
       loCol = .addCursorColumn("Pnl_PK", "Edit Panel", ;
         'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit Panel...]")',"panel")
       return .render()
