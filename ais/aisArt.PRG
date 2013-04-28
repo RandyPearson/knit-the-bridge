@@ -451,6 +451,10 @@ define class ais_ArtHome as aisArtPage
       this.addMenuItem("main\This", "Re-Assign ID...", StuffUrl(this.cUrlA, 2, "ReassignID", "art", this.cArt))
     endif 
 
+    if poContext.lAdmin and empty(this.oArt.Art_Group_Art_FK)
+      this.addMenuItem("main\This", "Add Contributing Artist...", StuffUrl(this.cUrlA, 2, "AddContributor", "art", this.cArt))
+    endif 
+
     dodefault()
     return 
   endfunc 
@@ -464,7 +468,7 @@ define class ais_ArtHome as aisArtPage
   endfunc 
   * ----------------------------------------------------- *  
   function page_getMainRecord()
-    local loElem, loRow, lcRet, loData
+    local loElem, loRow, lcRet, loData, lcStr
     lcRet = ""
     loData = this.oArt
     loElem = createobject("aisRecordElement")
@@ -478,7 +482,6 @@ define class ais_ArtHome as aisArtPage
 
       .AddRow("Name", AisArtistName(m.loData, .t.))
       .AddRow("Alternative Full Name", TRIM(loData.ART_FULL_NAME), .t.)
-      .AddRow("Grouping", iif(loData.Art_No_Count, "GROUP ONLY", ""), .t., "private")
       .AddRow("Name Release", iif(loData.ART_Release_NAME, "OK to Release Name", "DO NOT Release Name"))
       if loData.ART_Anonymous
         .AddRow("Anonymous", "ANONYMOUS", .F., "private")
@@ -488,9 +491,19 @@ define class ais_ArtHome as aisArtPage
       .AddRow("Email", HTEmailLink(TRIM(loData.ART_EMAIL), .f., .f., .f., .t.))
       .AddRow("Phone", TRIM(loData.ART_PHONE), .t.)
       .AddRow("Original Contact (from blog)", loData.ART_CONTACT_ORIG, .t., "private")
-      .AddRow("Neighborhood", TRIM(loData.ART_NEIGHBORHOOD), .F.)
       .AddRow("Address (from blog)", L7ParseOnView(loData.ART_ADDRESS), .t., "private")
-      .AddRow("Age Range", TRIM(loData.ART_AGE_RANGE))
+      
+      if loData.Art_No_Count
+        .AddRow("Grouping", iif(loData.Art_No_Count, "GROUP ONLY", ""), .t., "private")
+      else
+        .AddRow("Neighborhood", TRIM(loData.ART_NEIGHBORHOOD), .F.)
+        .AddRow("Age Range", TRIM(loData.ART_AGE_RANGE))
+      endif 
+      lcStr = this.page_getContributors()
+      if !empty(m.lcStr)
+        .AddHeading('Contributing Artists')
+        .AddRow(null, m.lcStr)
+      endif   
 
       if this.oArt.Art_Artist
         .AddHeading('Submitted Work and WIP')
@@ -580,9 +593,6 @@ define class ais_ArtHome as aisArtPage
           ["(panel) " + HTLink(StuffUrl(urls.item('FacHome'), 'fac', Pnl_Fac_FK), AisFacilityName(Pnl_Fac_FK), "go to facility", "facility")] + ;
           [)])
 
-        *!*          loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
-        *!*            [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pce_Fac_FK), trim(Fac_Name), , "piece")])
-
         loCol = .addCursorColumn('Pce_Pnl_FK', "Bridge<br>Location", ;
           [aisFormatPanelLocation(Pce_Pnl_FK)])
         loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
@@ -594,18 +604,69 @@ define class ais_ArtHome as aisArtPage
     
     return m.lcRet
   endfunc && page_getPieceInfo
+  * ----------------------------------------------------- *  
+  function page_getContributors()
+    local lcRet, loQ, loTbl, loCol
+    lcRet = ''
+    loQ = createobject("AisArtQuery")
+    with loQ
+      .cGroupArt = this.cArt
+      .Execute()
+    endwith 
+    if loQ.nTally = 0
+    else
+      urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
+      
+      select (loQ.cAlias)
+      loTbl = createobject("AisTable")
+      with loTbl
+        loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
+        loCol = .addCursorColumn("Art_ID", "Artist ID", ;
+          [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), Art_ID)], "id-field piece")
+
+        loCol = .addCursorColumn("Art_Last_Name", "Name", ;
+          [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), aisArtistName(THISRECORD))])
+
+        loCol = .addCursorColumn("Art_Neighborhood", "Neighborhood")
+        loCol = .addCursorColumn("Art_Age_Range", "Age Range")
+
+        lcRet = m.lcRet + .Render()
+      endwith 
+    endif 
+    
+    return m.lcRet
+  endfunc && page_getPieceInfo
 enddefine && ArtHome
+
+*** ========================================================= ***
+define class ais_AddContributor as ais_ArtForm
+  lAdding = .t.
+  lArtRequired = .t.
+  cPage_FormClass = "aisContributorForm"
+  * ----------------------------------------------------- *  
+  function page_setAdditionalFields(toForm)
+    replace ;
+      Art_Group_Art_FK with this.cArt ;
+      Art_Artist with .t. 
+    return 
+  endfunc 
+enddefine 
 
 *** ========================================================= ***
 define class ais_ArtNew as ais_ArtForm 
   lAdding = .t.
   lArtRequired = .f. 
+  cPage_FormClass = "aisRegisterForm"
 enddefine 
 
 *** ========================================================= ***
 define class ais_ArtForm as aisArtPage 
   lAdding = .f.
   lAdminRequired = .t.
+  cPage_FormClass = "aisArtistForm"
+  * ----------------------------------------------------- *  
+  function page_setAdditionalFields(toForm)
+  endfunc 
   * ----------------------------------------------------- *  
   function ProcessRequest
 
@@ -619,7 +680,7 @@ define class ais_ArtForm as aisArtPage
     this.assert(!V_Artist.Art_Developer or poContext.lDeveloper, "Cannot edit developer record.")
     
     cursorsetprop("Buffering", 5, "V_Artist")
-    loForm = this.createForm(iif(this.lAdding, 'aisRegisterForm', 'aisArtistForm'))
+    loForm = this.createForm(this.cPage_FormClass)
     with loForm
       .lNewRecord = THIS.lAdding
       .AddControls()
@@ -635,6 +696,7 @@ define class ais_ArtForm as aisArtPage
             replace Art_Approved with .t. && if admin is adding, approve immediately
           endif
         endif 
+        this.page_setAdditionalFields(m.loForm)
         .UpdateControlSources()
         select V_Artist && UpdateControlSources can alter work area
         * flag as Artist if making anything: 
@@ -668,7 +730,11 @@ define class ais_ArtForm as aisArtPage
             if poContext.lAnonymous
               this.cCancelUrl = StuffURL(THIS.cUrlA, 2, "ThankYou")
             else
-              this.cCancelUrl = StuffURL(THIS.cUrlA, 2, "ArtHome", "art", V_Artist.Art_PK)
+              if !empty(V_Artist.Art_Group_Art_FK)
+                this.cCancelUrl = StuffURL(THIS.cUrlA, 2, "ArtHome", "art", V_Artist.Art_Group_Art_FK)
+              else
+                this.cCancelUrl = StuffURL(THIS.cUrlA, 2, "ArtHome", "art", V_Artist.Art_PK)
+              endif 
             endif 
             this.page_onNewArtist(m.loNewRec)
           endif
@@ -683,11 +749,14 @@ define class ais_ArtForm as aisArtPage
 
     endwith 
     response.write(loForm.render())
-  endfunc 
+    return 
+  endfunc && ProcessRequest
   * ----------------------------------------------------- *  
   function page_onNewArtist(loRec)
     local loExc, lcMailMessage, lcName, lcSubject, lcUrl, lcExcMessage
-
+    if !empty(loRec.Art_Group_Art_FK)
+      return  && no alerts for contributing artist additions 
+    endif 
     try 
       * lcName = textmerge([<<TRIM(loRec.Art_First_Name)>> <<TRIM(loRec.Art_Last_Name)>>])
       lcName = aisArtistName(m.loRec)
@@ -901,8 +970,17 @@ define class aisArtistForms AS AisForm
 enddefine 
 
 *** ========================================================= ***
+define class aisContributorForm AS aisRegisterForm
+  cTitle = "New Contributing Artist Form"
+  lCustom_Participation = .f. 
+  lCustom_Contributing = .t. 
+enddefine 
+
+*** ========================================================= ***
 define class aisRegisterForm AS aisArtistForms
   cTitle = "New Sign-Up Form"
+  lCustom_Participation = .t. 
+  lCustom_Contributing = .f. 
   * --------------------------------------------------------- *
   function AddControls
     with this
@@ -945,16 +1023,17 @@ define class aisRegisterForm AS aisArtistForms
         .nRowSourceType = L7_ROWSOURCETYPE_VALUE
         .cRowSource = THISAPP_AGE_RANGES
       endwith
-
-      .AddObject("txtFull_Name", "L7Textbox")
-      with .txtFull_Name
-        .cGroupID = "name2"
-        .cFieldType = "C"
-        .cControlSource = "V_artist.Art_Full_Name"
-        .cLabel = "Alternative Full Name"
-        .cInstructions = "(leave blank unless this entry needs to override First/Last name in listings)"
-      endwith
-
+      if !this.lCustom_Contributing 
+        .AddObject("txtFull_Name", "L7Textbox")
+        with .txtFull_Name
+          .cGroupID = "name2"
+          .cFieldType = "C"
+          .cControlSource = "V_artist.Art_Full_Name"
+          .cLabel = "Alternative Full Name"
+          .cInstructions = "(leave blank unless this entry needs to override First/Last name in listings)"
+        endwith
+      endif 
+      
       .AddObject("txtEmail", "L7Textbox")
       with .txtEmail
         .cGroupID = "cont"
@@ -983,16 +1062,20 @@ define class aisRegisterForm AS aisArtistForms
         .cLabel = "Neighborhood or Township"
       endwith
 
-      .addParticipationControls()
-
-      .AddObject("edtComments", "L7Textarea")
-      with .edtComments
-        .cGroupID = "comments"
-        .cControlSource = "V_artist.Art_Comments"
-        .cLabel = "Description and Comments"
-        .nRows = 2
-      endwith
-
+      if this.lCustom_Participation
+        .addParticipationControls()
+      endif 
+      
+      if !this.lCustom_Contributing 
+        .AddObject("edtComments", "L7Textarea")
+        with .edtComments
+          .cGroupID = "comments"
+          .cControlSource = "V_artist.Art_Comments"
+          .cLabel = "Description and Comments"
+          .nRows = 2
+        endwith
+      endif 
+      
     endwith
     return 
   endfunc  && addControls
