@@ -478,6 +478,7 @@ define class ais_ArtHome as aisArtPage
 
       .AddRow("Name", AisArtistName(m.loData, .t.))
       .AddRow("Alternative Full Name", TRIM(loData.ART_FULL_NAME), .t.)
+      .AddRow("Grouping", iif(loData.Art_No_Count, "GROUP ONLY", ""), .t., "private")
       .AddRow("Name Release", iif(loData.ART_Release_NAME, "OK to Release Name", "DO NOT Release Name"))
       if loData.ART_Anonymous
         .AddRow("Anonymous", "ANONYMOUS", .F., "private")
@@ -1095,6 +1096,16 @@ define class aisArtistForm AS aisArtistForms
         .cLabel = "Alternative Full Name"
         .cInstructions = "(leave blank unless this entry needs to override First/Last name in listings)"
       endwith
+      .AddObject("chkNo_Count", "L7Checkbox")
+      with .chkNo_Count
+        .cGroupID = "name2"
+        .cControlSource = "V_artist.Art_No_Count"
+        .cLabel = "Group Only?"
+        .nMode = L7_MULTI_RADIOBUTTON
+        .nStyle = L7_MULTISTYLE_VERTICAL  && only applies to radio-button transforms
+        .cCaption = "Group Only (don't count in demographics)"
+        .cFalseCaption = "Individual (include in demographics)"
+      endwith
 
       .AddObject("txtEmail", "L7Textbox")
       with .txtEmail
@@ -1266,6 +1277,7 @@ define class aisArtistForm AS aisArtistForms
       with .chkCore
         .cControlSource = "V_artist.Art_Core"
         .cCaption = "Core"
+        .cCssClass = "FormControlPrivate"
       endwith
       .colSec.AddObjectToParent("chkAccount_Lockout", "L7Checkbox")
       with .chkAccount_Lockout
