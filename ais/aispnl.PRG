@@ -155,6 +155,7 @@ define class ais_PnlList as aisPnlPage
       loCol = .addCursorColumn("Pnl_Single_Piece", "Single-Piece?")
       loCol = .addCursorColumn("Pnl_Dim_1", "Dimension 1")
       loCol = .addCursorColumn("Pnl_Dim_2", "Dimension 2")
+      loCol = .addCursorColumn("Pnl_Comments", "Comments")
       loCol = .addCursorColumn("Pnl_Completed", "Completed?")
       loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pnl_Stitcher_Art_FK), aisArtistName(THISRECORD))], 'artist')
@@ -165,8 +166,9 @@ define class ais_PnlList as aisPnlPage
       loCol.lDisplayTextmerge = .t. 
 
       if poContext.lAdmin
+        loCol = .addCursorColumn("Pnl_Notes", "Notes",, "private")
         loCol = .addCursorColumn("Pnl_PK", "Edit Panel", ;
-          'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit Panel...]")', 'panel', "no-print")
+          'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit&nbsp;Panel...]")', 'panel', "no-print")
         loCol.cHeadingClass = "nosort no-print" 
       endif 
 
@@ -213,6 +215,7 @@ define class ais_PnlAddPiece as aisPnlPage
       loCol = .AddCursorColumn('Pce_Whole_Panel', 'Whole Panel?')
       loCol = .AddCursorColumn('Pce_Dim_1', 'Dim 1')
       loCol = .AddCursorColumn('Pce_Dim_2', 'Dim 2')
+      loCol = .AddCursorColumn('Pce_Comments', 'Comments')
       loCol = .addCursorColumn("Fac_Name", "Current Storage Facility")
 
     endwith 
@@ -531,15 +534,15 @@ endif
       loCol = .AddCursorColumn('Pce_Whole_Panel', 'Whole Panel?')
       loCol = .AddCursorColumn('Pce_Dim_1', 'Dim 1')
       loCol = .AddCursorColumn('Pce_Dim_2', 'Dim 2')
+      loCol = .addCursorColumn("Pce_Comments", "Comments")
       loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
       loCol = .AddCursorColumn('Pce_Received', 'Received')
 
-      *!*        loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
-      *!*          [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pce_Fac_FK), trim(Fac_Name))])
-
-      loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
-        'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit Piece...]")')
-
+      if poContext.lAdmin
+        loCol = .addCursorColumn("Pce_Notes", "Notes",, "private")
+        loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
+          'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit&nbsp;Piece...]")')
+      endif
       lcRet = m.lcRet + .Render()
     endwith 
     
@@ -729,7 +732,7 @@ define class AisPnlQuery as L7Query
   cBaseTable = "Panel"
   cDefaultFieldList = ;
     "Pnl_PK, Pnl_ID, Pnl_Stitcher_Art_FK, Pnl_Asm_FK, Pnl_Fac_FK, Pnl_Single_Piece" + ;  
-    ", Pnl_Dim_1, Pnl_Dim_2, Pnl_Completed" 
+    ", Pnl_Dim_1, Pnl_Dim_2, Pnl_Completed, Pnl_Comments, Pnl_Notes" 
 
   nOrderBy = 1
   dimension aOrderBy[ 1, 2]

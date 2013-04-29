@@ -44,8 +44,8 @@ define class aisLocPage as aisPage
     lcMenu = "main\This"
     with this
       .AddSubMenu("This", "BRIDGE LOCATIONS")
-      .addMenuItem(m.lcMenu, 'Dahntahn Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Down"))
-      .addMenuItem(m.lcMenu, 'Uptahn Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Up"))
+      .addMenuItem(m.lcMenu, 'Downtown Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Down"))
+      .addMenuItem(m.lcMenu, 'Uptown Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Up"))
       .addMenuItem(m.lcMenu, 'All Bridge Locations', StuffUrl(.cUrlA, 2, "LocList"))
       if poContext.lDeveloper
         .addMenuItem(m.lcMenu, "Edit All Locations...", StuffUrl(.cUrlB, 2, "LocBrowse"))
@@ -119,13 +119,13 @@ define class ais_LocList as aisLocPage
 
       if empty(this.cPage_Side) or "Down" $ this.cPage_Side
         .cFilter = [Loc_Side = "Down"]
-        .cTableCaption = "Dahntahn List"
+        .cTableCaption = "Downtown List"
         response.write(.render())
         .Reset()
       endif
       if empty(this.cPage_Side) or "Up" $ this.cPage_Side
         .cFilter = [Loc_Side = "Up  "]
-        .cTableCaption = "Uptahn List"
+        .cTableCaption = "Uptown List"
         response.write(.render())
         .Reset()
       endif

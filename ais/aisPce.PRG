@@ -180,6 +180,7 @@ define class ais_PceList as aisPcePage
       loCol = .addCursorColumn("Pce_Whole_Panel", "Whole Panel?")
       loCol = .addCursorColumn("Pce_Dim_1", "Dim 1")
       loCol = .addCursorColumn("Pce_Dim_2", "Dim 2")
+      loCol = .addCursorColumn("Pce_Comments", "Comments")
 
       if isnull(loQry.lOrphans) or loQry.lOrphans
         loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
@@ -196,8 +197,9 @@ define class ais_PceList as aisPcePage
         
       endif 
       if poContext.lAdmin
+        loCol = .addCursorColumn("Pce_Notes", "Notes",, "private")
         loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
-          'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit Piece...]")', 'no-print')
+          'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit&nbsp;Piece...]")', 'no-print')
         loCol.cHeadingClass = "nosort no-print" 
       endif 
       response.write(.render())
@@ -593,7 +595,7 @@ define class AisPceQuery as L7Query
   cBaseTable = "Piece"
   cDefaultFieldList = ;
     "Pce_PK, Pce_ID, Pce_Art_FK, Pce_Pnl_FK, Pce_Fac_FK, Pce_Whole_Panel" + ;  
-    ", Pce_Dim_1, Pce_Dim_2, Pce_Type, Pce_Shipped, Pce_Ship_Date, Pce_Received, Pce_Acknowledged"
+    ", Pce_Dim_1, Pce_Dim_2, Pce_Comments, Pce_Notes, Pce_Type, Pce_Shipped, Pce_Ship_Date, Pce_Received, Pce_Acknowledged"
 
   nOrderBy = 1
   dimension aOrderBy[ 1, 2]

@@ -194,10 +194,14 @@ define class ais_FacHome as aisFacPage
       loCol = .addCursorColumn("Pnl_Single_Piece", "Single-Piece?")
       loCol = .addCursorColumn("Pnl_Dim_1", "Dim 1")
       loCol = .addCursorColumn("Pnl_Dim_2", "Dim 2")
+      loCol = .addCursorColumn("Pnl_Comments", "Comments")
       loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pnl_Stitcher_Art_FK), aisArtistName(THISRECORD))], 'artist')
-      loCol = .addCursorColumn("Pnl_PK", "Edit Panel", ;
-        'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit Panel...]")',"panel")
+      if poContext.lAdmin
+        loCol = .addCursorColumn("Pnl_Notes", "Notes",, "private")
+        loCol = .addCursorColumn("Pnl_PK", "Edit Panel", ;
+          'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit&nbsp;Panel...]")',"panel")
+      endif 
       return .render()
     endwith 
     

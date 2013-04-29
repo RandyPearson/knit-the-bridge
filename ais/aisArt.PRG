@@ -288,7 +288,7 @@ define class ais_ArtList as aisMultiArtPage
         endif
 
         loCol = .addCursorColumn("Art_PK", "Edit Artist", ;
-          'HTLink(StuffUrl(urls.item("ArtForm"), "art", Art_PK), "[Edit Artist...]")', 'no-print')
+          'HTLink(StuffUrl(urls.item("ArtForm"), "art", Art_PK), "[Edit&nbsp;Artist...]")', 'no-print')
         loCol.cHeadingClass = "nosort no-print" 
       endif 
       response.write(.render())
@@ -584,6 +584,7 @@ define class ais_ArtHome as aisArtPage
         loCol = .AddCursorColumn('Pce_Whole_Panel', 'Whole Panel?')
         loCol = .AddCursorColumn('Pce_Dim_1', 'Dim 1')
         loCol = .AddCursorColumn('Pce_Dim_2', 'Dim 2')
+        loCol = .addCursorColumn("Pce_Comments", "Comments")
         loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
         loCol = .AddCursorColumn('Pce_Received', 'Received')
 
@@ -595,9 +596,13 @@ define class ais_ArtHome as aisArtPage
 
         loCol = .addCursorColumn('Pce_Pnl_FK', "Bridge<br>Location", ;
           [aisFormatPanelLocation(Pce_Pnl_FK)])
-        loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
-          'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit Piece...]")')
-
+        
+        if poContext.lAdmin
+          loCol = .addCursorColumn("Pce_Notes", "Notes",, "private")
+          loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
+            'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit&nbsp;Piece...]")')
+        endif
+        
         lcRet = m.lcRet + .Render()
       endwith 
     endif 
