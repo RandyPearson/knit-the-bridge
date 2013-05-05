@@ -3,6 +3,18 @@
 #INCLUDE WCONNECT.H
 #INCLUDE AIS.H
 
+
+* --------------------------------------------------------- *
+function AisPanelImage(lcId, lcSuff)
+  local lcFileName, lcRet
+  lcFileName = forceext(m.lcId + m.lcSuff, "jpeg")
+  if file(aisPanelFilePath(m.lcId) + m.lcFileName)
+    lcRet = HTImage(aisPanelWebFilePath(m.lcId) + m.lcFileName, "Panel " + m.lcId)
+  else
+    lcRet = "" && 
+  endif
+  return m.lcRet
+endfunc 
 * --------------------------------------------------------- *
 function aisCreatePanel(toPce)
   * Create a panel from a "starter" piece. 
@@ -153,6 +165,9 @@ define class ais_PnlList as aisPnlPage
       loCol = .addCursorColumn("Pnl_ID", "Panel ID", ;
         [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), Pnl_ID)], 'id-field panel')
       loCol = .addCursorColumn("Pnl_Single_Piece", "Single-Piece?")
+
+      loCol = .addCursorColumn("Pnl_ID", "Image", [AisPanelImage(Pnl_Id, "_h25")])
+
       loCol = .addCursorColumn("Pnl_Dim_1", "Dimension 1")
       loCol = .addCursorColumn("Pnl_Dim_2", "Dimension 2")
       loCol = .addCursorColumn("Pnl_Comments", "Comments")
@@ -415,9 +430,7 @@ define class ais_PnlHome as aisPnlPage
       if poContext.lAdmin
         .addMenuItem("main\This,page", "Edit Panel...", StuffUrl(.cUrlA, 2, "PnlForm", "pnl", .cPnl))
 
-if poContext.lDeveloper
         .addMenuItem("main\This,page", "Upload Panel File...", StuffUrl(.cUrlA, 2, "PnlFilNew", "pnl", .cPnl))
-endif         
 
         if .oPnl.Pnl_Single_Piece = .f. and !.oPnl.Pnl_Completed 
           .addMenuItem("main\This,page", "Add Piece to Panel...", ;
@@ -454,7 +467,7 @@ endif
   endfunc 
   * ----------------------------------------------------- *  
   function page_getMainRecord()
-    local loElem, loRow, lcRet, loData, loPlc
+    local loElem, loRow, lcRet, loData, loPlc, lcFileName
     lcRet = ""
     loData = this.oPnl
     loPlc = this.oPage_Location 
@@ -468,6 +481,11 @@ endif
 
       .AddRow("Single-Piece?", loData.Pnl_Single_Piece)
 
+      lcFileName = forceext(loData.Pnl_ID + "_main", "jpeg")
+      if file(aisPanelFilePath(loData.Pnl_ID) + m.lcFileName)
+        .AddRow("File", HTImage(aisPanelWebFilePath(loData.Pnl_ID) + m.lcFileName, "Panel " + loData.Pnl_ID))
+      endif
+      
       .AddRow("Dimension 1", loData.Pnl_Dim_1)
       .AddRow("Dimension 2", loData.Pnl_Dim_2)
       .AddRow("Description and Comments", L7ParseOnView(loData.Pnl_COMMENTS), .t.)

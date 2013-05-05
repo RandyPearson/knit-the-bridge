@@ -11,6 +11,13 @@ function aisPanelFilePath(tvKey)
     "Panels\" + substr(m.lcKey, len("PNL") + 1, 1) + "\" + m.lcKey + "\" 
   return m.lcPath
 endfunc 
+* --------------------------------------------------------- *
+function aisPanelWebFilePath(tvKey)
+  local lcPath, lcKey
+  lcKey = iif(vartype(m.tvKey) = 'O', tvKey.Pnl_ID, m.tvKey)
+  lcPath = "/ktb-photos/Panels/" + substr(m.lcKey, len("PNL") + 1, 1) + "/" + m.lcKey + "/" 
+  return m.lcPath
+endfunc 
 
 *** ========================================================= ***
 define class ais_PnlFilNew as aisPage
