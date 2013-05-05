@@ -975,7 +975,7 @@ define class L7ImageInfo as Custom
   function GetInfo
     local llOK, lnW, lnH, lnRes
     store 0 to lnW, lnH, lnRes
-    llOK = GetImageInfo(addbs(this.cPath) + this.cFileName, @lnW, @lnH, @Res)
+    llOK = GetImageInfo(addbs(this.cPath) + this.cFileName, @lnW, @lnH, @lnRes)
     if m.llOK
       this.nWidth = m.lnW
       this.nHeight = m.lnH
@@ -984,10 +984,57 @@ define class L7ImageInfo as Custom
       error "GetImageInfo failed"
     endif
     return     
-  endfunc 
+  endfunc && GetInfo 
   * --------------------------------------------
-enddefine && L7ImageInfo 
+  function RotateImage(tnFlipType, tcNewFile, tcAltPath)
+    * rotates current file _or_ creates a new rotated file
+    * returns an object for the rotated file 
+    local loImg
+    if empty(m.tcNewFile)
+      loImg = this
+    else
+      loImg = createobject(this.Class) && rotate works on existing file, so first make a copy
+      loImg.cFileName = m.tcNewFile
+      loImg.cPath = evl(m.tcAltPath, this.cPath)
+      copy file (addbs(this.cPath) + this.cFileName) to (addbs(loImg.cPath) + loImg.cFileName)
+    endif
+    RotateImage(addbs(loImg.cPath) + loImg.cFileName, m.tnFlipType)
+    return m.loImg
+  endfunc && RotateImage
+  * --------------------------------------------
+  function CreateThumbnail(tnW, tnH, tcNewFile, tcAltPath)
+    * if H and W both specified, allows default behavior based on larged dimension
+    * otherwise forces the passed dimension to rule, by calculating 
+    local lnW, lnH, lnRatio, loImg
+    if this.nWidth = 0
+      this.GetInfo()
+    endif
+    lnRatio = this.nWidth / this.nHeight 
+    do case
+    case empty(m.tnW) && new width not specified--base on height
+      lnH = m.tnH
+      lnW = int(m.tnH * m.lnRatio)
+    case empty(m.tnH) && new height not specified--base on width
+      lnW = m.tnW
+      lnH = int(m.tnW / m.lnRatio)
+    otherwise
+      lnH = m.tnH
+      lnW = m.tnW
+    endcase
 
+    loImg = createobject(this.Class) 
+    loImg.cFileName = m.tcNewFile
+    loImg.cPath = evl(m.tcAltPath, this.cPath)
+    CreateThumbnail( ;
+      addbs(this.cPath) + this.cFileName, ;
+      addbs(loImg.cPath) + loImg.cFileName, ;
+      m.lnW, m.lnH )
+    loImg.GetInfo() && so we return an object with its actual values
+    return m.loImg
+  endfunc && CreateThumbnail 
+  * --------------------------------------------
+
+enddefine && L7ImageInfo 
 
 * end: L7Graphics
 
