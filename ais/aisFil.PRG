@@ -6,9 +6,9 @@
 * --------------------------------------------------------- *
 function aisPanelFilePath(tvKey)
   local lcPath, lcKey
-  lcKey = iif(vartype(m.tvKey) = 'O', tvKey.Pnl_PK, m.tvKey)
+  lcKey = iif(vartype(m.tvKey) = 'O', tvKey.Pnl_ID, m.tvKey)
   lcPath = addbs(config.cFilePath) + ; && start at top 
-    "Panels\" + left(m.lcKey, 1) + "\" + m.lcKey + "\" 
+    "Panels\" + substr(m.lcKey, len("PNL") + 1, 1) + "\" + m.lcKey + "\" 
   return m.lcPath
 endfunc 
 
@@ -21,7 +21,7 @@ define class ais_PnlFilNew as aisPage
     this.Assert(poContext.lCore)
     this.cCancelUrl = stuffUrl(this.cUrlB, 2, "PnlHome")
 
-    local loForm, vp_cPnl_PK, lcAlias, loTrans
+    local loForm, vp_cPnl_PK, lcAlias, loTrans, loImg, loNewRec
     lcAlias = "v_Panel_File_Set"
     vp_cPnl_PK = this.cPnl
     use (m.lcAlias) again in select(m.lcAlias)
@@ -45,23 +45,40 @@ define class ais_PnlFilNew as aisPage
         StampRec( CurrentUser, THIS.tNow )
 
         with .fil1
-          .cSaveAsFolder = aisPanelFilePath(this.cPnl)
+          .cSaveAsFolder = aisPanelFilePath(this.oPnl)
           .cSaveAsName = forceext(Fil_PK, justext(.cFileName)) && pk w/ original extension
           
           if !directory(.cSaveAsFolder)
             mkdir(.cSaveAsFolder)
           endif 
         
-         .lOverwriteProtection = .T.                  && [[ correct policy?
-         if !.SaveAs()
-           error "failed to save file" 
-         endif
+          .lOverwriteProtection = .T.                  && [[ correct policy?
+          if !.SaveAs()
+            error "failed to save file" 
+          endif
+          loImg = createobject("L7ImageInfo")
+          loImg.cPath = .cSaveAsFolder
+          loImg.cFileName = .cSaveAsName
+          loImg.GetInfo()
+          replace Fil_Height with loImg.nHeight ;
+            Fil_Width with loImg.nWidth ;
+            Fil_Resolution with loImg.nResolution 
         endwith        
+        select (m.lcAlias)
+        scatter memo name loNewRec
+        
+        if Fil_Main && if now main, uncheck any previous files 
+          scan for Fil_Main and !Fil_PK = loNewRec.Fil_PK
+            replace Fil_Main with .f.
+            StampRec( CurrentUser, THIS.tNow )
+          endscan 
+        endif
 
         loTrans = THIS.CreateTransaction()
         loTrans.AddCursor(m.lcAlias)
 
         if loTrans.Save()  
+          this.page_onFileSave(m.loImg, m.loNewRec)
           Response.Redirect(this.cCancelUrl)
           return 
         endif 
@@ -71,6 +88,30 @@ define class ais_PnlFilNew as aisPage
     endwith 
     return 
   endfunc 
+  * --------------------------------------------------------- *
+  function page_onFileSave(loImg, loNewRec)  
+    local lcXforms, loXforms, loXform, loImgT, lcFileName
+    if !loNewRec.Fil_Main
+      return 
+    endif 
+    text to lcXforms noshow pretext 15
+      [{"suffix": "_main", "width": 320, "height": 0, "rotate": 0}, 
+       {"suffix": "_H50", "width": 0, "height": 50, "rotate": 0}, ;
+       {"suffix": "_H50R", "width": 0, "height": 50, "rotate": 1}, ;
+       {"suffix": "_H25", "width": 0, "height": 25, "rotate": 0}]
+    endtext 
+    loXforms = L7JsonParse(m.lcXforms)
+    for lnXform = 1 to loXforms.count
+      loXform = loXforms.item[m.lnXform]
+      lcFileName = forceext(this.oPnl.Pnl_ID + m.loXform.suffix, "jpeg")
+      loImgT = loImg.CreateThumbnail(loXform.width, loXform.height, m.lcFileName)
+      if loXform.rotate > 0
+        loImgT.RotateImage(loXform.rotate)
+      endif 
+    next 
+    return 
+  endfunc 
+  
 enddefine  && ais_PnlFilNew 
 
 *** ========================================================= ***
