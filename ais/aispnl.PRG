@@ -37,6 +37,9 @@ function aisCreatePanel(toPce)
     replace ; 
       Pnl_Stitcher_Art_FK with toPce.Pce_Art_FK ; && panel attributed to piece artist
       Pnl_Completed with .t.                      && single-piece panel are complete by def'n 
+    replace ;
+      Pnl_Notes with toPce.Pce_Notes ;
+      Pnl_Comments with toPce.Pce_Comments 
   endif 
 
   select V_Panel  && UpdateControlSources can alter work area
