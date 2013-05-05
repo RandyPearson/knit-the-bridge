@@ -918,49 +918,81 @@ DEFINE CLASS L7Pie AS custom
     RETURN
   ENDPROC
 
-*!*    PROCEDURE Init
-*!*      LPARAMETERS tcTable, tcValueField, tcLegendField, tcColorField, ;
-*!*          tcDetachField, tcSliceTextField, tcCaption
+    *!*    PROCEDURE Init
+    *!*      LPARAMETERS tcTable, tcValueField, tcLegendField, tcColorField, ;
+    *!*          tcDetachField, tcSliceTextField, tcCaption
 
-*!*      IF VARTYPE(m.tcTable) == "C"
-*!*        THIS.SourceAlias = m.tcTable
-*!*      ENDIF
+    *!*      IF VARTYPE(m.tcTable) == "C"
+    *!*        THIS.SourceAlias = m.tcTable
+    *!*      ENDIF
 
-*!*      IF VARTYPE(m.tcValueField) == "C"
-*!*        THIS.PieValueField  = m.tcValueField
-*!*      ENDIF
+    *!*      IF VARTYPE(m.tcValueField) == "C"
+    *!*        THIS.PieValueField  = m.tcValueField
+    *!*      ENDIF
 
-*!*      IF VARTYPE(m.tcLegendField) == "C"
-*!*        THIS.PieLegendField = m.tcLegendField
-*!*      ENDIF
+    *!*      IF VARTYPE(m.tcLegendField) == "C"
+    *!*        THIS.PieLegendField = m.tcLegendField
+    *!*      ENDIF
 
-*!*      IF VARTYPE(m.tcDetachField) == "C"
-*!*        THIS.PieDetachField = m.tcDetachField
-*!*      ENDIF
+    *!*      IF VARTYPE(m.tcDetachField) == "C"
+    *!*        THIS.PieDetachField = m.tcDetachField
+    *!*      ENDIF
 
-*!*      IF VARTYPE(m.tcColorField) == "C"
-*!*        THIS.PieColorField = m.tcColorField
-*!*      ENDIF
+    *!*      IF VARTYPE(m.tcColorField) == "C"
+    *!*        THIS.PieColorField = m.tcColorField
+    *!*      ENDIF
 
-*!*      IF VARTYPE(m.tcSliceTextField) == "C"
-*!*        THIS.PieSliceTextField = m.tcSliceTextField
-*!*      ENDIF
+    *!*      IF VARTYPE(m.tcSliceTextField) == "C"
+    *!*        THIS.PieSliceTextField = m.tcSliceTextField
+    *!*      ENDIF
 
-*!*      IF VARTYPE(m.tcCaption) == "C"
-*!*        This.Title = m.tcCaption
-*!*      ENDIF
+    *!*      IF VARTYPE(m.tcCaption) == "C"
+    *!*        This.Title = m.tcCaption
+    *!*      ENDIF
 
-*!*      * All parameters passed, so create automatically
-*!*      IF VARTYPE(m.tcTable) + VARTYPE(m.tcValueField) + VARTYPE(m.tcLegendField) == "CCC"
-*!*        This.Create
-*!*      ENDIF
+    *!*      * All parameters passed, so create automatically
+    *!*      IF VARTYPE(m.tcTable) + VARTYPE(m.tcValueField) + VARTYPE(m.tcLegendField) == "CCC"
+    *!*        This.Create
+    *!*      ENDIF
 
-*!*      IF This.GradientLevel > 10 OR This.GradientLevel < 0
-*!*        This.GradientLevel = 5
-*!*      ENDIF 
+    *!*      IF This.GradientLevel > 10 OR This.GradientLevel < 0
+    *!*        This.GradientLevel = 5
+    *!*      ENDIF 
 
-*!*      RETURN
-*!*    ENDPROC
-
+    *!*      RETURN
+    *!*    ENDPROC
 
 ENDDEFINE  && L7Pie
+
+*** ===================================================== ***
+define class L7ImageInfo as Custom
+  cPath = null
+  cFileName = 0
+  nWidth = 0
+  nHeight = 0 
+  nResolution = 0
+  * --------------------------------------------
+  function GetInfo
+    local llOK, lnW, lnH, lnRes
+    store 0 to lnW, lnH, lnRes
+    llOK = GetImageInfo(addbs(this.cPath) + this.cFileName, @lnW, @lnH, @Res)
+    if m.llOK
+      this.nWidth = m.lnW
+      this.nHeight = m.lnH
+      this.nResolution = m.lnRes
+    else
+      error "GetImageInfo failed"
+    endif
+    return     
+  endfunc 
+  * --------------------------------------------
+enddefine && L7ImageInfo 
+
+
+* end: L7Graphics
+
+
+
+
+
+
