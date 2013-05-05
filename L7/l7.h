@@ -132,9 +132,9 @@
 * good starter for common data entry:
 #DEFINE L7_FIELD_CHARACTERS L7_WORD_CHARACTERS + L7_PUNCTUATION_CHARACTERS + L7_BRACKET_CHARACTERS
 * good starter for query forms: 
-#DEFINE L7_QUERY_CHARACTERS L7_WORD_CHARACTERS + " ,-.+"
+#DEFINE L7_QUERY_CHARACTERS L7_WORD_CHARACTERS + " ,-.+@"
 * default for request.queryString validating: 
-#DEFINE L7_QS_CHARACTERS L7_WORD_CHARACTERS + " ,-.+"
+#DEFINE L7_QS_CHARACTERS L7_WORD_CHARACTERS + " ,-.+@"
 
 * passwords: (following previously had ?=.<>;: too, which were outside policy)
 #DEFINE L7_PASSWORD_SPECIAL_CHARACTERS "!@#$%^&*_-+" 

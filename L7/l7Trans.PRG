@@ -190,25 +190,37 @@ DEFINE CLASS L7ViewTransaction AS LINE
   ENDFUNC 
   * --------------------------------------------------------- *
   function Log
-    local loExc, lcFile, lcPath, llLog
-    if !this.lSaved 
-      if this.lXmlupdategramOnErrors
-        llLog = .T.
-        lcPath = THIS.GetFailureLogPath()
-      endif 
-    else  && saved
-      if this.lLogTransactions 
-        llLog = .T.
-        lcPath = THIS.cLogPath
-      endif 
-    endif  
-    if m.llLog
-      if !directory(m.lcPath)
-        mkdir (m.lcPath)
+    local loExc, loExc2, lcFile, lcPath, llLog
+    try 
+      if !this.lSaved 
+        if this.lXmlupdategramOnErrors
+          llLog = .T.
+          lcPath = THIS.GetFailureLogPath()
+        endif 
+      else  && saved
+        if this.lLogTransactions 
+          llLog = .T.
+          lcPath = THIS.cLogPath
+        endif 
       endif  
-      lcFile = addbs(m.lcPath) + forceext(this.cTransId, "xml")
-      strtofile(this.cXmlUpdateGram, m.lcFile)
-    endif  
+      if m.llLog
+        if !directory(m.lcPath)
+          mkdir (m.lcPath)
+        endif  
+        lcFile = addbs(m.lcPath) + forceext(this.cTransId, "xml")
+        strtofile(this.cXmlUpdateGram, m.lcFile)
+      endif  
+    catch to loExc
+      * can't afford to do anything here (perhaps app_log??), as 
+      * additional error could mask original transaction result 
+      * trying app_log...
+      try 
+        goL7App.app_log(L7_SEVERITY_WARNING, L7ExceptionMessage(m.loExc))
+      catch to loExc2
+        = .f.  && giving up
+      endtry 
+    endtry 
+    
     return  
   endfunc && Log 
   * --------------------------------------------------------- *

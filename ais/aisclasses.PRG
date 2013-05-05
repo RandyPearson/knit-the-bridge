@@ -18,6 +18,7 @@ set procedure to AisPce     additive  && Piece pages
 set procedure to AisPnl     additive  && Panel pages  
 set procedure to AisFac     additive  && Facility pages  
 set procedure to AisLoc     additive  && Location pages  
+set procedure to AisFil     additive  && FILE pages  
 
 return 
 

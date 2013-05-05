@@ -64,7 +64,7 @@ define class ais_SetPassword as aisAdminPage
 
     use (m.lcAlias) in select(m.lcAlias)
     cursorsetprop("Buffering", 5, m.lcAlias)
-    loForm = this.createForm('AisSetPasswordForm')
+    loForm = this.createForm('AisSetPasswordForm', this.cUrlC)
     with loForm
       .AddControls()
       .DoEvents() 

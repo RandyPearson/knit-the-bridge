@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     17
+#DEFINE THISAPP_DATABASE_REVISION     22
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -113,6 +113,7 @@ define class AisApp AS KtbApp
     * Force lookups to get created now (so they stay open):
     * Deploy physical files needed in http space:
     this.DeployContent()
+    set nulldisplay to "--"
     return .T.
   endfunc  && OnFirstPostMaintenanceHit
   * --------------------------------------------------------- *
@@ -398,6 +399,35 @@ define class AisApp AS KtbApp
         with "Location", this.cDataPath, this.cDataBase
       use in select("Location")
 
+    case m.lnRev = 18
+      * Create PanelLocation table:
+      do CreateTable ;
+        with "PanelLocation", this.cDataPath, this.cDataBase
+      use in select("PanelLocation")
+
+    case m.lnRev = 19
+      * no changes--force view creation 
+
+    case m.lnRev = 20
+      * drop and re-create Files table--not used yet 
+      if indbc("Files","TABLE")
+        drop table Files 
+      endif 
+      do CreateTable ;
+        with "Files", this.cDataPath, this.cDataBase
+      use in select("Files")
+
+    case m.lnRev = 21
+      * no changes--force view creation 
+
+    case m.lnRev = 22
+      alter table Artist add column Art_Group_Art_FK C(32)
+      alter table Artist add column Art_No_Count L
+      select Artist 
+      index on Art_Group_Art_FK tag Group_Art 
+      index on Art_No_Count tag no_count 
+      use in select("Artist")
+
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
@@ -448,6 +478,7 @@ function CreateEmptyDatabase( lcPath)
     FIL = Files
     LOC = Location (installation point)
     PCE = Piece
+    PLC = PanelLocation
     PNL = Panel
     RCP = Recipient
     
@@ -474,6 +505,8 @@ function CreateEmptyDatabase( lcPath)
   do CreateLocationTable
   do CreatePieceTable
   do CreatePanelTable
+  do CreatePanelLocationTable
+
   *!* do CreateRecipientTable
 
   * Miscellaneous:
@@ -554,6 +587,8 @@ function CreateArtistTable
       Art_Inactive L default .F., ;
       Art_ID C(8), ;
       Art_Approved L default .f., ;
+      Art_Group_Art_FK C(32), ; && Rev 22
+      Art_No_Count L, ;         && Rev 22 
       Art_Developer L default .f., ;
       Art_Admin L default .f., ;
       Art_Core L default .f., ;
@@ -619,7 +654,9 @@ function CreateArtistTable
   index on deleted() tag Deleted
   index on Art_Inactive tag Inactive
   * Foreign Keys:
+  index on Art_Group_Art_FK tag Group_Art && Rev 22
   * Other Keys:
+  index on Art_No_Count tag no_count && Rev 22 
   index on Art_Starred tag Starred  && Rev 10
   index on Art_Approved tag Approved
   index on Art_Hidden tag Hidden
@@ -732,48 +769,37 @@ function CreatePanelTable
 endfunc  && CreatePanelTable
 
 * --------------------------------------------------------- *
-function CreateFacilityTable  && TABLE added in Rev 11
+function CreatePanelLocationTable  && TABLE added in Rev 18
   * Don't declare this PRIVATE. This command allows this procedure
   * to be run by itself, as in DO <thisproc> IN <thisfile>.PRG:
   poEnv = GetEnvObject()
 
-  create table ("Facility") name Facility ;
+  create table ("PanelLocation") name PanelLocation ;
     ( ;
-      Fac_PK C(32) primary key default GetGuid32(), ;
-      Fac_Inactive L default .F., ;
-      Fac_ID C(8), ;
-      Fac_Order N(6, 1), ;  && Rev 13
-      Fac_Name C(60), ;
-      Fac_Address M, ;
-      Fac_Contact M, ;
-      Fac_Email C(THISAPP_USER_EMAIL_LEN), ;  && 80
-      Fac_Phone C(24), ;
-      Fac_Comments M, ;
-      Fac_Storage L, ;
-      Fac_DropOff L, ;  
-      Fac_Notes M, ;
-      Fac_Orig_Art_FK C(32), ;
-      Fac_Orig_Time T, ;
-      Fac_Rev_Art_FK C(32), ;
-      Fac_Rev_Time T, ;
-      Fac_Revision I NOT NULL DEFAULT 0 ;
+      Plc_PK C(32) primary key default GetGuid32(), ;
+      Plc_Inactive L default .F., ;
+      Plc_Pnl_FK C(32), ;
+      Plc_Loc_FK C(32), ;
+      Plc_Orientation C(5), ;
+      Plc_Orig_Art_FK C(32), ;
+      Plc_Orig_Time T, ;
+      Plc_Rev_Art_FK C(32), ;
+      Plc_Rev_Time T, ;
+      Plc_Revision I NOT NULL DEFAULT 0 ;
     )
 
   * Standard 2 Indexes:
   index on deleted() tag Deleted
-  index on Fac_Inactive tag Inactive
+  index on Plc_Inactive tag Inactive
   * Foreign Keys:
+  index on Plc_Pnl_FK tag pnl for !Plc_Inactive candidate 
+  index on Plc_Loc_FK tag loc
   * Other Keys:
-  index on Fac_ID tag Fac_ID
-  index on Fac_Name tag Fac_Name  && Rev 12
-  index on Fac_Storage tag Storage
-  index on Fac_DropOff tag DropOff
-  index on Fac_Order tag order && Rev 13
-     
+  index on Plc_Orientation tag Orient 
   * Comment:
-  dbsetprop("Facility", "Table", "Comment", ;
-    [One record per Facility.] )
-endfunc  && CreateFacilityTable
+  dbsetprop("PanelLocation", "Table", "Comment", ;
+    [One record per Panel Location.] )
+endfunc  && CreatePanelLocationTable
 
 * --------------------------------------------------------- *
 function CreateLocationTable  && TABLE added in Rev 17
@@ -819,6 +845,50 @@ function CreateLocationTable  && TABLE added in Rev 17
     [One record per Location.] )
 endfunc  && CreateLocationTable
 
+* --------------------------------------------------------- *
+function CreateFacilityTable  && TABLE added in Rev 11
+  * Don't declare this PRIVATE. This command allows this procedure
+  * to be run by itself, as in DO <thisproc> IN <thisfile>.PRG:
+  poEnv = GetEnvObject()
+
+  create table ("Facility") name Facility ;
+    ( ;
+      Fac_PK C(32) primary key default GetGuid32(), ;
+      Fac_Inactive L default .F., ;
+      Fac_ID C(8), ;
+      Fac_Order N(6, 1), ;  && Rev 13
+      Fac_Name C(60), ;
+      Fac_Address M, ;
+      Fac_Contact M, ;
+      Fac_Email C(THISAPP_USER_EMAIL_LEN), ;  && 80
+      Fac_Phone C(24), ;
+      Fac_Comments M, ;
+      Fac_Storage L, ;
+      Fac_DropOff L, ;  
+      Fac_Notes M, ;
+      Fac_Orig_Art_FK C(32), ;
+      Fac_Orig_Time T, ;
+      Fac_Rev_Art_FK C(32), ;
+      Fac_Rev_Time T, ;
+      Fac_Revision I NOT NULL DEFAULT 0 ;
+    )
+
+  * Standard 2 Indexes:
+  index on deleted() tag Deleted
+  index on Fac_Inactive tag Inactive
+  * Foreign Keys:
+  * Other Keys:
+  index on Fac_ID tag Fac_ID
+  index on Fac_Name tag Fac_Name  && Rev 12
+  index on Fac_Storage tag Storage
+  index on Fac_DropOff tag DropOff
+  index on Fac_Order tag order && Rev 13
+     
+  * Comment:
+  dbsetprop("Facility", "Table", "Comment", ;
+    [One record per Facility.] )
+endfunc  && CreateFacilityTable
+
 * ---------------------------------------------------------- *
 function CreateFilesTable
   * Don't declare this PRIVATE. This command allows this procedure
@@ -829,28 +899,26 @@ function CreateFilesTable
     ( ;
       Fil_PK C(32) PRIMARY KEY DEFAULT GetGuid32(), ;
       Fil_Inactive L DEFAULT .F., ;
+      Fil_Type C(9) DEFAULT "File     ", ; 
+      Fil_Base_Fil_FK c(32), ;
+      Fil_Main L, ;
+      Fil_Thumb L, ;
+      Fil_Thumb_R L, ;
       Fil_Art_FK C(32), ;
       Fil_Pce_FK C(32), ;  
       Fil_Pnl_FK C(32), ;  
-      Fil_Type C(9) DEFAULT "File     ", ; 
-      Fil_Ref_Fil_FK C(32), ; 
-      Fil_Superseded L, ;  
-      Fil_Superseded_Date D, ;  
-      Fil_Download_Only L, ; 
-      Fil_Unlisted L, ;  
       Fil_Core L DEFAULT .T., ;
       Fil_Artist L DEFAULT .T., ;
       Fil_Public L DEFAULT .F., ;
-      Fil_Name C(160), ;  
-      Fil_URL M, ;
+      Fil_Height I, ;
+      Fil_Width I, ;
+      Fil_Resolution I, ;
       Fil_Size I, ;
-      Fil_Date D, ;
-      Fil_Time T, ;
+      Fil_Comments M, ;
       Fil_Upload_Art_FK C(32), ;  
       Fil_Upload_Time T, ;
-      Fil_Scanned L, ;
-      Fil_Summary M, ;
-      Fil_Details M, ;
+      Fil_Upload_Name M, ;
+      Fil_URL M, ;
       Fil_Notes M, ;
       Fil_Orig_Art_FK C(32), ;
       Fil_Orig_Time T, ;
@@ -858,14 +926,34 @@ function CreateFilesTable
       Fil_Rev_Time T, ;
       Fil_Revision I NOT NULL DEFAULT 0 ;
     )
+
+* dropped in Rev 20:
+*!*        Fil_Time T, ;
+*!*        Fil_Date D, ;
+*!*        Fil_Name C(160), ;  
+*!*        Fil_Ref_Fil_FK C(32), ; 
+*!*        Fil_Superseded L, ;  
+*!*        Fil_Superseded_Date D, ;  
+*!*        Fil_Download_Only L, ; 
+*!*        Fil_Unlisted L, ;  
+*!*        Fil_Scanned L, ;
+*!*        Fil_Summary M, ;
+*!*        Fil_Details M, 
+
   * Standard 2 Indexes:
-  INDEX ON DELETED() TAG Deleted
-  INDEX ON Fil_Inactive TAG Inactive
+  index on deleted() tag Deleted
+  index on Fil_Inactive TAG Inactive
   * Foreign Keys:
+  index on Fil_Base_Fil_FK tag base_Fil
   index on Fil_Art_FK tag Art_FK
   index on Fil_Pce_FK tag Pce_FK
   index on Fil_Pnl_FK tag Pnl_FK
   * Other Keys:
+  index on Fil_Type tag type 
+  index on Fil_Main tag main 
+  index on Fil_Thumb tag Thumb 
+  index on Fil_Thumb_R tag Thumb_R
+  
   * Comment:
   dbsetprop( "Files", "Table", "Comment", ;
     [One record per file. ])
@@ -1097,14 +1185,22 @@ FUNCTION CreateViews(lcOneTable, lcDataPath, lcDataBase)
   * Add app-specific child record views:
   if empty( m.lcOneTable)
 
+    * Sub-sets:
     do CreateChildView WITH "V_Artist_Piece_Set", "Piece", "Pce_Art_FK", "Artist", [Pce_Inactive=.F.]
-    do CreateChildView WITH "V_Panel_Piece_Set", "Piece", "Pce_Pnl_FK", "Panel", [Pce_Inactive=.F.]
+    do CreateChildView WITH "V_Panel_Piece_Set", "Piece", "Pce_Pnl_FK", "Panel",  [Pce_Inactive=.F.]
+    do CreateChildView WITH "V_Panel_File_Set",  "Files", "Fil_Pnl_FK", "Panel",  [Fil_Inactive=.F.]
+    do CreateChildView WITH "V_Piece_File_Set",  "Files", "Fil_Pce_FK", "Piece",  [Fil_Inactive=.F.]
+    do CreateChildView WITH "V_Artist_File_Set", "Files", "Fil_Art_FK", "Artist", [Fil_Inactive=.F.]
+    do CreateChildView WITH "V_Contributing_Artist_Set", "Artist", "Art_Group_Art_FK", "Artist", [Art_Inactive=.F.] 
 
     * All-record views (for master "browse" forms):
     do CreateAllRecordsView WITH "V_Unapproved_Artists",  "Artist", "Art_PK", [!Art_Inactive and !Art_Approved]
     do CreateAllRecordsView WITH "V_Artists_by_Name",     "Artist", "Art_PK", [!Art_Inactive and !empty(Art_ID) and !Art_Hidden], [Art_Last_Name, Art_First_Name]
     do CreateAllRecordsView WITH "V_Artists_by_Location", "Artist", "Art_PK", [!Art_Inactive and !empty(Art_ID) and !Art_Hidden], [Art_Neighborhood]
     do CreateAllRecordsView WITH "V_Artists_by_Reg_Time", "Artist", "Art_PK", [!Art_Inactive and !empty(Art_ID) and !Art_Hidden], [Art_Register_Time]
+
+    do CreateAllRecordsView WITH "V_All_Locations",  "Location", "Loc_PK", [!Loc_Inactive], [Loc_Side, Loc_No]
+    do CreateAllRecordsView WITH "V_All_Facilities", "Facility", "Fac_PK", [!Fac_Inactive], [Fac_Name]
 
   endif 
   return 

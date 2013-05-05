@@ -27,6 +27,12 @@ define class AisPnlData AS AisViewData
 enddefine    
 
 *** ============================================== ***
+define class AisPlcData AS AisViewData 
+  cTable = "PanelLocation"
+  cPrefix = "PLC"
+enddefine    
+
+*** ============================================== ***
 define class AisFacData AS AisViewData 
   cTable = "Facility"
   cPrefix = "FAC"

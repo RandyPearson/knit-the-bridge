@@ -269,6 +269,7 @@ DEFINE CLASS L7Page AS CUSTOM
   cFileContents = ""  && set either this or next 2 for templates, etc.
   cFilePath     = ""
   cFileName     = ""
+  cFileNameSent = ""  && optional override physical filename for user
   lFileDownload = .F. && use octet-stream binary download response
   lFileTransmit = .F.
   
