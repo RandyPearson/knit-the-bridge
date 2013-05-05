@@ -41,6 +41,7 @@ define class L7ResponsePieces AS Custom
   cFileContents = ""  && set either this or next 2 for templates, etc.
   cFilePath     = ""
   cFileName     = ""
+  cFileNameSent = ""  && optional override physical filename for user
   lFileDownload = .F. && use octet-stream binary download response
   lFileTransmit = .F.
 
@@ -86,6 +87,7 @@ define class L7ResponsePieces AS Custom
   * --------------------------------------------------------- *
   * Formerly an L7Page method
   function GetFileContents() 
+    * NOTE: this doesn't use cFileNameSent override--that happens in HTTP header (see L7FileResponse)
     with this
       do case
       case !empty(.cFileContents)
@@ -323,14 +325,16 @@ DEFINE CLASS L7FileResponse AS L7Response
   ENDFUNC
   * --------------------------------------------------------- *
   FUNCTION RenderHttpHeader(toHeader, tcText)  
-    LOCAL lcHttp
+    LOCAL lcHttp, lcFileNameSent
     lcHttp = ""
+    lcFileNameSent = evl(poPieces.cFileNameSent, poPieces.cFileName)
+
     WITH toHeader
       IF poPieces.lFileDownload
         .nContentLength = THIS.nFileSize
         .cContentType = "application/octet-stream"
         .cContentDisposition = "attachment"
-        .cContentFilename = poPieces.cFileName
+        .cContentFilename = m.lcFileNameSent && poPieces.cFileName
         lcHttp = .Render()
       ELSE
         IF poPieces.lFileTransmit
@@ -340,7 +344,7 @@ DEFINE CLASS L7FileResponse AS L7Response
               L7ExtensionToContentType(JUSTEXT(poPieces.cFileName))
           ENDIF
           .cContentDisposition = "inline"  && experiment--to coax filename suggestion
-          .cContentFilename = poPieces.cFileName
+        .cContentFilename = m.lcFileNameSent && poPieces.cFileName
           lcHttp = .Render()
         ELSE
           lcHttp = DODEFAULT(m.toHeader, @tcText)  

@@ -1,7 +1,6 @@
-body { margin: 0; font-family: Tahoma, Arial; cursor: default; overflow: hidden /* for status bar, WHY NOT 17?! */ }
+body { margin: 0; font-family: Tahoma, Arial; }
 
 /* Header */
-a { text-decoration: underline }
 #header { position: absolute; top: 0; left: 0; right: 0; height: 57px;  padding: 5px 0 0 0; z-index: 200 }
 #header h1 { font-weight: normal; font-face: Tahoma, Arial; font-size: 18px; margin: 0;}
 #header h2 { font-weight: normal; font-face: Tahoma, Arial; font-size: 16px; margin: 0;}
@@ -45,23 +44,44 @@ a { text-decoration: underline }
 #content h2, #content h3, #content h4 {font-family: Tahoma, Arial}
 #content {font-family: Tahoma, Arial; font-size: 11px;}
 
-/* Ubiquitous */
-.id-field {font-weight: bold; font-size: 12px; color: brown;}
-.private td {background-color: #eef;}
-.admin td {color: brown; background-color: #fee;}
-.hidden {display: none;}
+@media print {
+	#header {position: relative; height: auto; color: black; background-color: white; background: inherit; }
+	#header .user, #header #signOut {display: none;}
+  #sidebar {display: none; }
+  #content {position: relative; padding: 5px; overflow: visible;}
+  #status_bar {display: none; position: relative;}
+  #server-override-notice-content {display: none;}
+  .admin {display: none;}
+  .no-print{display: none;}
+  body, #content {font-size: 11pt; margin: 0;}
+  h1 {font-size: 13pt;}
+  h2 {font-size: 12pt;}
+}
 
 /* Plain links in text: */
 a { text-decoration: none; }
-a:link    { color: blue;    text-decoration: none; }
-a:visited { color: blue;    text-decoration: none; }
-a:hover   { color: red;  text-decoration: underline; }
-a:active  { color: green;   text-decoration: underline; }
+a:link    { color: blue;  text-decoration: none; }
+a:visited { color: blue;  text-decoration: none; }
+a:hover   { color: red;   text-decoration: underline; }
+a:active  { color: green; text-decoration: underline; }
 
-a.action { color: #999; text-decoration: underline; font-weight: normal }
-a.action:hover { color: #c00; cursor: pointer }
-div.inline { display: inline-block; vertical-align: middle }
-td.inline {display: inline-block}
+.artist, .artist a:link, .artist a:visited {color: darkgreen;}
+.piece, .piece a:link, .piece a:visited {color: purple;}
+.panel, .panel a:link, .panel a:visited  {color: brown !important;}
+.location, .location a:link, .location a:visited  {color: navy !important;}
+.facility, .facility a:link, .facility a:visited  {color: #EE7722 !important;}
+
+.id-field {font-weight: bold; font-size: 110%; }
+.private td {background-color: #eef;}
+.admin td {color: brown; background-color: #fee;}
+div.admin{border: 1px dashed #333; background-color: #ddd; margin-top: 20px;}
+.hidden {display: none;}
+p.debug{margin: 1px;}
+.debug{font-size: 10px; font-family: Courier, monospace; color: #303;}
+
+.top, .bottom {	padding: 15px;	background-color: #F5F5F5;	border: 1px solid #CCCCCC;}
+.top {	float: none;}
+.clear {clear: both;}
 
 ul.contextMenu { margin-left: 0px; padding-left: 0; list-style-type: none; margin-top: 0; margin-bottom: 5px; padding-top: 0 }
 .contextMenu li { margin-left: 0; color: #666; padding: 2px 0 2px 10px; line-height: 14px; cursor: pointer }
@@ -70,6 +90,10 @@ ul.contextMenu { margin-left: 0px; padding-left: 0; list-style-type: none; margi
 .label { float: left; padding: 0 3px 0 5px; font-weight: bold; margin-right: 0px; color: inherit }
 
 p.break { margin-bottom: 5em }
+
+table.mgmt-report{border: 0;}
+.mgmt-report th{font-weight: normal; color: brown; text-align: right;}
+.mgmt-report td{text-align: right;}
 
 /* Data record and tables display */
 table, table th, table td {border: 1px solid #c6c; border-collapse: collapse;}
@@ -91,8 +115,8 @@ td ul, td p{ margin: 0;}
 td p+p, td ul+p, td p+ul{margin: 10px 0 0 0;}
 
 /* Ledger row classes */
-table tr.oddX { background-color: #ddffdd;}
-table tr.evenX{	background-color: #eeffee;}
+table tr.oddX { background-color: #eeffee;}
+table tr.evenX{	background-color: #ffffff;}
 
 /* DataTables sorting */
 .sorting_asc  { background: url('../icons/SortTableUp.gif'); no-repeat center right;	background-color: #f5f5f5;}
@@ -106,16 +130,6 @@ table.sortable .sortdown { background-image: url("../icons/SortTableDown.gif"); 
 
 table.sortable thead th {	padding: 3px 10px 0 1px;	cursor: pointer;}
 
-/*  Misc */
-div.admin{border: 1px dashed #333; background-color: #ddd; margin-top: 20px;}
-p.debug{margin: 1px;}
-.debug{font-size: 10px; font-family: Courier, monospace; color: #303;}
-
-.top, .bottom {	padding: 15px;	background-color: #F5F5F5;	border: 1px solid #CCCCCC;}
-.top {	float: none;}
-.clear {clear: both;}
-
-span.current {padding-right: 5px;}
 
 
 

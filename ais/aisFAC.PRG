@@ -92,7 +92,7 @@ define class ais_FacList as aisFacPage
     with loTbl
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Fac_ID", "Facility ID", ;
-        [HTLink(StuffUrl(urls.item("FacHome"), "Fac", Fac_PK), Fac_ID)])
+        [HTLink(StuffUrl(urls.item("FacHome"), "Fac", Fac_PK), Fac_ID)], 'id-field facility')
       loCol = .addCursorColumn("Fac_Name", "Facility Name")
       loCol = .addCursorColumn("Fac_DropOff", "Drop-Off?", [iif(Fac_DropOff, "Drop-Off", "--")])
       loCol = .addCursorColumn("Fac_Storage", "Storage?", [iif(Fac_Storage, "Storage", "--")])
@@ -119,7 +119,7 @@ define class ais_FacHome as aisFacPage
   endfunc 
   * ----------------------------------------------------- *  
   function ProcessRequest
-    this.cSubTitle = "Facility " + this.oFac.Fac_ID + " - " + trim(this.oFac.Fac_Name) 
+    this.cSubTitle = "Facility " + HTWrap(this.oFac.Fac_ID, 'span',,'id-field facility') + " - " + trim(this.oFac.Fac_Name) 
     response.write(this.page_getMainRecord())
 
     if poContext.lAdmin
@@ -140,9 +140,6 @@ define class ais_FacHome as aisFacPage
       
       .AddRow("Facility ID", loData.Fac_ID,, "id-field" )
       .AddRow("Name", loData.Fac_Name)
-      *!*        .AddRow("Contact", loData.Fac_Contact)
-      *!*        .AddRow("Email", loData.Fac_Email)
-      *!*        .AddRow("Phone", loData.Fac_Phone)
       .AddRow("Address", L7ParseOnView(loData.Fac_Address))
       .AddRow("Comments", L7ParseOnView(loData.Fac_Comments))
 
@@ -166,7 +163,7 @@ define class ais_FacHome as aisFacPage
         .AddRow("Last Modified", TRANSFORM(loData.Fac_REV_TIME) + [ by ] + AisArtistName(loData.Fac_Rev_Art_FK), .F., "private")
       endif
 
-      lcRet = lcRet + .Render()
+      lcRet = m.lcRet + .Render()
 
     endwith 
     return m.lcRet
@@ -178,6 +175,7 @@ define class ais_FacHome as aisFacPage
     loQry = createobject("AisPnlQuery")
     with loQry
       .cFac = this.cFac 
+      .lJoinArtist = .t. 
       .execute()
       if .nTally = 0
         return "(none)"
@@ -186,17 +184,24 @@ define class ais_FacHome as aisFacPage
     
     urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
     urls.add(StuffUrl(this.cUrlA, 2, "PnlForm"), "PnlForm")
+    urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
 
     loTbl = createobject("AisTable")
     with loTbl
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Pnl_ID", "Panel ID", ;
-        [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), Pnl_ID)])
+        [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), Pnl_ID)], "id-field panel")
       loCol = .addCursorColumn("Pnl_Single_Piece", "Single-Piece?")
       loCol = .addCursorColumn("Pnl_Dim_1", "Dim 1")
       loCol = .addCursorColumn("Pnl_Dim_2", "Dim 2")
-      loCol = .addCursorColumn("Pnl_PK", "Edit Panel", ;
-        'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit Panel...]")')
+      loCol = .addCursorColumn("Pnl_Comments", "Comments")
+      loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pnl_Stitcher_Art_FK), aisArtistName(THISRECORD))], 'artist')
+      if poContext.lAdmin
+        loCol = .addCursorColumn("Pnl_Notes", "Notes",, "private")
+        loCol = .addCursorColumn("Pnl_PK", "Edit Panel", ;
+          'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit&nbsp;Panel...]")',"panel")
+      endif 
       return .render()
     endwith 
     
@@ -228,7 +233,7 @@ define class ais_FacForm as aisFacPage
       scatter memo name loOldRec
     endif 
     cursorsetprop("Buffering", 5, "V_Facility")
-    loForm = this.createForm('aisFacilityForm')
+    loForm = this.createForm('aisFacilityForm', this.cUrlC)
     with loForm
       .lNewRecord = THIS.lAdding
       .AddControls()

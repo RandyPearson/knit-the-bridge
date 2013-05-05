@@ -40,6 +40,17 @@ define class aisPage as L7Page
   lPnlRequired = .f.
   * --------------------------------------------------------- *
   function BeforeProcessRequest
+    if this.lPnlRequired
+      this.cPnl = evl(this.cPnl, this.StripUrl("pnl", .f., .t.))
+      if empty(this.cPnl)  && Item required, but not found in URL.
+        this.NotFound()
+      else 
+        this.VerifyPanel()
+        if !isnull(this.oPnl)
+          * derived parent properties set here
+        endif
+      endif 
+    endif 
     if this.lArtRequired
       if empty(this.cArt)
         this.cArt = evl(this.cArt, this.StripUrl("art", .f., .t.))
@@ -350,6 +361,14 @@ define class aisPage as L7Page
   endfunc 
 
   * --------------------------------------------------------- *
+  FUNCTION SetupErrorOutput
+    THIS.oBody = NULL  && kills any current body
+    THIS.SetupBodyElement()
+    THIS.CreateMenu()
+    THIS.cTitle = THIS.oApp.cTitle
+    RETURN 
+  ENDFUNC
+  * --------------------------------------------------------- *
   function SetCss  && defeat parent
     this.oHead.AddCssLink("../ktb-content/css/ktb-ais.css", "all")
     this.oHead.AddCssLink("../ktb-content/css/ktb-aisForm.css", "all")
@@ -387,7 +406,8 @@ define class aisPage as L7Page
   function AddMenuHeadings
     this.AddSubMenu("This", "THIS PAGE")
     this.AddSubMenu("Reports", "Listings")
-    this.AddSubMenu("Navigate", "Navigate")
+    this.AddSubMenu("Navigate", "Navigate AIS")
+    this.AddSubMenu("Links", "Links")
     this.AddSubMenu("Search", "Search")
     if poContext.lAdmin
       this.AddSubMenu("Admin", "Admin")
@@ -400,6 +420,7 @@ define class aisPage as L7Page
     local lcMenu, lcLpInfo, lcForm
     lcMenu = "main\Navigate"
     this.addMenuItem(m.lcMenu, 'People', StuffUrl(this.cUrlA, 2, "ArtList", "flags", "core", "fields", "contact"))
+    this.addMenuItem(m.lcMenu, 'Neighborhood Summary Report', StuffUrl(this.cUrlA, 2, "NeighborhoodSumList"))
 
     lcLpInfo = THIS.GetBaseHiddenFormvars() && sustains license plate, etc. for GET form
     
@@ -414,13 +435,17 @@ define class aisPage as L7Page
     this.addMenuItem(m.lcMenu, 'Pieces and Railings', StuffUrl(this.cUrlA, 2, "PceList", "type", "Panels", "orphans", "1"))
     this.addMenuItem(m.lcMenu, 'Panels', StuffUrl(this.cUrlA, 2, "PnlList"))
     this.addMenuItem(m.lcMenu, 'Facilities', StuffUrl(this.cUrlA, 2, "FacList"))
-    this.addMenuItem(m.lcMenu, 'Bridge Locations', StuffUrl(this.cUrlA, 2, "LocList"))
-
+    ** this.addMenuItem(m.lcMenu, 'Bridge Locations', StuffUrl(this.cUrlA, 2, "LocList"))
+    this.addMenuItem(m.lcMenu, 'Downtown Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Down"))
+    this.addMenuItem(m.lcMenu, 'Uptown Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Up"))
+    this.addMenuItem(m.lcMenu, 'Management Report', StuffUrl(this.cUrlA, 2, "Home"))
+    
     ** this.addMenuItem(m.lcMenu, 'About', StuffUrl(this.cUrlA, 2, "About"), "About")
     if poContext.lAdmin
       *!* this.addMenuItem("main\Admin", 'Refresh Content', StuffUrl(this.cUrlA, 2, "RefreshContent"))
     endif
 
+    lcMenu = "main\Links"
     this.addMenuItem(m.lcMenu, 'KtB Webpage', "/")
     this.addMenuItem(m.lcMenu, 'KtB Blog', "http://knitthebridge.wordpress.com/")
 
@@ -437,11 +462,128 @@ enddefine && AisPage
 define class ais_Home as aisPage 
   ** nMinLoginLevel = L7_NONE  && users always need access to login form
   cSubTitle = "Home"
+  oPage_Queries = null 
   * ----------------------------------------------------- *  
   function ProcessRequest
-    Response.Write("Home page content goes here...")
+    local lcTmp, loState, lcRpt
+    lcTmp = this.page_getTemplate()
+    loState = this.page_getState()
+    this.page_RunQueries(m.loState)
+    lcRpt = textmerge(m.lcTmp)
+    with Response
+      *.Write("Home page content goes here...")
+      *.Write(str(this.oPage_Queries.item("LocQuery").aResults[1]))
+      .Write(m.lcRpt)
+    endwith 
+    return 
   endfunc 
-enddefine 
+  * ----------------------------------------------------- *  
+  function page_RunQueries(loState)
+    local loQ
+    this.oPage_Queries = createobject("Collection")
+    loQ = createobject("AisLocQuery")
+    with loQ
+      .lArrayResults = .t.
+      .lSkip = null  
+      .ClearFields()
+      .AddFields([count(*), sum(iif(Loc_Skip, 1, 0))])
+      .BuildFieldList() && [[ needed?
+      .AddOrderBy()     && [[ ditto
+      .Execute()
+      loState.Locations = .aResults[1]
+      loState.skippedLocations = .aResults[2]
+    endwith 
+    this.oPage_Queries.add(m.loQ, "LocQuery")
+    
+    loQ = createobject("AisPlcQuery")
+    with loQ
+      .lArrayResults = .t.
+      .ClearFields()
+      .AddFields([count(*)])
+      .BuildFieldList() && [[ needed?
+      .AddOrderBy()     && [[ ditto
+      .Execute()
+      loState.locatedPanels = .aResults[1]
+    endwith 
+    this.oPage_Queries.add(m.loQ, "PceQuery")
+
+    loQ = createobject("AisPnlQuery")
+    with loQ
+      .lHasLocation = .f. && un-located 
+      .lArrayResults = .t.
+      .ClearFields()
+      .AddFields([count(*)])
+      .BuildFieldList() && [[ needed?
+      .AddOrderBy()     && [[ ditto
+      .Execute()
+      loState.unlocatedPanels = .aResults[1]
+    endwith 
+    this.oPage_Queries.add(m.loQ, "PnlQuery")
+
+    loQ = createobject("AisArtQuery")
+    with loQ
+      .lPanelsSubmitted = .f. && don't count folks who have submitted
+      .lArrayResults = .t.
+      .ClearFields()
+      .AddFields([sum(Art_Panel_Count)])
+      .BuildFieldList() && [[ needed?
+      .AddOrderBy()     && [[ ditto
+      .Execute()
+      loState.estimatedPanels = .aResults[1]
+    endwith 
+    this.oPage_Queries.add(m.loQ, "ArtQuery")
+
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_getState()
+    local loState
+    loState = createobject("empty")
+    addproperty(m.loState, "Locations", 0)
+    addproperty(m.loState, "skippedLocations", 0)
+    addproperty(m.loState, "unlocatedPanels", 0)
+    addproperty(m.loState, "locatedPanels", 0)
+    addproperty(m.loState, "estimatedPanels", 0)
+    return m.loState
+  endfunc && page_getState
+  * ----------------------------------------------------- *  
+  function page_getTemplate()
+    local lcTmp
+    text to lcTmp noshow 
+      <table class="mgmt-report">
+      <caption>Production Accounting Report</caption>
+        <tbody>
+          <tr><th>Total Bridge Locations</th>
+            <td><<loState.Locations>></td></tr>
+            
+          <tr><th>- Skipped Locations</th>
+            <td><<loState.skippedLocations>></td></tr>
+            
+          <tr><th>= Total Panel Locations</th>
+            <td><<loState.Locations - loState.skippedLocations>></td></tr>
+            
+          <tr><th>x 2 = Total Panel Requirement</th>
+            <td><<2 * (loState.Locations - loState.skippedLocations)>></td></tr>
+            
+          <tr><th>- Panels with Locations Assigned</th>
+            <td><<loState.locatedPanels>></td></tr>
+
+          <tr><th>- Panels Available for Assignment</th>
+            <td><<loState.unlocatedPanels>></td></tr>
+            
+          <tr><th>Panels Still Needed</th>
+            <td><<2 * (loState.Locations - loState.skippedLocations) - loState.locatedPanels - loState.unlocatedPanels>></td></tr>
+
+          <tr><th>- Estimated Panels Pending Delivery</th>
+            <td><<loState.estimatedPanels>></td></tr>
+
+          <tr><th>Best Case Panel Shortfall</th>
+            <td><<2 * (loState.Locations - loState.skippedLocations) - loState.locatedPanels - loState.unlocatedPanels - loState.estimatedPanels>></td></tr>
+        </tbody>
+      </table>
+    endtext 
+    return m.lcTmp
+  endfunc && page_getTemplate
+enddefine && Home 
 
 *** ========================================================= ***
 define class ais_About as aisPage 
