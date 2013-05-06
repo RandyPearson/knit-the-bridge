@@ -13,6 +13,9 @@ function AisPanelImage(lcId, lcSuff, lcUrl, lcPK, llCanUpload)
   lcFileName = forceext(m.lcId + m.lcSuff, "jpeg")
   if file(aisPanelFilePath(m.lcId) + m.lcFileName)
     lcRet = HTImage(aisPanelWebFilePath(m.lcId) + m.lcFileName, "Panel " + m.lcId)
+    if !empty(m.lcPK)
+      lcRet = HTLink(StuffUrl(page.cUrlA, 2, "PnlHome", "pnl", m.lcPK), m.lcRet)
+    endif 
   else
     if m.llCanUpload and !empty(m.lcUrl) and !empty(m.lcPK)
       lcRet = HTLink(StuffUrl(m.lcUrl, "pnl", m.lcPK), "Upload...")
@@ -101,22 +104,6 @@ define class aisPnlPage as aisPage
   cPnl = ""
   oPnl = null
   lPnlRequired = .t.
-*!*    * --------------------------------------------------------- *
-*!*    function BeforeProcessRequest
-*!*      if this.lPnlRequired
-*!*        this.cPnl = evl(this.cPnl, this.StripUrl("pnl", .f., .t.))
-*!*        if empty(this.cPnl)  && Item required, but not found in URL.
-*!*          this.NotFound()
-*!*        else 
-*!*          this.VerifyPanel()
-*!*          if !isnull(this.oPnl)
-*!*            * derived parent properties set here
-*!*          endif
-*!*        endif 
-*!*      endif 
-*!*      dodefault()  && required bubble-up
-*!*      return    
-*!*    endfunc  
 enddefine && AisPnlPage
 
 *** ========================================================= ***
@@ -772,6 +759,8 @@ define class AisPnlQuery as L7Query
   dimension aOrderBy[ 1, 2]
   aOrderBy[ 1, 1] = "Pnl_ID"
 
+  cID = null 
+  
   cAsm = null
   cFac = null
   
@@ -795,6 +784,10 @@ define class AisPnlQuery as L7Query
       .lWhereBuilt = .T.
       .cWhereClause = [WHERE Pnl_Inactive = .F.] 
 
+      if !isnull(.cID)
+        .cWhereClause = .cWhereClause + [ and Pnl_Id = '] + .cId + [']
+      endif
+      
       if !isnull(.cArtPiece) or .lJoinPiece
         .nJoins = .nJoins + 1
         dimension .aJoins[.nJoins, 3]

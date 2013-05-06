@@ -1637,6 +1637,8 @@ define class AisArtQuery AS L7Query
     ", Art_Email, Art_Phone, Art_Neighborhood, Art_Age_Range" + ;
     ", Art_Register_Time, Art_KTB_Response" 
 
+  cID = null 
+
   * Account-based params:
   lUser = NULL
   lAccountInactive = null && surrogate is "approved"
@@ -1651,7 +1653,7 @@ define class AisArtQuery AS L7Query
   lCore = .F.
   lHidden = .F. 
   lArtist = .F.
-  lStarred = .f.
+  lStarred = null
   lInstall = .F.
   lOrganizer = .F.
   lOutreach = .f. 
@@ -1680,10 +1682,14 @@ define class AisArtQuery AS L7Query
     local lcStr, lcInnerWhere, loFlags, lnFlag, loFlag, lcField, lnWords, lcWord1, lcWord2
     store "" to lcInnerWhere
 
-    WITH this 
+    with this 
       .lWhereBuilt = .T.
       .cWhereClause = [WHERE Art_Inactive = .F.] 
       
+      if !isnull(.cID)
+        .cWhereClause = .cWhereClause + [ and Art_Id = '] + .cId + [']
+      endif
+
       if !empty(.cName)
         .cWhereClause = .cWhereClause + [ AND Art_Last_Name LIKE '] + .cName + [']
       endif 

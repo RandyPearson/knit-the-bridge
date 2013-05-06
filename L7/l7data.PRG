@@ -180,7 +180,7 @@ error "This method appears never to be called and itself calls an invalid method
   ENDFUNC  && SelectAlias
   * -------------------------------------------------- *
   function FindRecord( tvKey )
-    if empty( tvKey)
+    if empty(m.tvKey)
     	tnKey = iif(this.lIntegerKeys, this.nRecordId, this.cRecordId)
     endif 
 
