@@ -5,13 +5,20 @@
 
 
 * --------------------------------------------------------- *
-function AisPanelImage(lcId, lcSuff)
+function AisPanelImage(lcId, lcSuff, lcUrl, lcPK, llCanUpload)
+  if isnull(m.lcId) or empty(m.lcId)
+    return ""
+  endif
   local lcFileName, lcRet
   lcFileName = forceext(m.lcId + m.lcSuff, "jpeg")
   if file(aisPanelFilePath(m.lcId) + m.lcFileName)
     lcRet = HTImage(aisPanelWebFilePath(m.lcId) + m.lcFileName, "Panel " + m.lcId)
   else
-    lcRet = "" && 
+    if m.llCanUpload and !empty(m.lcUrl) and !empty(m.lcPK)
+      lcRet = HTLink(StuffUrl(m.lcUrl, "pnl", m.lcPK), "Upload...")
+    else
+      lcRet = "" 
+    endif
   endif
   return m.lcRet
 endfunc 
@@ -159,6 +166,7 @@ define class ais_PnlList as aisPnlPage
     urls.add(StuffUrl(this.cUrlA, 2, "PnlForm"), "PnlForm")
     urls.add(StuffUrl(this.cUrlA, 2, "FacHome"), "FacHome")
     urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
+    urls.add(StuffUrl(this.cUrlA, 2, "PnlFilNew", "return", this.cUrlC), "PnlFilNew")
 
     loTbl = createobject("AisTable")
     with loTbl
@@ -169,14 +177,15 @@ define class ais_PnlList as aisPnlPage
         [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), Pnl_ID)], 'id-field panel')
       loCol = .addCursorColumn("Pnl_Single_Piece", "Single-Piece?")
 
-      loCol = .addCursorColumn("Pnl_ID", "Image", [AisPanelImage(Pnl_Id, "_h25")])
-
       loCol = .addCursorColumn("Pnl_Dim_1", "Dimension 1")
       loCol = .addCursorColumn("Pnl_Dim_2", "Dimension 2")
       loCol = .addCursorColumn("Pnl_Comments", "Comments")
-      loCol = .addCursorColumn("Pnl_Completed", "Completed?")
+      loCol = .addCursorColumn("Pnl_ID", "Image", ;
+        [AisPanelImage(Pnl_Id, "_h25", urls.item("PnlFilNew"), Pnl_PK, poContext.lAdmin)])
+
       loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pnl_Stitcher_Art_FK), aisArtistName(THISRECORD))], 'artist')
+      loCol = .addCursorColumn("Pnl_Completed", "Completed?")
       loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
         [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pnl_Fac_FK), trim(Fac_Name))], 'facility')
       loCol = .addCursorColumn("Plc_Orientation", "Bridge<br>Location", ;
@@ -486,7 +495,11 @@ define class ais_PnlHome as aisPnlPage
 
       lcFileName = forceext(loData.Pnl_ID + "_main", "jpeg")
       if file(aisPanelFilePath(loData.Pnl_ID) + m.lcFileName)
-        .AddRow("File", HTImage(aisPanelWebFilePath(loData.Pnl_ID) + m.lcFileName, "Panel " + loData.Pnl_ID))
+        .AddRow("Image", HTImage(aisPanelWebFilePath(loData.Pnl_ID) + m.lcFileName, "Panel " + loData.Pnl_ID))
+      else
+        if poContext.lAdmin
+          .addRow("Image", HTLink(StuffUrl(this.cUrlA, 2, "PnlFilNew", "pnl", this.cPnl), "Upload Panel File..."))
+        endif 
       endif
       
       .AddRow("Dimension 1", loData.Pnl_Dim_1)

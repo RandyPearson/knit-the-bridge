@@ -570,6 +570,7 @@ define class ais_ArtHome as aisArtPage
       urls.add(StuffUrl(this.cUrlA, 2, "PceForm"), "PceForm")
       urls.add(StuffUrl(this.cUrlA, 2, "FacHome"), "FacHome")
       urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
+      urls.add(StuffUrl(this.cUrlA, 2, "PnlFilNew", "return", this.cUrlC), "PnlFilNew")
       
       select (loQ.cAlias)
       loTbl = createobject("AisTable")
@@ -596,6 +597,8 @@ define class ais_ArtHome as aisArtPage
 
         loCol = .addCursorColumn('Pce_Pnl_FK', "Bridge<br>Location", ;
           [aisFormatPanelLocation(Pce_Pnl_FK)])
+        loCol = .addCursorColumn("Pnl_ID", "Image", ;
+          [AisPanelImage(Pnl_Id, "_h25", urls.item("PnlFilNew"), Pce_Pnl_FK, poContext.lAdmin)])
         
         if poContext.lAdmin
           loCol = .addCursorColumn("Pce_Notes", "Notes",, "private")

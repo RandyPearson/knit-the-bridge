@@ -23,12 +23,19 @@ endfunc
 define class ais_PnlFilNew as aisPage
   lPnlRequired = .t.
   lAdding = .t. 
+  cPage_Return = ""
+  * --------------------------------------------------------- *
+  function BeforeProcessRequest
+    this.cPage_Return = this.ReadQueryString("return", .t., .t., .f.,  L7_QS_CHARACTERS + L7_URL_PUNCTUATION_CHARACTERS)
+    dodefault()  && required bubble-up
+    return    
+  endfunc  
   * ----------------------------------------------------- *  
   function ProcessRequest
     this.Assert(poContext.lCore)
-    this.cCancelUrl = stuffUrl(this.cUrlB, 2, "PnlHome")
+    this.cCancelUrl = iif(empty(this.cPage_Return), stuffUrl(this.cUrlB, 2, "PnlHome"), this.cPage_Return)
 
-    local loForm, vp_cPnl_PK, lcAlias, loTrans, loImg, loNewRec
+    local loForm, vp_cPnl_PK, lcAlias, loTrans, loImg, loNewRec, llIsImage
     lcAlias = "v_Panel_File_Set"
     vp_cPnl_PK = this.cPnl
     use (m.lcAlias) again in select(m.lcAlias)
@@ -52,6 +59,7 @@ define class ais_PnlFilNew as aisPage
         StampRec( CurrentUser, THIS.tNow )
 
         with .fil1
+          llIsImage = "," + lower(justext(.cFileName)) + "," $ THISAPP_IMAGE_FILETYPES
           .cSaveAsFolder = aisPanelFilePath(this.oPnl)
           .cSaveAsName = forceext(Fil_PK, justext(.cFileName)) && pk w/ original extension
           
@@ -63,13 +71,17 @@ define class ais_PnlFilNew as aisPage
           if !.SaveAs()
             error "failed to save file" 
           endif
-          loImg = createobject("L7ImageInfo")
-          loImg.cPath = .cSaveAsFolder
-          loImg.cFileName = .cSaveAsName
-          loImg.GetInfo()
-          replace Fil_Height with loImg.nHeight ;
-            Fil_Width with loImg.nWidth ;
-            Fil_Resolution with loImg.nResolution 
+          if m.llIsImage
+            loImg = createobject("L7ImageInfo")
+            loImg.cPath = .cSaveAsFolder
+            loImg.cFileName = .cSaveAsName
+            loImg.GetInfo()
+            replace Fil_Height with loImg.nHeight ;
+              Fil_Width with loImg.nWidth ;
+              Fil_Resolution with loImg.nResolution 
+          else
+            replace Fil_Main with .f.  && Main flag only intended for images 
+          endif
         endwith        
         select (m.lcAlias)
         scatter memo name loNewRec
@@ -85,7 +97,9 @@ define class ais_PnlFilNew as aisPage
         loTrans.AddCursor(m.lcAlias)
 
         if loTrans.Save()  
-          this.page_onFileSave(m.loImg, m.loNewRec)
+          if m.llIsImage
+            this.page_onFileSave(m.loImg, m.loNewRec)
+          endif 
           Response.Redirect(this.cCancelUrl)
           return 
         endif 
@@ -94,7 +108,7 @@ define class ais_PnlFilNew as aisPage
       response.write(.render()) 
     endwith 
     return 
-  endfunc 
+  endfunc && ProcessRequest 
   * --------------------------------------------------------- *
   function page_onFileSave(loImg, loNewRec)  
     local lcXforms, loXforms, loXform, loImgT, lcFileName
@@ -128,11 +142,14 @@ define class aisFilForm as AisForm
   * --------------------------------------------------------- *
   function  AddControls
     with this
+      
       .AddObject("fil1", "L7FileUpload")
       with .fil1
         .lRequired = .t. && fail if nothing arrives 
         .cLabel = "Choose file to upload"
+        .nSize = 80
         .cAllowExtensions = THISAPP_VALID_LIBRARY_FILETYPES 
+        .cInstructions = "Any size upload is OK. The system will create thumbnails of necessary size automatically. "
       endwith
 
       .AddObject("chkMain", "L7Checkbox")
