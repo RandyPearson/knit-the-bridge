@@ -50,9 +50,11 @@ define class aisPage as L7Page
         else 
           do case
           case len(.cPnl) = 32
-          case len(.cPnl) = THISAPP_LENGTH_ID_FIELDS 
+          case len(.cPnl) <= THISAPP_LENGTH_ID_FIELDS 
+            lcStr = "PNL" + padl(strtran(.cPnl, "pnl", "", 1, 1, 1), 5, "0")
+            
             loQ = createobject("AisPnlQuery")
-            loQ.cID = upper(.cPnl)
+            loQ.cID = m.lcStr && upper(.cPnl)
             loQ.execute()
             if loQ.nTally = 1
               .cPnl = Pnl_PK

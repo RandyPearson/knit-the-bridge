@@ -151,7 +151,6 @@ define class ais_ArtList as aisMultiArtPage
 
     this.cPage_Srch1 = this.ReadQueryString("srch1", .t., .t., .t.)
     this.ReadQueryString("btn", .t., .t., .t.) && clear search button from URL
-    
     this.cPage_Flags = this.ReadQueryString("flags", .t., .t.)
 
     lcStr = this.ReadQueryString("approved", .t., .t.)
@@ -161,6 +160,7 @@ define class ais_ArtList as aisMultiArtPage
     this.lPage_Response = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
     
     dodefault()  && required bubble-up
+
     return    
   endfunc  
   * ----------------------------------------------------- *  
@@ -205,7 +205,19 @@ define class ais_ArtList as aisMultiArtPage
   * ----------------------------------------------------- *  
   function ProcessRequest
     local loQry, loFlags, lnIdx, loItem, lcWord, lcProp, loFields, ;
-      loTbl, loCol, loGrp
+      loTbl, loCol, loGrp, loRE, loMtchs, loMtch, lcEnt
+    
+    * do this late so url has been processed
+    if !empty(this.cPage_Srch1)
+      loRE = createobject("L7RegExp")
+      loRE.pattern = '^(pnl|pce)(\d{1,5})$'
+      loMtchs = loRE.execute(this.cPage_Srch1)
+      if loMtchs.count = 1
+        loMtch = loMtchs.item(1) 
+        lcEnt = loMtch.submatches[1]
+        this.redirect(stuffUrl(this.cUrlA, 2, m.lcEnt + "home", m.lcEnt, m.lcEnt + padl(loMtch.submatches[2], 5, "0")))
+      endif
+    endif
     
     loQry = createobject("AisArtQuery")
     with loQry

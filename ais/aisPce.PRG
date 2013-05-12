@@ -11,21 +11,44 @@ define class aisPcePage as aisPage
   lPceRequired = .t.
   * --------------------------------------------------------- *
   function BeforeProcessRequest
-    if this.lPceRequired
-      this.cPce = evl(this.cPce, this.StripUrl("pce", .f., .t.))
-      if empty(this.cPce)  && Item required, but not found in URL.
-        this.NotFound()
-      else 
-        this.VerifyPiece()
-        if !isnull(this.oPce)
-          this.cArt = this.oPce.Pce_Art_FK
-          if !empty(this.oPce.Pce_Pnl_FK)
-            this.cPnl = this.oPce.Pce_Pnl_FK
-            this.verifyPanel()
+    local lcStr, loQ, llBad
+    with this
+      if .lPceRequired
+        .cPce = evl(.cPce, .StripUrl("pce", .f., .t.))
+        if empty(.cPce)  && Item required, but not found in URL.
+          .NotFound()
+          llBad = .t. 
+        else 
+          do case
+          case len(.cPce) = 32
+          case len(.cPce) <= THISAPP_LENGTH_ID_FIELDS 
+            lcStr = "PCE" + padl(strtran(.cPce, "pce", "", 1, 1, 1), 5, "0")
+            
+            loQ = createobject("AisPceQuery")
+            loQ.cID = m.lcStr 
+            loQ.execute()
+            if loQ.nTally = 1
+              .cPce = Pce_PK
+            else
+              .NotFound()
+              llBad = .t.
+            endif
+          otherwise
+            .BadRequest("Invalid Piece ID length")
+            llBad = .t.
+          endcase
+          
+          = !m.llBad and .VerifyPiece()
+          if !isnull(.oPce)
+            .cArt = .oPce.Pce_Art_FK
+            if !empty(.oPce.Pce_Pnl_FK)
+              .cPnl = .oPce.Pce_Pnl_FK
+              .verifyPanel()
+            endif
           endif
-        endif
+        endif 
       endif 
-    endif 
+    endwith 
     dodefault()  && required bubble-up
     return    
   endfunc  && BeforeProcessRequest
@@ -279,7 +302,7 @@ define class ais_PceHome as aisPcePage
   endfunc 
   * ----------------------------------------------------- *  
   function page_getMainRecord()
-    local loElem, loRow, lcRet, loData, llPanel
+    local loElem, loRow, lcRet, loData, llPanel, lcFileName
     lcRet = ""
     loData = this.oPce
     llPanel = !empty(loData.Pce_Pnl_FK)
@@ -300,6 +323,14 @@ define class ais_PceHome as aisPcePage
         .AddRow("Assigned to Panel?", iif(empty(m.loData.Pce_Pnl_FK), ;
           "No (see menu options)", ;
           HtWrap(HTLink(StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", loData.Pce_Pnl_FK), this.oPnl.Pnl_Id), 'span', ,'id-field panel')))
+        if !empty(m.loData.Pce_Pnl_FK) 
+          lcFileName = forceext(this.oPnl.Pnl_Id + "_main", "jpeg")
+          if file(aisPanelFilePath(this.oPnl.Pnl_ID) + m.lcFileName)
+            .AddRow("Panel Image", HTImage(aisPanelWebFilePath(this.oPnl.Pnl_ID) + m.lcFileName, "Panel " + this.oPnl.Pnl_ID))
+          endif
+        endif 
+      else
+
       endif
       .AddRow("Description and Comments", L7ParseOnView(loData.Pce_COMMENTS))
 
@@ -601,6 +632,8 @@ define class AisPceQuery as L7Query
   dimension aOrderBy[ 1, 2]
   aOrderBy[ 1, 1] = "Pce_ID"
 
+  cID = null 
+
   cArt = null
   cPnl = null
   cFac = null
@@ -646,6 +679,10 @@ define class AisPceQuery as L7Query
     with this 
       .lWhereBuilt = .T.
       .cWhereClause = [WHERE Pce_Inactive = .F.] 
+
+      if !isnull(.cID)
+        .cWhereClause = .cWhereClause + [ and Pce_Id = '] + .cId + [']
+      endif
 
       if .lJoinArtist
         .nJoins = .nJoins + 1
