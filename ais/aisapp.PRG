@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     22
+#DEFINE THISAPP_DATABASE_REVISION     23
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -427,6 +427,25 @@ define class AisApp AS KtbApp
       index on Art_Group_Art_FK tag Group_Art 
       index on Art_No_Count tag no_count 
       use in select("Artist")
+
+    case m.lnRev = 23
+      use Piece again in select("Piece") alias Piece
+      use Panel again in select("Panel") alias Panel
+      select Piece
+      scan for Pce_Whole_Panel and !Pce_Inactive
+        select Panel
+        locate for Pnl_PK = Piece.Pce_Pnl_FK
+        if found()
+          if !empty(Piece.Pce_Notes) and empty(Pnl_Notes)
+            replace Pnl_Notes with Piece.Pce_Notes
+          endif
+          if !empty(Piece.Pce_Comments) and empty(Pnl_Comments)
+            replace Pnl_Comments with Piece.Pce_Comments
+          endif
+        endif
+      endscan 
+      use in select("Piece")
+      use in select("Panel")
 
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 

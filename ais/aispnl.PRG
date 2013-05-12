@@ -3,6 +3,28 @@
 #INCLUDE WCONNECT.H
 #INCLUDE AIS.H
 
+
+* --------------------------------------------------------- *
+function AisPanelImage(lcId, lcSuff, lcUrl, lcPK, llCanUpload)
+  if isnull(m.lcId) or empty(m.lcId)
+    return ""
+  endif
+  local lcFileName, lcRet
+  lcFileName = forceext(m.lcId + m.lcSuff, "jpeg")
+  if file(aisPanelFilePath(m.lcId) + m.lcFileName)
+    lcRet = HTImage(aisPanelWebFilePath(m.lcId) + m.lcFileName, "Panel " + m.lcId)
+    if !empty(m.lcPK)
+      lcRet = HTLink(StuffUrl(page.cUrlA, 2, "PnlHome", "pnl", m.lcPK), m.lcRet)
+    endif 
+  else
+    if m.llCanUpload and !empty(m.lcUrl) and !empty(m.lcPK)
+      lcRet = HTLink(StuffUrl(m.lcUrl, "pnl", m.lcPK), "Upload...")
+    else
+      lcRet = "" 
+    endif
+  endif
+  return m.lcRet
+endfunc 
 * --------------------------------------------------------- *
 function aisCreatePanel(toPce)
   * Create a panel from a "starter" piece. 
@@ -25,6 +47,9 @@ function aisCreatePanel(toPce)
     replace ; 
       Pnl_Stitcher_Art_FK with toPce.Pce_Art_FK ; && panel attributed to piece artist
       Pnl_Completed with .t.                      && single-piece panel are complete by def'n 
+    replace ;
+      Pnl_Notes with toPce.Pce_Notes ;
+      Pnl_Comments with toPce.Pce_Comments 
   endif 
 
   select V_Panel  && UpdateControlSources can alter work area
@@ -79,22 +104,6 @@ define class aisPnlPage as aisPage
   cPnl = ""
   oPnl = null
   lPnlRequired = .t.
-*!*    * --------------------------------------------------------- *
-*!*    function BeforeProcessRequest
-*!*      if this.lPnlRequired
-*!*        this.cPnl = evl(this.cPnl, this.StripUrl("pnl", .f., .t.))
-*!*        if empty(this.cPnl)  && Item required, but not found in URL.
-*!*          this.NotFound()
-*!*        else 
-*!*          this.VerifyPanel()
-*!*          if !isnull(this.oPnl)
-*!*            * derived parent properties set here
-*!*          endif
-*!*        endif 
-*!*      endif 
-*!*      dodefault()  && required bubble-up
-*!*      return    
-*!*    endfunc  
 enddefine && AisPnlPage
 
 *** ========================================================= ***
@@ -144,6 +153,7 @@ define class ais_PnlList as aisPnlPage
     urls.add(StuffUrl(this.cUrlA, 2, "PnlForm"), "PnlForm")
     urls.add(StuffUrl(this.cUrlA, 2, "FacHome"), "FacHome")
     urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
+    urls.add(StuffUrl(this.cUrlA, 2, "PnlFilNew", "return", this.cUrlC), "PnlFilNew")
 
     loTbl = createobject("AisTable")
     with loTbl
@@ -153,12 +163,16 @@ define class ais_PnlList as aisPnlPage
       loCol = .addCursorColumn("Pnl_ID", "Panel ID", ;
         [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), Pnl_ID)], 'id-field panel')
       loCol = .addCursorColumn("Pnl_Single_Piece", "Single-Piece?")
+
       loCol = .addCursorColumn("Pnl_Dim_1", "Dimension 1")
       loCol = .addCursorColumn("Pnl_Dim_2", "Dimension 2")
       loCol = .addCursorColumn("Pnl_Comments", "Comments")
-      loCol = .addCursorColumn("Pnl_Completed", "Completed?")
+      loCol = .addCursorColumn("Pnl_ID", "Image", ;
+        [AisPanelImage(Pnl_Id, "_h25", urls.item("PnlFilNew"), Pnl_PK, poContext.lAdmin)])
+
       loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pnl_Stitcher_Art_FK), aisArtistName(THISRECORD))], 'artist')
+      loCol = .addCursorColumn("Pnl_Completed", "Completed?")
       loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
         [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pnl_Fac_FK), trim(Fac_Name))], 'facility')
       loCol = .addCursorColumn("Plc_Orientation", "Bridge<br>Location", ;
@@ -415,9 +429,7 @@ define class ais_PnlHome as aisPnlPage
       if poContext.lAdmin
         .addMenuItem("main\This,page", "Edit Panel...", StuffUrl(.cUrlA, 2, "PnlForm", "pnl", .cPnl))
 
-if poContext.lDeveloper
         .addMenuItem("main\This,page", "Upload Panel File...", StuffUrl(.cUrlA, 2, "PnlFilNew", "pnl", .cPnl))
-endif         
 
         if .oPnl.Pnl_Single_Piece = .f. and !.oPnl.Pnl_Completed 
           .addMenuItem("main\This,page", "Add Piece to Panel...", ;
@@ -454,7 +466,7 @@ endif
   endfunc 
   * ----------------------------------------------------- *  
   function page_getMainRecord()
-    local loElem, loRow, lcRet, loData, loPlc
+    local loElem, loRow, lcRet, loData, loPlc, lcFileName
     lcRet = ""
     loData = this.oPnl
     loPlc = this.oPage_Location 
@@ -468,6 +480,15 @@ endif
 
       .AddRow("Single-Piece?", loData.Pnl_Single_Piece)
 
+      lcFileName = forceext(loData.Pnl_ID + "_main", "jpeg")
+      if file(aisPanelFilePath(loData.Pnl_ID) + m.lcFileName)
+        .AddRow("Image", HTImage(aisPanelWebFilePath(loData.Pnl_ID) + m.lcFileName, "Panel " + loData.Pnl_ID))
+      else
+        if poContext.lAdmin
+          .addRow("Image", HTLink(StuffUrl(this.cUrlA, 2, "PnlFilNew", "pnl", this.cPnl), "Upload Panel File..."))
+        endif 
+      endif
+      
       .AddRow("Dimension 1", loData.Pnl_Dim_1)
       .AddRow("Dimension 2", loData.Pnl_Dim_2)
       .AddRow("Description and Comments", L7ParseOnView(loData.Pnl_COMMENTS), .t.)
@@ -738,6 +759,8 @@ define class AisPnlQuery as L7Query
   dimension aOrderBy[ 1, 2]
   aOrderBy[ 1, 1] = "Pnl_ID"
 
+  cID = null 
+  
   cAsm = null
   cFac = null
   
@@ -761,6 +784,10 @@ define class AisPnlQuery as L7Query
       .lWhereBuilt = .T.
       .cWhereClause = [WHERE Pnl_Inactive = .F.] 
 
+      if !isnull(.cID)
+        .cWhereClause = .cWhereClause + [ and Pnl_Id = '] + .cId + [']
+      endif
+      
       if !isnull(.cArtPiece) or .lJoinPiece
         .nJoins = .nJoins + 1
         dimension .aJoins[.nJoins, 3]
