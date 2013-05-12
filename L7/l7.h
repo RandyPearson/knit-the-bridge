@@ -326,11 +326,19 @@
 #DEFINE L7_SEVERITY_MOST      L7_SEVERITY_EMERGENCY 
 #DEFINE L7_SEVERITY_LEAST     L7_SEVERITY_DEBUG
 * validate: between( <nVar>, L7_SEVERITY_MOST, L7_SEVERITY_LEAST )
+
+* Graphics constants: (use w/ RotateImage)
+#DEFINE L7_IMAGE_ROTATE_90     1
+#DEFINE L7_IMAGE_ROTATE_180    2
+#DEFINE L7_IMAGE_ROTATE_270    3
+#DEFINE L7_IMAGE_MIRROR        4
+* last item can be added to any rotate constant to achieve both 
+
+
 *-- Standard user "override" approach. Keep this last!!
 #IF FILE( "L7_OVERRIDE.H")
   #INCLUDE L7_OVERRIDE.H
 #ENDIF
-
 
 * History:
 * 01/18/2003 - added L7BR.

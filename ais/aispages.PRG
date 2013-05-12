@@ -40,27 +40,67 @@ define class aisPage as L7Page
   lPnlRequired = .f.
   * --------------------------------------------------------- *
   function BeforeProcessRequest
-    if this.lPnlRequired
-      this.cPnl = evl(this.cPnl, this.StripUrl("pnl", .f., .t.))
-      if empty(this.cPnl)  && Item required, but not found in URL.
-        this.NotFound()
-      else 
-        this.VerifyPanel()
-        if !isnull(this.oPnl)
-          * derived parent properties set here
-        endif
+    local lcStr, loQ, llBad
+    with this
+      if !m.llBad and .lPnlRequired
+        .cPnl = evl(.cPnl, .StripUrl("pnl", .f., .t.))
+        if empty(.cPnl)  && Item required, but not found in URL.
+          .NotFound()
+          llBad = .t. 
+        else 
+          do case
+          case len(.cPnl) = 32
+          case len(.cPnl) = THISAPP_LENGTH_ID_FIELDS 
+            loQ = createobject("AisPnlQuery")
+            loQ.cID = upper(.cPnl)
+            loQ.execute()
+            if loQ.nTally = 1
+              .cPnl = Pnl_PK
+            else
+              .NotFound()
+              llBad = .t.
+            endif
+          otherwise
+            .BadRequest("Invalid Panel ID length")
+            llBad = .t.
+          endcase
+          
+          = !m.llBad and .VerifyPanel()
+          if !isnull(.oPnl)
+            * derived parent properties set here
+          endif
+        endif 
       endif 
-    endif 
-    if this.lArtRequired
-      if empty(this.cArt)
-        this.cArt = evl(this.cArt, this.StripUrl("art", .f., .t.))
+      if !m.llBad and .lArtRequired
+        if empty(.cArt)
+          .cArt = evl(.cArt, .StripUrl("art", .f., .t.))
+        endif 
+        if empty(.cArt)  && Item required, but neither set nor found in URL.
+          .NotFound()
+          llBad = .t. 
+        else 
+          do case
+          case len(.cArt) = 32
+          case len(.cArt) = THISAPP_LENGTH_ID_FIELDS 
+            loQ = createobject("AisArtQuery")
+            loQ.cID = upper(.cArt)
+            loQ.lHidden = null 
+            loQ.execute()
+            if loQ.nTally = 1
+              .cArt = Art_PK
+            else
+              .NotFound()
+              llBad = .t.
+            endif
+          otherwise
+            .BadRequest("Invalid Artist ID length")
+            llBad = .t.
+          endcase
+
+          = !m.llBad and .VerifyArtist()
+        endif 
       endif 
-      if empty(this.cArt)  && Item required, but neither set nor found in URL.
-        this.NotFound()
-      else 
-        this.VerifyArtist()
-      endif 
-    endif 
+    endwith 
     dodefault()  && required bubble-up
     return    
   endfunc  

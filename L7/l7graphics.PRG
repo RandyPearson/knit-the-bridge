@@ -918,49 +918,128 @@ DEFINE CLASS L7Pie AS custom
     RETURN
   ENDPROC
 
-*!*    PROCEDURE Init
-*!*      LPARAMETERS tcTable, tcValueField, tcLegendField, tcColorField, ;
-*!*          tcDetachField, tcSliceTextField, tcCaption
+    *!*    PROCEDURE Init
+    *!*      LPARAMETERS tcTable, tcValueField, tcLegendField, tcColorField, ;
+    *!*          tcDetachField, tcSliceTextField, tcCaption
 
-*!*      IF VARTYPE(m.tcTable) == "C"
-*!*        THIS.SourceAlias = m.tcTable
-*!*      ENDIF
+    *!*      IF VARTYPE(m.tcTable) == "C"
+    *!*        THIS.SourceAlias = m.tcTable
+    *!*      ENDIF
 
-*!*      IF VARTYPE(m.tcValueField) == "C"
-*!*        THIS.PieValueField  = m.tcValueField
-*!*      ENDIF
+    *!*      IF VARTYPE(m.tcValueField) == "C"
+    *!*        THIS.PieValueField  = m.tcValueField
+    *!*      ENDIF
 
-*!*      IF VARTYPE(m.tcLegendField) == "C"
-*!*        THIS.PieLegendField = m.tcLegendField
-*!*      ENDIF
+    *!*      IF VARTYPE(m.tcLegendField) == "C"
+    *!*        THIS.PieLegendField = m.tcLegendField
+    *!*      ENDIF
 
-*!*      IF VARTYPE(m.tcDetachField) == "C"
-*!*        THIS.PieDetachField = m.tcDetachField
-*!*      ENDIF
+    *!*      IF VARTYPE(m.tcDetachField) == "C"
+    *!*        THIS.PieDetachField = m.tcDetachField
+    *!*      ENDIF
 
-*!*      IF VARTYPE(m.tcColorField) == "C"
-*!*        THIS.PieColorField = m.tcColorField
-*!*      ENDIF
+    *!*      IF VARTYPE(m.tcColorField) == "C"
+    *!*        THIS.PieColorField = m.tcColorField
+    *!*      ENDIF
 
-*!*      IF VARTYPE(m.tcSliceTextField) == "C"
-*!*        THIS.PieSliceTextField = m.tcSliceTextField
-*!*      ENDIF
+    *!*      IF VARTYPE(m.tcSliceTextField) == "C"
+    *!*        THIS.PieSliceTextField = m.tcSliceTextField
+    *!*      ENDIF
 
-*!*      IF VARTYPE(m.tcCaption) == "C"
-*!*        This.Title = m.tcCaption
-*!*      ENDIF
+    *!*      IF VARTYPE(m.tcCaption) == "C"
+    *!*        This.Title = m.tcCaption
+    *!*      ENDIF
 
-*!*      * All parameters passed, so create automatically
-*!*      IF VARTYPE(m.tcTable) + VARTYPE(m.tcValueField) + VARTYPE(m.tcLegendField) == "CCC"
-*!*        This.Create
-*!*      ENDIF
+    *!*      * All parameters passed, so create automatically
+    *!*      IF VARTYPE(m.tcTable) + VARTYPE(m.tcValueField) + VARTYPE(m.tcLegendField) == "CCC"
+    *!*        This.Create
+    *!*      ENDIF
 
-*!*      IF This.GradientLevel > 10 OR This.GradientLevel < 0
-*!*        This.GradientLevel = 5
-*!*      ENDIF 
+    *!*      IF This.GradientLevel > 10 OR This.GradientLevel < 0
+    *!*        This.GradientLevel = 5
+    *!*      ENDIF 
 
-*!*      RETURN
-*!*    ENDPROC
-
+    *!*      RETURN
+    *!*    ENDPROC
 
 ENDDEFINE  && L7Pie
+
+*** ===================================================== ***
+define class L7ImageInfo as Custom
+  cPath = null
+  cFileName = 0
+  nWidth = 0
+  nHeight = 0 
+  nResolution = 0
+  * --------------------------------------------
+  function GetInfo
+    local llOK, lnW, lnH, lnRes
+    store 0 to lnW, lnH, lnRes
+    llOK = GetImageInfo(addbs(this.cPath) + this.cFileName, @lnW, @lnH, @lnRes)
+    if m.llOK
+      this.nWidth = m.lnW
+      this.nHeight = m.lnH
+      this.nResolution = m.lnRes
+    else
+      error "GetImageInfo failed"
+    endif
+    return     
+  endfunc && GetInfo 
+  * --------------------------------------------
+  function RotateImage(tnFlipType, tcNewFile, tcAltPath)
+    * rotates current file _or_ creates a new rotated file
+    * returns an object for the rotated file 
+    local loImg
+    if empty(m.tcNewFile)
+      loImg = this
+    else
+      loImg = createobject(this.Class) && rotate works on existing file, so first make a copy
+      loImg.cFileName = m.tcNewFile
+      loImg.cPath = evl(m.tcAltPath, this.cPath)
+      copy file (addbs(this.cPath) + this.cFileName) to (addbs(loImg.cPath) + loImg.cFileName)
+    endif
+    RotateImage(addbs(loImg.cPath) + loImg.cFileName, m.tnFlipType)
+    return m.loImg
+  endfunc && RotateImage
+  * --------------------------------------------
+  function CreateThumbnail(tnW, tnH, tcNewFile, tcAltPath)
+    * if H and W both specified, allows default behavior based on larged dimension
+    * otherwise forces the passed dimension to rule, by calculating 
+    local lnW, lnH, lnRatio, loImg
+    if this.nWidth = 0
+      this.GetInfo()
+    endif
+    lnRatio = this.nWidth / this.nHeight 
+    do case
+    case empty(m.tnW) && new width not specified--base on height
+      lnH = m.tnH
+      lnW = int(m.tnH * m.lnRatio)
+    case empty(m.tnH) && new height not specified--base on width
+      lnW = m.tnW
+      lnH = int(m.tnW / m.lnRatio)
+    otherwise
+      lnH = m.tnH
+      lnW = m.tnW
+    endcase
+
+    loImg = createobject(this.Class) 
+    loImg.cFileName = m.tcNewFile
+    loImg.cPath = evl(m.tcAltPath, this.cPath)
+    CreateThumbnail( ;
+      addbs(this.cPath) + this.cFileName, ;
+      addbs(loImg.cPath) + loImg.cFileName, ;
+      m.lnW, m.lnH )
+    loImg.GetInfo() && so we return an object with its actual values
+    return m.loImg
+  endfunc && CreateThumbnail 
+  * --------------------------------------------
+
+enddefine && L7ImageInfo 
+
+* end: L7Graphics
+
+
+
+
+
+

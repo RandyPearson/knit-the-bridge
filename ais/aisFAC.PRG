@@ -185,6 +185,7 @@ define class ais_FacHome as aisFacPage
     urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
     urls.add(StuffUrl(this.cUrlA, 2, "PnlForm"), "PnlForm")
     urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
+    urls.add(StuffUrl(this.cUrlA, 2, "PnlFilNew", "return", this.cUrlC), "PnlFilNew")
 
     loTbl = createobject("AisTable")
     with loTbl
@@ -195,6 +196,8 @@ define class ais_FacHome as aisFacPage
       loCol = .addCursorColumn("Pnl_Dim_1", "Dim 1")
       loCol = .addCursorColumn("Pnl_Dim_2", "Dim 2")
       loCol = .addCursorColumn("Pnl_Comments", "Comments")
+      loCol = .addCursorColumn("Pnl_ID", "Image", ;
+        [AisPanelImage(Pnl_Id, "_h25", urls.item("PnlFilNew"), Pnl_PK, poContext.lAdmin)])
       loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pnl_Stitcher_Art_FK), aisArtistName(THISRECORD))], 'artist')
       if poContext.lAdmin

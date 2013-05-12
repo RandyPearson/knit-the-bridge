@@ -12,6 +12,7 @@
 #DEFINE THISAPP_USER_DEV         "NOBODY01"
 
 #DEFINE THISAPP_VALID_LIBRARY_FILETYPES "doc,docx,pdf,xls,xlsx,ppt,pptx,txt,zip,gif,jpg,jpeg,png,tif,tiff,htm,html,wav,avi,mpg,mov"
+#DEFINE THISAPP_IMAGE_FILETYPES "jpg,jpeg,png,tif,tiff"
 
 #DEFINE THISAPP_LENGTH_STATUS      12
 #DEFINE THISAPP_LENGTH_UNIQUE_NAME 10
