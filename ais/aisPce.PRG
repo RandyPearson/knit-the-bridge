@@ -541,8 +541,12 @@ define class aisPieceForm as AisForm
         if this.lNewRecord
           .SetValue(Page.cPage_Dim_1)
         endif 
-        .cLabel = "Dimension 1 (inches)"
-        .cInstructions = "If not equal, please enter SMALLER dimension first!"
+        if this.lNewRecord and Page.lPage_Whole
+          .cLabel = "Height"
+        else
+          .cLabel = "Dimension 1 (inches)"
+          .cInstructions = "If not equal, please enter SMALLER dimension first!"
+        endif 
       endwith
        
       .AddObject("txtDim_2", "L7Textbox")
@@ -553,8 +557,12 @@ define class aisPieceForm as AisForm
         if this.lNewRecord
           .SetValue(Page.cPage_Dim_2)
         endif 
-        .cLabel = "Dimension 2 (inches)"
-        .cInstructions = "If not equal, please enter LARGER dimension second!"
+        if this.lNewRecord and Page.lPage_Whole
+          .cLabel = "Width"
+        else
+          .cLabel = "Dimension 2 (inches)"
+          .cInstructions = "If not equal, please enter LARGER dimension second!"
+        endif 
       endwith 
 
       .AddObject("edtComments", "L7Textarea")

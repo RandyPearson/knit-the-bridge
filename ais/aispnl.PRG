@@ -112,6 +112,7 @@ define class ais_PnlList as aisPnlPage
   cSubTitle = "Panel List"
 
   lPage_Location = null
+  cPage_Style = null 
   * --------------------------------------------------------- *
   function BeforeProcessRequest
     local lcStr
@@ -119,6 +120,8 @@ define class ais_PnlList as aisPnlPage
     lcStr = this.ReadQueryString("location", .t., .t.)
     this.lPage_Location = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
     
+    this.cPage_Style = evl(this.ReadQueryString("style", .t., .t.), "table")
+
     dodefault()  && required bubble-up
     return    
   endfunc  
@@ -128,6 +131,11 @@ define class ais_PnlList as aisPnlPage
     with this
       .AddSubMenu("This", "PANELS")
       lcMenu = "main\This"
+      if this.cPage_Style = "table"
+        .addMenuItem(m.lcMenu, 'Show as Gallery', StuffUrl(this.cUrlC, "style", "gallery"))
+      else
+        .addMenuItem(m.lcMenu, 'Show as Table', StuffUrl(this.cUrlC, "style", "table"))
+      endif 
       .addMenuItem(m.lcMenu, 'Panel w/Bridge Locations', StuffUrl(this.cUrlA, 2, "PnlList", "location", "1"))
       .addMenuItem(m.lcMenu, 'Panels Still Available', StuffUrl(this.cUrlA, 2, "PnlList", "location", "0"))
       .addMenuItem(m.lcMenu, 'ALL Panels', StuffUrl(this.cUrlA, 2, "PnlList", "location", .f.))
@@ -154,7 +162,42 @@ define class ais_PnlList as aisPnlPage
     urls.add(StuffUrl(this.cUrlA, 2, "FacHome"), "FacHome")
     urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
     urls.add(StuffUrl(this.cUrlA, 2, "PnlFilNew", "return", this.cUrlC), "PnlFilNew")
+    
+    if this.cPage_Style = "table"
+      response.write(this.page_getTableDisplay(m.loQry))
+    else
+      response.write(this.page_getGalleryDisplay(m.loQry))
+    endif
+    return 
+  endfunc 
 
+  * ----------------------------------------------------- *  
+  function page_getGalleryDisplay(loQry)
+    local lcTmp, lcItem, lcRet
+    lcRet = ""
+    text to lcTmp noshow 
+      <div class="gallery-item">
+       <<AisPanelImage(Pnl_Id, "_h50", urls.item("PnlFilNew"), Pnl_PK, poContext.lAdmin)>>
+       <div class="gallery-item-info">
+        <<HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), Pnl_ID)>>
+        <br/><<Pnl_Dim_1>> x <<Pnl_Dim_2>>
+       </div>
+      </div>
+      
+    endtext 
+    select (loQry.cAlias)
+    scan
+      lcItem = textmerge(m.lcTmp)
+     lcRet = m.lcRet + m.lcItem
+    endscan
+    return m.lcRet
+  endfunc && page_getGalleryDisplay
+    
+  * ----------------------------------------------------- *  
+  function page_getTableDisplay(loQry)
+    local loTbl, loCol, loGrp
+
+    select (loQry.cAlias)
     loTbl = createobject("AisTable")
     with loTbl
       .cTableCaption = this.cSubTitle 
@@ -164,8 +207,8 @@ define class ais_PnlList as aisPnlPage
         [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), Pnl_ID)], 'id-field panel')
       loCol = .addCursorColumn("Pnl_Single_Piece", "Single-Piece?")
 
-      loCol = .addCursorColumn("Pnl_Dim_1", "Dimension 1")
-      loCol = .addCursorColumn("Pnl_Dim_2", "Dimension 2")
+      loCol = .addCursorColumn("Pnl_Dim_1", "Height")
+      loCol = .addCursorColumn("Pnl_Dim_2", "Width")
       loCol = .addCursorColumn("Pnl_Comments", "Comments")
       loCol = .addCursorColumn("Pnl_ID", "Image", ;
         [AisPanelImage(Pnl_Id, "_h25", urls.item("PnlFilNew"), Pnl_PK, poContext.lAdmin)])
@@ -185,12 +228,10 @@ define class ais_PnlList as aisPnlPage
           'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit&nbsp;Panel...]")', 'panel', "no-print")
         loCol.cHeadingClass = "nosort no-print" 
       endif 
-
-      response.write(.render())
     endwith 
     
-    return 
-  endfunc 
+    return loTbl.render() 
+  endfunc && page_getTableDisplay 
 enddefine && ais_PnlList 
 
 *** ========================================================= ***
@@ -489,8 +530,8 @@ define class ais_PnlHome as aisPnlPage
         endif 
       endif
       
-      .AddRow("Dimension 1", loData.Pnl_Dim_1)
-      .AddRow("Dimension 2", loData.Pnl_Dim_2)
+      .AddRow("Height", loData.Pnl_Dim_1)
+      .AddRow("Width", loData.Pnl_Dim_2)
       .AddRow("Description and Comments", L7ParseOnView(loData.Pnl_COMMENTS), .t.)
 
       .AddRow("Completed?", loData.Pnl_Completed)
@@ -708,8 +749,8 @@ define class aisPanelForm as AisForm
         .cGroupID = "DIM"
         .cFieldType = "C"
         .cControlSource = "V_Panel.Pnl_Dim_1"
-        .cLabel = "Dimension 1 (inches)"
-        .cInstructions = "If not equal, please enter SMALLER dimension first!"
+        .cLabel = "Height" && "Dimension 1 (inches)"
+        * .cInstructions = "If not equal, please enter SMALLER dimension first!"
       endwith
        
       .AddObject("txtDim_2", "L7Textbox")
@@ -717,8 +758,8 @@ define class aisPanelForm as AisForm
         .cGroupID = "DIM"
         .cFieldType = "C"
         .cControlSource = "V_Panel.Pnl_Dim_2"
-        .cLabel = "Dimension 2 (inches)"
-        .cInstructions = "If not equal, please enter LARGER dimension second!"
+        .cLabel = "Width" && "Dimension 2 (inches)"
+        * .cInstructions = "If not equal, please enter LARGER dimension second!"
       endwith 
 
       .AddObject("chkCompleted", "L7Checkbox")
