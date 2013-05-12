@@ -59,7 +59,7 @@ define class ais_PnlFilNew as aisPage
         StampRec( CurrentUser, THIS.tNow )
 
         with .fil1
-          llIsImage = "," + lower(justext(.cFileName)) + "," $ THISAPP_IMAGE_FILETYPES
+          llIsImage = "," + lower(justext(.cFileName)) + "," $ "," + THISAPP_IMAGE_FILETYPES + ","
           .cSaveAsFolder = aisPanelFilePath(this.oPnl)
           .cSaveAsName = forceext(Fil_PK, justext(.cFileName)) && pk w/ original extension
           
@@ -139,6 +139,7 @@ enddefine  && ais_PnlFilNew
 define class aisFilForm as AisForm
   cTitle = "File Upload Form"
   cAlias = null && client should set 
+  cSubmitCaption = "Upload" 
   * --------------------------------------------------------- *
   function  AddControls
     with this
@@ -156,7 +157,7 @@ define class aisFilForm as AisForm
       with .chkMain
         .cControlSource = this.cAlias + ".Fil_Main"
         .cLabel = "Main File?"
-        .cInstructions = "Check if file is the primary image for this item."
+        .cInstructions = "Check if file is the primary image for this item. Thumbnails will be generated, etc., if checked."
         if this.lNewRecord
           .setValue(.t.)
         endif

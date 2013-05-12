@@ -65,11 +65,12 @@ a:visited { color: blue;  text-decoration: none; }
 a:hover   { color: red;   text-decoration: underline; }
 a:active  { color: green; text-decoration: underline; }
 
-.artist, .artist a:link, .artist a:visited {color: darkgreen;}
-.piece, .piece a:link, .piece a:visited {color: purple;}
-.panel, .panel a:link, .panel a:visited  {color: brown !important;}
-.location, .location a:link, .location a:visited  {color: navy !important;}
-.facility, .facility a:link, .facility a:visited  {color: #EE7722 !important;}
+.artist, .artist a:link, .artist a:visited {color: darkgreen; }
+.piece, .piece a:link, .piece a:visited {color: purple; }
+.panel, .panel a:link, .panel a:visited  {color: brown !important; }
+.location, .location a:link, .location a:visited  {color: navy !important; }
+.facility, .facility a:link, .facility a:visited  {color: #EE7722 !important; }
+#header .artist, #header .panel, #header .facility, #header .piece, #header .location {background-color: white;}
 
 .id-field {font-weight: bold; font-size: 110%; }
 .private td {background-color: #eef;}
