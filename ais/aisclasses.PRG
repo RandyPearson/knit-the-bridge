@@ -396,6 +396,7 @@ define class aisForm AS L7Form
   lToolbarAtTop = .T.
   lResetButton = .F.
   lNewRecord = .F.
+  lPreventMultipleSubmissions = .F.  && allow re-submit 
   cSubmitCaption = "Save"
   * customize: 
   cEntityAlias = null  && e.g., "Artist"

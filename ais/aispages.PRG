@@ -585,6 +585,7 @@ define class ais_Home as aisPage
     addproperty(m.loState, "unlocatedPanels", 0)
     addproperty(m.loState, "locatedPanels", 0)
     addproperty(m.loState, "estimatedPanels", 0)
+    addproperty(m.loState, "noShowFraction", 0.20)
     return m.loState
   endfunc && page_getState
   * ----------------------------------------------------- *  
@@ -620,6 +621,16 @@ define class ais_Home as aisPage
 
           <tr><th>Best Case Panel Shortfall</th>
             <td><<2 * (loState.Locations - loState.skippedLocations) - loState.locatedPanels - loState.unlocatedPanels - loState.estimatedPanels>></td></tr>
+
+          <tr><th>Pessimistic No-Show Percent</th>
+            <td><<round(100 * loState.noShowFraction,0)>>%</td></tr>
+
+          <tr><th>Pessimistic Panel Shortfall</th>
+            <td><<2 * (loState.Locations - loState.skippedLocations) - loState.locatedPanels - loState.unlocatedPanels - round(loState.estimatedPanels * (1 - loState.noShowFraction),0)>></td></tr>
+
+          <tr><th>Estimated Contribution from Bits</th>
+            <td></td></tr>
+
         </tbody>
       </table>
     endtext 

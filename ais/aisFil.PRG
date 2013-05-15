@@ -46,6 +46,8 @@ define class ais_PnlFilNew as aisPage
       .cAlias = m.lcAlias
       .lNewRecord = THIS.lAdding
       .AddControls()
+      .lblParent.cLabel = "Panel"
+      .lblParent.cControlSource = "Page.oPnl.Pnl_ID"
       .DoEvents()
 
       if .Valid()
@@ -144,6 +146,10 @@ define class aisFilForm as AisForm
   function  AddControls
     with this
       
+      .AddObject("lblParent", "L7Label")
+      with .lblParent
+      endwith 
+
       .AddObject("fil1", "L7FileUpload")
       with .fil1
         .lRequired = .t. && fail if nothing arrives 
