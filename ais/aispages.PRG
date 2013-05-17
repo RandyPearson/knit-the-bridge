@@ -598,6 +598,7 @@ define class ais_Home as aisPage
       .estimatedWholePanels = round(.duePanels * (1 - .noShowFraction), 0)
       .estimatedBitPanels = round(.dueBits * .bitsPerPerson * (1 - .noShowFraction) / 8, 0)
       .neededPanels = 2 * (.Locations - .skippedLocations) - .actualPanels
+      .estimatedShortfall = .neededPanels - .estimatedBitPanels - .estimatedWholePanels
     endwith
     return 
   endfunc 
@@ -615,6 +616,7 @@ define class ais_Home as aisPage
     addproperty(m.loState, "duePanels", 0)
     addproperty(m.loState, "estimatedWholePanels", 0)
     addproperty(m.loState, "estimatedBitPanels", 0)
+    addproperty(m.loState, "estimatedShortfall", 0)
     addproperty(m.loState, "noShowFraction", 0.20)
     addproperty(m.loState, "bitsPerPerson", 1.70)
     return m.loState
@@ -627,37 +629,42 @@ define class ais_Home as aisPage
       <caption>Production Accounting Report</caption>
         <tbody>
           <tr><th>Total Bridge Locations</th>
-            <td><<loState.Locations>></td></tr>
+            <td><<loState.Locations>></td>
+            <td></td></tr>
             
           <tr><th>- Skipped Locations</th>
-            <td><<loState.skippedLocations>></td></tr>
+            <td><<loState.skippedLocations>></td>
+            <td></td></tr>
             
           <tr><th>= Total Panel Locations</th>
-            <td><<loState.Locations - loState.skippedLocations>></td></tr>
+            <td><<loState.Locations - loState.skippedLocations>></td><td></td></tr>
             
           <tr><th>x 2 = Total Panel Requirement</th>
-            <td><<2 * (loState.Locations - loState.skippedLocations)>></td></tr>
+            <td></td><td class="total"><<2 * (loState.Locations - loState.skippedLocations)>></td></tr>
             
           <tr><th>- Panels with Locations Assigned</th>
-            <td><<loState.locatedPanels>></td></tr>
+            <td></td><td><<loState.locatedPanels>></td></tr>
 
           <tr><th>- Panels Available for Assignment</th>
-            <td><<loState.unlocatedPanels>></td></tr>
+            <td></td><td><<loState.unlocatedPanels>></td></tr>
             
           <tr><th>Panels Still Needed</th>
-            <td><<loState.neededPanels>></td></tr>
+            <td></td><td class="total"><<loState.neededPanels>></td></tr>
 
           <tr><th>Pessimistic No-Show Percent</th>
-            <td><<round(100 * loState.noShowFraction,0)>>%</td></tr>
+            <td><<round(100 * loState.noShowFraction,0)>>%</td><td></td></tr>
 
-          <tr><th>- Whole Panels Pending Delivery</th>
-            <td><<loState.estimatedWholePanels>></td></tr>
+          <tr><th>Whole Panels Pending Delivery</th>
+            <td><<loState.estimatedWholePanels>></td><td></td></tr>
 
-          <tr><th>- Contribution from Bits Pending Delivery</th>
-            <td><<loState.estimatedBitPanels>></td></tr>
+          <tr><th>- Est. Contribution from Pending Panels</th>
+            <td></td><td><<loState.estimatedWholePanels>></td></tr>
 
-          <tr><th>Pessimistic Panel Shortfall</th>
-            <td><<loState.neededPanels - loState.estimatedBitPanels - loState.estimatedWholePanels>></td></tr>
+          <tr><th>- Est. Contribution from Pending Bits</th>
+            <td></td><td><<loState.estimatedBitPanels>></td></tr>
+
+          <tr class="total"><th>Pessimistic Panel Shortfall</th>
+            <td></td><td class="<<iif(loState.estimatedShortfall <= 0,'good','bad')>>"><<loState.estimatedShortfall>></td></tr>
 
         </tbody>
       </table>
