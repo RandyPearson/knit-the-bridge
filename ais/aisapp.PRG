@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     23
+#DEFINE THISAPP_DATABASE_REVISION     24
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -447,6 +447,18 @@ define class AisApp AS KtbApp
       use in select("Piece")
       use in select("Panel")
 
+    case m.lnRev = 24
+      alter table Artist add column Art_Undeliverable L
+      select Artist 
+      index on Art_Undeliverable tag undeliver
+      use in select("Artist")
+    
+      alter table Panel add column Pnl_Special_Size L
+      select Panel
+      replace all Pnl_Special_Size with .t. for "special size" $ lower(Pnl_Comments)
+      index on Pnl_Special_Size tag Special 
+      use in select("Panel")
+
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
@@ -623,6 +635,7 @@ function CreateArtistTable
       Art_Title C(60), ;  && Rev 6
       Art_Name_Orig M, ; 
       Art_Email C(THISAPP_USER_EMAIL_LEN), ;  && 80
+      Art_Undeliverable L, ; && Rev 24
       Art_Phone C(24), ;
       Art_Contact_Orig M, ; 
       Art_Address M, ;
@@ -679,6 +692,7 @@ function CreateArtistTable
   index on Art_Starred tag Starred  && Rev 10
   index on Art_Approved tag Approved
   index on Art_Hidden tag Hidden
+  index on Art_Undeliverable tag undeliver && Rev 24
   ** index on upper(Art_User_ID) tag User_ID
   index on Art_ID tag Art_ID
   index on Art_Access_Token tag token 
@@ -761,6 +775,7 @@ function CreatePanelTable
       Pnl_Single_Piece L, ;  
       Pnl_Dim_1 C(12), ;
       Pnl_Dim_2 C(12), ;
+      Pnl_Special_Size L, ; && Rev 24
       Pnl_Comments M, ;
       Pnl_Notes M, ;
       Pnl_Orig_Art_FK C(32), ;
@@ -781,6 +796,7 @@ function CreatePanelTable
   index on Pnl_Completed tag Completed
   index on Pnl_ID tag Pnl_ID
   index on Pnl_Single_Piece tag Single
+  index on Pnl_Special_Size tag Special && Rev 24 
      
   * Comment:
   dbsetprop("Panel", "Table", "Comment", ;

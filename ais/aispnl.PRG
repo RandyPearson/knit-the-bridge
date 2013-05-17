@@ -209,6 +209,7 @@ define class ais_PnlList as aisPnlPage
 
       loCol = .addCursorColumn("Pnl_Dim_1", "Height")
       loCol = .addCursorColumn("Pnl_Dim_2", "Width")
+      loCol = .addCursorColumn("Pnl_Special_Size", "Special<br>Size", [iif(Pnl_Special_Size,"Special Size","")])
       loCol = .addCursorColumn("Pnl_Comments", "Comments")
       loCol = .addCursorColumn("Pnl_ID", "Image", ;
         [AisPanelImage(Pnl_Id, "_h25", urls.item("PnlFilNew"), Pnl_PK, poContext.lAdmin)])
@@ -517,7 +518,13 @@ define class ais_PnlHome as aisPnlPage
       .cCaption = this.cSubTitle
       .AddHeading('Key Information')
       
-      .AddRow("Panel ID", loData.Pnl_ID,, "id-field panel" )
+      loRow.clear()
+      loRow.cLabel = "Panel ID"
+      loRow.vValue = HTWrap(loData.Pnl_ID, 'span',, "id-field panel" )
+      if poContext.lAdmin
+        loRow.Links.add(HTLink(StuffUrl(This.cUrlB, 2, "PnlForm", "pnl", this.cPnl), "Edit Panel..."))
+      endif
+      .AddRowEx(m.loRow)
 
       .AddRow("Single-Piece?", loData.Pnl_Single_Piece)
 
@@ -532,6 +539,7 @@ define class ais_PnlHome as aisPnlPage
       
       .AddRow("Height", loData.Pnl_Dim_1)
       .AddRow("Width", loData.Pnl_Dim_2)
+      .AddRow("Special Size?", iif(loData.Pnl_Special_Size, "Special Size", "no"))
       .AddRow("Description and Comments", L7ParseOnView(loData.Pnl_COMMENTS), .t.)
 
       .AddRow("Completed?", loData.Pnl_Completed)
@@ -602,8 +610,9 @@ define class ais_PnlHome as aisPnlPage
 
       if poContext.lAdmin
         loCol = .addCursorColumn("Pce_Notes", "Notes",, "private")
-        loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
-          'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit&nbsp;Piece...]")')
+        * This was encouraging editing the piece, not the panel:
+        *!*          loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
+        *!*            'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit&nbsp;Piece...]")')
       endif
       lcRet = m.lcRet + .Render()
     endwith 
@@ -794,7 +803,7 @@ define class AisPnlQuery as L7Query
   cBaseTable = "Panel"
   cDefaultFieldList = ;
     "Pnl_PK, Pnl_ID, Pnl_Stitcher_Art_FK, Pnl_Asm_FK, Pnl_Fac_FK, Pnl_Single_Piece" + ;  
-    ", Pnl_Dim_1, Pnl_Dim_2, Pnl_Completed, Pnl_Comments, Pnl_Notes" 
+    ", Pnl_Dim_1, Pnl_Dim_2, Pnl_Special_Size, Pnl_Completed, Pnl_Comments, Pnl_Notes" 
 
   nOrderBy = 1
   dimension aOrderBy[ 1, 2]

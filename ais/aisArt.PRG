@@ -14,6 +14,7 @@ function AisArtQueryFlags()
     ',{"root": "towers", "prompt": "Machine Knit for Towers"}' + ;
     ',{"root": "money", "field": "Art_Help_Money", "prompt": "Donate Money"}' + ;
     ',{"root": "materials", "field": "Art_Help_Materials", "prompt": "Donate Materials"}' + ;
+    ',{"root": "undeliverable"}' + ;
     ',{"root": "artist"}' + ;
     ',{"root": "admin", "menu": false}' + ;
     ']' )
@@ -64,6 +65,7 @@ function aisFormatContactInfo(toData)
   endif
   lcRet = ;
     iif(empty(loData.Art_Email), "", HTEmailLink(trim(loData.Art_Email))) + ;
+    iif(loData.Art_Undeliverable, " (UNDELIVERABLE)", "") + ;
     iif(empty(loData.Art_Phone), "", " " + trim(loData.Art_Phone))
   return ltrim(m.lcRet)
 endfunc && aisFormatContactInfo
@@ -492,7 +494,14 @@ define class ais_ArtHome as aisArtPage
       .cCaption = AisArtistName(m.loData) + " Data"
       .AddHeading('Key Information')
       
-      .AddRow("ID", loData.ART_ID,, "id-field artist" )
+      loRow.clear()
+      loRow.cLabel = "Artist ID"
+      loRow.vValue = HTWrap(loData.Art_ID, 'span',, "id-field panel" )
+      if poContext.lAdmin
+        loRow.Links.add(HTLink(StuffUrl(This.cUrlB, 2, "ArtForm", "art", this.cArt), "Edit This Person..."))
+      endif
+      .AddRowEx(m.loRow)
+
       .AddRow("Approved", loData.ART_APPROVED)
 
       .AddRow("Name", AisArtistName(m.loData, .t.))
@@ -503,7 +512,7 @@ define class ais_ArtHome as aisArtPage
       endif 
       .AddRow("Original Name (from blog)", loData.ART_NAME_ORIG, .t., "private")
 
-      .AddRow("Email", HTEmailLink(TRIM(loData.ART_EMAIL), .f., .f., .f., .t.))
+      .AddRow("Email", HTEmailLink(TRIM(loData.ART_EMAIL) + iif(loData.Art_Undeliverable, " (UNDELIVERABLE)", ""), .f., .f., .f., .t.))
       .AddRow("Phone", TRIM(loData.ART_PHONE), .t.)
       .AddRow("Original Contact (from blog)", loData.ART_CONTACT_ORIG, .t., "private")
       .AddRow("Address (from blog)", L7ParseOnView(loData.ART_ADDRESS), .t., "private")
@@ -617,8 +626,8 @@ define class ais_ArtHome as aisArtPage
         
         if poContext.lAdmin
           loCol = .addCursorColumn("Pce_Notes", "Notes",, "private")
-          loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
-            'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit&nbsp;Piece...]")')
+          *!*            loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
+          *!*              'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit&nbsp;Piece...]")')
         endif
         
         lcRet = m.lcRet + .Render()
@@ -1239,6 +1248,14 @@ define class aisArtistForm AS aisArtistForms
         .cLabel = "Email"
         .cCssStyle = "width: 60%;"
         .nSize = 60
+      endwith
+      .AddObject("chkUndeliverable", "L7Checkbox")
+      with .chkUndeliverable
+        .cGroupID = "cont"
+        .cControlSource = "V_artist.Art_Undeliverable"
+        .cLabel = "Undeliverable?"
+        .lDisabled = !m.poContext.lAdmin
+        .cCssClass = "FormControlPrivate"
       endwith
       .AddObject("txtPhone", "L7Textbox")
       with .txtPhone
@@ -1878,7 +1895,7 @@ define class AisArtQuery AS L7Query
   cDefaultFieldList = ;
     "Art_PK, Art_ID, Art_Access_Token, Art_Approved, Art_Group_Art_FK, Art_No_Count, Art_Starred, Art_Artist, Art_Anonymous, Art_Unknown, Art_Hidden" + ;
     ", Art_Full_Name, Art_Last_Name, Art_First_Name, Art_Title, Art_Release_Name, Art_Name_Orig" + ; 
-    ", Art_Email, Art_Phone, Art_Neighborhood, Art_Age_Range" + ;
+    ", Art_Email, Art_Undeliverable, Art_Phone, Art_Neighborhood, Art_Age_Range" + ;
     ", Art_Register_Time, Art_KTB_Response" 
 
   cID = null 
@@ -1896,6 +1913,7 @@ define class AisArtQuery AS L7Query
   lAdmin = .F.
   lCore = .F.
   lHidden = .F. 
+  lUndeliverable = null
   lArtist = .F.
   lStarred = null
   lInstall = .F.
@@ -1971,6 +1989,10 @@ define class AisArtQuery AS L7Query
 
       if !isnull( .lHidden)
         .cWhereClause = .cWhereClause + [ AND Art_Hidden = ] + IIF(.lHidden, [.T.], [.F.])
+      endif 
+
+      if !isnull( .lUndeliverable)
+        .cWhereClause = .cWhereClause + [ AND Art_Undeliverable = ] + IIF(.lUndeliverable, [.T.], [.F.])
       endif 
 
       if !isnull( .lKtbResponse)
