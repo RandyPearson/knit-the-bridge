@@ -512,6 +512,7 @@ define class ais_Home as aisPage
     lcTmp = this.page_getTemplate()
     loState = this.page_getState()
     this.page_RunQueries(m.loState)
+    this.page_Calculate(m.loState)
     lcRpt = textmerge(m.lcTmp)
     with Response
       *.Write("Home page content goes here...")
@@ -572,10 +573,33 @@ define class ais_Home as aisPage
       .BuildFieldList() && [[ needed?
       .AddOrderBy()     && [[ ditto
       .Execute()
-      loState.estimatedPanels = .aResults[1]
+      loState.duePanels = .aResults[1]
     endwith 
-    this.oPage_Queries.add(m.loQ, "ArtQuery")
+    this.oPage_Queries.add(m.loQ, "EstPanelQuery")
 
+    loQ = createobject("AisArtQuery")
+    with loQ
+      .lBitsSubmitted = .f. && don't count folks who have submitted
+      .lArrayResults = .t.
+      .ClearFields()
+      .AddFields([sum(iif(Art_Partial_Panel,1,0))])
+      .BuildFieldList() && [[ needed?
+      .AddOrderBy()     && [[ ditto
+      .Execute()
+      loState.dueBits = .aResults[1] 
+    endwith 
+    this.oPage_Queries.add(m.loQ, "EstBitsQuery")
+
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_Calculate(loState)
+    with loState
+      .actualPanels = .locatedPanels + .unlocatedPanels
+      .estimatedWholePanels = round(.duePanels * (1 - .noShowFraction), 0)
+      .estimatedBitPanels = round(.dueBits * .bitsPerPerson * (1 - .noShowFraction) / 8, 0)
+      .neededPanels = 2 * (.Locations - .skippedLocations) - .actualPanels
+    endwith
+    return 
   endfunc 
   * ----------------------------------------------------- *  
   function page_getState()
@@ -585,8 +609,14 @@ define class ais_Home as aisPage
     addproperty(m.loState, "skippedLocations", 0)
     addproperty(m.loState, "unlocatedPanels", 0)
     addproperty(m.loState, "locatedPanels", 0)
-    addproperty(m.loState, "estimatedPanels", 0)
+    addproperty(m.loState, "actualPanels", 0)
+    addproperty(m.loState, "neededPanels", 0)
+    addproperty(m.loState, "dueBits", 0)
+    addproperty(m.loState, "duePanels", 0)
+    addproperty(m.loState, "estimatedWholePanels", 0)
+    addproperty(m.loState, "estimatedBitPanels", 0)
     addproperty(m.loState, "noShowFraction", 0.20)
+    addproperty(m.loState, "bitsPerPerson", 1.70)
     return m.loState
   endfunc && page_getState
   * ----------------------------------------------------- *  
@@ -615,22 +645,19 @@ define class ais_Home as aisPage
             <td><<loState.unlocatedPanels>></td></tr>
             
           <tr><th>Panels Still Needed</th>
-            <td><<2 * (loState.Locations - loState.skippedLocations) - loState.locatedPanels - loState.unlocatedPanels>></td></tr>
-
-          <tr><th>- Estimated Panels Pending Delivery</th>
-            <td><<loState.estimatedPanels>></td></tr>
-
-          <tr><th>Best Case Panel Shortfall</th>
-            <td><<2 * (loState.Locations - loState.skippedLocations) - loState.locatedPanels - loState.unlocatedPanels - loState.estimatedPanels>></td></tr>
+            <td><<loState.neededPanels>></td></tr>
 
           <tr><th>Pessimistic No-Show Percent</th>
             <td><<round(100 * loState.noShowFraction,0)>>%</td></tr>
 
-          <tr><th>Pessimistic Panel Shortfall</th>
-            <td><<2 * (loState.Locations - loState.skippedLocations) - loState.locatedPanels - loState.unlocatedPanels - round(loState.estimatedPanels * (1 - loState.noShowFraction),0)>></td></tr>
+          <tr><th>- Whole Panels Pending Delivery</th>
+            <td><<loState.estimatedWholePanels>></td></tr>
 
-          <tr><th>Estimated Contribution from Bits</th>
-            <td></td></tr>
+          <tr><th>- Contribution from Bits Pending Delivery</th>
+            <td><<loState.estimatedBitPanels>></td></tr>
+
+          <tr><th>Pessimistic Panel Shortfall</th>
+            <td><<loState.neededPanels - loState.estimatedBitPanels - loState.estimatedWholePanels>></td></tr>
 
         </tbody>
       </table>

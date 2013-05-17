@@ -528,6 +528,10 @@ define class ais_ArtHome as aisArtPage
         .AddHeading('Contributing Artists')
         .AddRow(null, m.lcStr)
       endif   
+      * part
+      if !empty(m.loData.Art_Group_Art_FK)
+        .AddRow("Group", HTLink(StuffUrl(this.cUrlA, "art", m.loData.Art_Group_Art_FK), aisArtistName(m.loData.Art_Group_Art_FK)))
+      endif 
 
       if this.oArt.Art_Artist
         .AddHeading('Submitted Work and WIP')
@@ -1437,6 +1441,15 @@ define class aisArtistForm AS aisArtistForms
         .cCssClass = "FormControlPrivate"
       endwith
 
+      if poContext.lDeveloper
+        .AddObject("txtGroup_Art_FK", "L7Textbox")
+        with .txtGroup_Art_FK
+          .cFieldType = "C"
+          .cControlSource = "V_artist.Art_Group_Art_FK"
+          .cLabel = "Group Artist FK"
+        endwith
+      endif 
+      
       .AddObject("txtAccess_Token", "L7Textbox")
       with .txtAccess_Token
         .cGroupId = "sec"
@@ -1904,6 +1917,7 @@ define class AisArtQuery AS L7Query
   lUser = NULL
   lAccountInactive = null && surrogate is "approved"
   
+  lBitsSubmitted = null 
   lPanelsSubmitted = null 
   lKtbResponse = null
   lNoCount = null 
@@ -2002,6 +2016,11 @@ define class AisArtQuery AS L7Query
       if !isnull(.lPanelsSubmitted)
         .cWhereClause = .cWhereClause + [ and Art_PK] + iif(.lPanelsSubmitted, [ in ], [ not in ]) + ;
           [(select Pce_Art_FK from Piece where !Pce_Inactive and Pce_Whole_Panel)]
+      endif 
+
+      if !isnull(.lBitsSubmitted)
+        .cWhereClause = .cWhereClause + [ and Art_PK] + iif(.lBitsSubmitted, [ in ], [ not in ]) + ;
+          [(select Pce_Art_FK from Piece where !Pce_Inactive and Pce_Type = 'Panels' and !Pce_Whole_Panel)]
       endif 
 
       if !isnull( .lNoCount)
