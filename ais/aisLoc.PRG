@@ -44,6 +44,8 @@ define class aisLocPage as aisPage
     lcMenu = "main\This"
     with this
       .AddSubMenu("This", "BRIDGE LOCATIONS")
+      .addMenuItem(m.lcMenu, 'Special Sizes', StuffUrl(this.cUrlA, 2, "LocList", "special", "1"))
+      .addMenuItem(m.lcMenu, 'Trapezoids', StuffUrl(this.cUrlA, 2, "LocList", "trapezoid", "1"))
       .addMenuItem(m.lcMenu, 'Downtown Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Down"))
       .addMenuItem(m.lcMenu, 'Uptown Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Up"))
       .addMenuItem(m.lcMenu, 'All Bridge Locations', StuffUrl(.cUrlA, 2, "LocList"))
@@ -62,8 +64,15 @@ define class ais_LocList as aisLocPage
   lLocRequired = .f.
   cSubTitle = "Bridge Locations"
   cPage_Side = ""
+  lPage_Trapezoid = null
+  lPage_Special = null 
   * --------------------------------------------------------- *
   function BeforeProcessRequest
+    local lcStr
+    lcStr = this.readQueryString("special", .t., .t.)
+    this.lPage_Special = iif(empty(m.lcStr), null, m.lcStr $ "1yYtT")
+    lcStr = this.readQueryString("trapezoid", .t., .t.)
+    this.lPage_Trapezoid = iif(empty(m.lcStr), null, m.lcStr $ "1yYtT")
     this.cPage_Side = this.readQueryString("side", .t., .t.)
     dodefault()
     return 
@@ -72,17 +81,23 @@ define class ais_LocList as aisLocPage
   function ProcessRequest
     local loLocQry, loPlcQry, loTbl, loCol, loGrp, lnOrient, lcOrient
        
+    * Secondary query of Panel Assignments: 
     loPlcQry = createobject("AisPlcQuery")
     with loPlcQry
       .cAlias = "PlcQuery_"
       .lJoinPanel = .t.
       .lJoinLocation = .t.
+      *!*        .lTrapezoid = this.lPage_Trapezoid
+      *!*        .lSpecial = this.lPage_Special 
       .execute()
       index on Plc_Loc_FK + Plc_Orientation tag LocOrient 
     endwith 
 
+    * Main Location query:
     loLocQry = createobject("AisLocQuery")
     with loLocQry
+      .lTrapezoid = this.lPage_Trapezoid
+      .lSpecial = this.lPage_Special 
       .execute()
     endwith 
     
@@ -119,13 +134,13 @@ define class ais_LocList as aisLocPage
 
       if empty(this.cPage_Side) or "Down" $ this.cPage_Side
         .cFilter = [Loc_Side = "Down"]
-        .cTableCaption = "Downtown List"
+        .cTableCaption = "Downtown Side (toward 6th St and The Point)"
         response.write(.render())
         .Reset()
       endif
       if empty(this.cPage_Side) or "Up" $ this.cPage_Side
         .cFilter = [Loc_Side = "Up  "]
-        .cTableCaption = "Uptown List"
+        .cTableCaption = "Uptown Side (toward 9th St and The Strip)"
         response.write(.render())
         .Reset()
       endif
@@ -438,6 +453,8 @@ define class AisPlcQuery as L7Query
 
   cSide = null
   cOrient = null 
+  lTrapezoid = null
+  lSpecial = null 
 
   lJoinPanel = .f. 
   lJoinLocation = .f. 
@@ -469,6 +486,13 @@ define class AisPlcQuery as L7Query
       if !isnull(.cSide)
         .cWhereClause = .cWhereClause + [ and Loc_Side = '] + padr(this.cSide, THISAPP_LENGTH_SIDE) + [']
       endif 
+      if !isnull(.lTrapezoid)
+        .cWhereClause = .cWhereClause + [ and Loc_H2 ] + iif(.lTrapezoid, [> 0], [= 0])
+      endif 
+      if !isnull(.lSpecial)
+        .cWhereClause = .cWhereClause + [ and ] + iif(.lSpecial, [!], []) + ;
+          [(Loc_H1 = 36 and Loc_W1 = 75 and Loc_H2 = 0)]
+      endif 
       if !isnull(.cOrient)
         .cWhereClause = .cWhereClause + [ Plc_Orientation = '] + padr(.cOrient, THISAPP_LENGTH_ORIENTATION ) + [']
       endif 
@@ -487,7 +511,9 @@ define class AisLocQuery as L7Query
 
   lSkip = null 
   cSide = null
-  
+  lTrapezoid = null
+  lSpecial = null 
+    
   cOrient = null 
   lHasPanel = null 
   
@@ -508,6 +534,13 @@ define class AisLocQuery as L7Query
       endif 
       if !isnull(.cSide)
         .cWhereClause = .cWhereClause + [ and Loc_Side = '] + padr(.cSide, THISAPP_LENGTH_SIDE) + [']
+      endif 
+      if !isnull(.lTrapezoid)
+        .cWhereClause = .cWhereClause + [ and Loc_H2 ] + iif(.lTrapezoid, [> 0], [= 0])
+      endif 
+      if !isnull(.lSpecial)
+        .cWhereClause = .cWhereClause + [ and ] + iif(.lSpecial, [!], []) + ;
+          [(Loc_H1 = 36 and Loc_W1 = 75 and Loc_H2 = 0)]
       endif 
       if !isnull(.lHasPanel)
         .cWhereClause = .cWhereClause + [ and Loc_PK] + iif(.lHasPanel, [ in ], [ not in ]) + ;

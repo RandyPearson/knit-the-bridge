@@ -478,6 +478,7 @@ define class aisPage as L7Page
     this.addMenuItem(m.lcMenu, 'Panels', StuffUrl(this.cUrlA, 2, "PnlList"))
     this.addMenuItem(m.lcMenu, 'Facilities', StuffUrl(this.cUrlA, 2, "FacList"))
     ** this.addMenuItem(m.lcMenu, 'Bridge Locations', StuffUrl(this.cUrlA, 2, "LocList"))
+    this.addMenuItem(m.lcMenu, 'Special Sizes', StuffUrl(this.cUrlA, 2, "LocList", "special", "1"))
     this.addMenuItem(m.lcMenu, 'Downtown Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Down"))
     this.addMenuItem(m.lcMenu, 'Uptown Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Up"))
     this.addMenuItem(m.lcMenu, 'Management Report', StuffUrl(this.cUrlA, 2, "Home"))
