@@ -655,7 +655,7 @@ define class ais_Home as aisPage
             <td><<round(100 * loState.noShowFraction,0)>>%</td><td></td></tr>
 
           <tr><th>Whole Panels Pending Delivery</th>
-            <td><<loState.estimatedWholePanels>></td><td></td></tr>
+            <td><<loState.duePanels>></td><td></td></tr>
 
           <tr><th>- Est. Contribution from Pending Panels</th>
             <td></td><td><<loState.estimatedWholePanels>></td></tr>
