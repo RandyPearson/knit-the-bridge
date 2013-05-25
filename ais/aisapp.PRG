@@ -1095,13 +1095,17 @@ function CreateStoredProcedures
           lcType = getwordnum(m.lcTypes, m.lnType, ",")
           * Artist: 
           lcField = alias() + "." + m.lcPrefix + "_" + m.lcType + "_Art_FK" && e.g., Panel.Pnl_Orig_Art_FK
-          if type(m.lcField) = "C" and empty(eval(m.lcField)) 
-            replace (m.lcField) with m.lcUserKey 
+          if type(m.lcField) = "C" 
+            if m.lcType = "Rev" or empty(eval(m.lcField)) 
+              replace (m.lcField) with m.lcUserKey 
+            endif
           endif  
           * Timestamp: 
           lcField = alias() + "." + m.lcPrefix + "_" + m.lcType + "_Time" && e.g., Panel.Pnl_Orig_Time
-          if type(m.lcField) = "T" and empty(eval(m.lcField)) 
-            replace (m.lcField) with m.ltTime 
+          if type(m.lcField) = "T"
+            if m.lcType = "Rev" or empty(eval(m.lcField)) 
+              replace (m.lcField) with m.ltTime 
+            endif 
           endif  
         next && lnType
       endif  

@@ -77,6 +77,7 @@ define class ais_PceList as aisPcePage
   lPage_Received = null 
   cPage_Type = null
   cPage_Order = null
+  cPage_Flags = null
   * --------------------------------------------------------- *
   function BeforeProcessRequest
     local lcStr
@@ -94,6 +95,7 @@ define class ais_PceList as aisPcePage
     this.lPage_Received = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
 
     this.cPage_Type = this.ReadQueryString("type", .t., .t.)
+    this.cPage_Flags = this.ReadQueryString("flags", .t., .t.)
     this.cPage_Order = this.ReadQueryString("order", .t., .t.)
 
     dodefault()  && required bubble-up
@@ -101,8 +103,10 @@ define class ais_PceList as aisPcePage
   endfunc  
   * --------------------------------------------------------- *
   function AddDefaultMenu
+    local lcMenu
     with this
       .AddSubMenu("This", "PIECES and RAILINGS")
+      lcMenu = "main\This"
 
 *!*        .addMenuItem("main\This", "Available", StuffUrl(.cUrlC, "orphans", "1"),, !isnull(.lPage_Orphans) and .lPage_Orphans)
 *!*        .addMenuItem("main\This", "Assigned", StuffUrl(.cUrlC, "orphans", "0"),, !isnull(.lPage_Orphans) and !.lPage_Orphans)
@@ -122,12 +126,15 @@ define class ais_PceList as aisPcePage
 
 *!*        .addMenuItem("main\This", "Available", StuffUrl(.cUrlC, "orphans", "1"),, !isnull(.lPage_Orphans) and .lPage_Orphans)
 
-      .addMenuItem("main\This", "Whole-Panel Pieces",   StuffUrl(.cUrlB, "order", "fac", "type", "Panels", "whole", "1"))
-      .addMenuItem("main\This", "Available Bits",       StuffUrl(.cUrlB, "order", "fac", "type", "Panels", "whole", "0", "orphans", "1"))
-      .addMenuItem("main\This", "Consumed Bits",        StuffUrl(.cUrlB, "order", "pnl", "type", "Panels", "whole", "0", "orphans", "0"))
+      .addMenuItem(m.lcMenu, "Whole-Panel Pieces",   StuffUrl(.cUrlB, "order", "fac", "type", "Panels", "whole", "1"))
+      .addMenuItem(m.lcMenu, "Available Bits",       StuffUrl(.cUrlB, "order", "fac", "type", "Panels", "whole", "0", "orphans", "1"))
+      .addMenuItem(m.lcMenu, "Consumed Bits",        StuffUrl(.cUrlB, "order", "pnl", "type", "Panels", "whole", "0", "orphans", "0"))
       
-      .addMenuItem("main\This", "Railings by Size",     StuffUrl(.cUrlB, "order", "size", "type", "Railings"))
-      .addMenuItem("main\This", "Railings by Facility", StuffUrl(.cUrlB, "order", "fac", "type", "Railings"))
+      .addMenuItem(m.lcMenu, "Railings by Size",     StuffUrl(.cUrlB, "order", "size", "type", "Railings"))
+      .addMenuItem(m.lcMenu, "Railings by Facility", StuffUrl(.cUrlB, "order", "fac", "type", "Railings"))
+
+      .addMenuItem(m.lcMenu, 'Deleted Pieces',       StuffUrl(.cUrlA, 2, "PceList", "flags", "inactive"))
+
     endwith 
     dodefault()
     return 
@@ -141,6 +148,10 @@ define class ais_PceList as aisPcePage
       .lJoinArtist = .t. 
       .lJoinFacility = .t.
       .lJoinPanel = .t. 
+
+      if "," + "inactive" + "," $ "," + this.cPage_Flags + ","
+        .lInactive = .t. 
+      endif 
       .lOrphans    = this.lPage_Orphans 
       .lWholePanel = this.lPage_Whole 
       .lShipped    = this.lPage_Shipped 
@@ -177,6 +188,8 @@ define class ais_PceList as aisPcePage
     loTbl = createobject("AisTable")
     with loTbl
       .cTableCaption = this.cSubTitle 
+
+      .cDataRowClass = .cDataRowClass + iif(empty(.cDataRowClass), [], [ + ]) + [iif(Pce_Inactive, " deleted", "")]
 
       do case
       case this.cPage_Order = "size" 
@@ -302,14 +315,19 @@ define class ais_PceHome as aisPcePage
   endfunc 
   * ----------------------------------------------------- *  
   function page_getMainRecord()
-    local loElem, loRow, lcRet, loData, llPanel, lcFileName
+    local loElem, loRow, lcRet, loData, llPanel, lcFileName, llDeleted
     lcRet = ""
     loData = this.oPce
+    llDeleted = loData.Pce_Inactive 
     llPanel = !empty(loData.Pce_Pnl_FK)
     loElem = createobject("aisRecordElement")
     with loElem
       loRow = .getRowObject()
       .cCaption = this.cSubTitle
+      if m.llDeleted
+        .cCssClass = .cCssClass + " deleted"
+        .cCaption = .cCaption + " [DELETED]"
+      endif
       .AddHeading('Key Information')
       
       .AddRow("Piece ID", loData.Pce_ID,, "id-field piece" )
@@ -633,7 +651,7 @@ enddefine  && PieceForm
 define class AisPceQuery as L7Query
   cBaseTable = "Piece"
   cDefaultFieldList = ;
-    "Pce_PK, Pce_ID, Pce_Art_FK, Pce_Pnl_FK, Pce_Fac_FK, Pce_Whole_Panel" + ;  
+    "Pce_PK, Pce_ID, Pce_Inactive, Pce_Art_FK, Pce_Pnl_FK, Pce_Fac_FK, Pce_Whole_Panel" + ;  
     ", Pce_Dim_1, Pce_Dim_2, Pce_Comments, Pce_Notes, Pce_Type, Pce_Shipped, Pce_Ship_Date, Pce_Received, Pce_Acknowledged"
 
   nOrderBy = 1
@@ -641,6 +659,8 @@ define class AisPceQuery as L7Query
   aOrderBy[ 1, 1] = "Pce_ID"
 
   cID = null 
+
+  lInactive = .f.  && whole record deleted
 
   cArt = null
   cPnl = null
@@ -686,7 +706,11 @@ define class AisPceQuery as L7Query
 
     with this 
       .lWhereBuilt = .T.
-      .cWhereClause = [WHERE Pce_Inactive = .F.] 
+      if isnull(.lInactive)
+        .cWhereClause = [WHERE .t.]
+      else
+        .cWhereClause = [WHERE Pce_Inactive = ] + IIF(.lInactive, [.T.], [.F.])
+      endif 
 
       if !isnull(.cID)
         .cWhereClause = .cWhereClause + [ and Pce_Id = '] + .cId + [']

@@ -14,6 +14,7 @@ function AisArtQueryFlags()
     ',{"root": "towers", "prompt": "Machine Knit for Towers"}' + ;
     ',{"root": "money", "field": "Art_Help_Money", "prompt": "Donate Money"}' + ;
     ',{"root": "materials", "field": "Art_Help_Materials", "prompt": "Donate Materials"}' + ;
+    ',{"root": "inactive", "prompt": "Deleted Artists"}' + ;
     ',{"root": "undeliverable"}' + ;
     ',{"root": "artist"}' + ;
     ',{"root": "admin", "menu": false}' + ;
@@ -273,6 +274,8 @@ define class ais_ArtList as aisMultiArtPage
         loGrp = .AddGroup("Art_Neighborhood",,.t.,["Neighborhood: " + trim(Art_Neighborhood)])
       otherwise
       endcase
+      
+      .cDataRowClass = .cDataRowClass + iif(empty(.cDataRowClass), [], [ + ]) + [iif(Art_Inactive, " deleted", "")]
 
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Art_ID", "Artist ID", ;
@@ -485,13 +488,18 @@ define class ais_ArtHome as aisArtPage
   endfunc 
   * ----------------------------------------------------- *  
   function page_getMainRecord()
-    local loElem, loRow, lcRet, loData, lcStr
+    local loElem, loRow, lcRet, loData, lcStr, llDeleted
     lcRet = ""
     loData = this.oArt
+    llDeleted = loData.Art_Inactive 
     loElem = createobject("aisRecordElement")
     with loElem
       loRow = .getRowObject()
       .cCaption = AisArtistName(m.loData) + " Data"
+      if m.llDeleted
+        .cCssClass = .cCssClass + " deleted"
+        .cCaption = .cCaption + " [DELETED]"
+      endif
       .AddHeading('Key Information')
       
       loRow.clear()
@@ -589,6 +597,9 @@ define class ais_ArtHome as aisArtPage
       .cArt = this.cArt
       .lJoinFacility = .t.
       .lJoinPanel = .t. 
+      if poContext.lAdmin
+        .lInactive = null 
+      endif
       .Execute()
     endwith 
     if loQ.nTally = 0
@@ -603,6 +614,8 @@ define class ais_ArtHome as aisArtPage
       select (loQ.cAlias)
       loTbl = createobject("AisTable")
       with loTbl
+        .cDataRowClass = .cDataRowClass + iif(empty(.cDataRowClass), [], [ + ]) + [iif(Pce_Inactive, " deleted", "")]
+        
         loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
         loCol = .addCursorColumn("Pce_ID", "Piece ID", ;
           [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)], "id-field piece")
@@ -1906,7 +1919,7 @@ enddefine && AisBroadcastForm
 define class AisArtQuery AS L7Query
   cBaseTable = "Artist"
   cDefaultFieldList = ;
-    "Art_PK, Art_ID, Art_Access_Token, Art_Approved, Art_Group_Art_FK, Art_No_Count, Art_Starred, Art_Artist, Art_Anonymous, Art_Unknown, Art_Hidden" + ;
+    "Art_PK, Art_ID, Art_Inactive, Art_Access_Token, Art_Approved, Art_Group_Art_FK, Art_No_Count, Art_Starred, Art_Artist, Art_Anonymous, Art_Unknown, Art_Hidden" + ;
     ", Art_Full_Name, Art_Last_Name, Art_First_Name, Art_Title, Art_Release_Name, Art_Name_Orig" + ; 
     ", Art_Email, Art_Undeliverable, Art_Phone, Art_Neighborhood, Art_Age_Range" + ;
     ", Art_Register_Time, Art_KTB_Response" 
@@ -1914,6 +1927,7 @@ define class AisArtQuery AS L7Query
   cID = null 
 
   * Account-based params:
+  lInactive = .f.  && whole record deleted
   lUser = NULL
   lAccountInactive = null && surrogate is "approved"
   
@@ -1960,7 +1974,11 @@ define class AisArtQuery AS L7Query
 
     with this 
       .lWhereBuilt = .T.
-      .cWhereClause = [WHERE Art_Inactive = .F.] 
+      if isnull(.lInactive)
+        .cWhereClause = [WHERE .t.]
+      else
+        .cWhereClause = [WHERE Art_Inactive = ] + IIF(.lInactive, [.T.], [.F.])
+      endif 
       
       if !isnull(.cID)
         .cWhereClause = .cWhereClause + [ and Art_Id = '] + .cId + [']

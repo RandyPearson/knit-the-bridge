@@ -113,6 +113,7 @@ define class ais_PnlList as aisPnlPage
 
   lPage_Location = null
   cPage_Style = null 
+  cPage_Flags = null
   * --------------------------------------------------------- *
   function BeforeProcessRequest
     local lcStr
@@ -121,6 +122,7 @@ define class ais_PnlList as aisPnlPage
     this.lPage_Location = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
     
     this.cPage_Style = evl(this.ReadQueryString("style", .t., .t.), "table")
+    this.cPage_Flags = this.ReadQueryString("flags", .t., .t.)
 
     dodefault()  && required bubble-up
     return    
@@ -139,6 +141,8 @@ define class ais_PnlList as aisPnlPage
       .addMenuItem(m.lcMenu, 'Panel w/Bridge Locations', StuffUrl(this.cUrlA, 2, "PnlList", "location", "1"))
       .addMenuItem(m.lcMenu, 'Panels Still Available', StuffUrl(this.cUrlA, 2, "PnlList", "location", "0"))
       .addMenuItem(m.lcMenu, 'ALL Panels', StuffUrl(this.cUrlA, 2, "PnlList", "location", .f.))
+
+      .addMenuItem(m.lcMenu, 'Deleted Panels', StuffUrl(this.cUrlA, 2, "PnlList", "flags", "inactive"))
       
     endwith 
     dodefault()
@@ -154,6 +158,10 @@ define class ais_PnlList as aisPnlPage
       .lJoinFacility = .t.
       .lJoinLocation = .t. 
       .lJoinArtist = .t. 
+      if "," + "inactive" + "," $ "," + this.cPage_Flags + ","
+        .lInactive = .t. 
+      endif 
+
       .execute()
     endwith 
     
@@ -201,6 +209,8 @@ define class ais_PnlList as aisPnlPage
     loTbl = createobject("AisTable")
     with loTbl
       .cTableCaption = this.cSubTitle 
+
+      .cDataRowClass = .cDataRowClass + iif(empty(.cDataRowClass), [], [ + ]) + [iif(Pnl_Inactive, " deleted", "")]
       
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Pnl_ID", "Panel ID", ;
@@ -508,14 +518,19 @@ define class ais_PnlHome as aisPnlPage
   endfunc 
   * ----------------------------------------------------- *  
   function page_getMainRecord()
-    local loElem, loRow, lcRet, loData, loPlc, lcFileName
+    local loElem, loRow, lcRet, loData, loPlc, lcFileName, llDeleted
     lcRet = ""
     loData = this.oPnl
+    llDeleted = loData.Pnl_Inactive 
     loPlc = this.oPage_Location 
     loElem = createobject("aisRecordElement")
     with loElem
       loRow = .getRowObject()
       .cCaption = this.cSubTitle
+      if m.llDeleted
+        .cCssClass = .cCssClass + " deleted"
+        .cCaption = .cCaption + " [DELETED]"
+      endif
       .AddHeading('Key Information')
       
       loRow.clear()
@@ -802,7 +817,7 @@ enddefine  && PanelForm
 define class AisPnlQuery as L7Query
   cBaseTable = "Panel"
   cDefaultFieldList = ;
-    "Pnl_PK, Pnl_ID, Pnl_Stitcher_Art_FK, Pnl_Asm_FK, Pnl_Fac_FK, Pnl_Single_Piece" + ;  
+    "Pnl_PK, Pnl_ID, Pnl_Inactive, Pnl_Stitcher_Art_FK, Pnl_Asm_FK, Pnl_Fac_FK, Pnl_Single_Piece" + ;  
     ", Pnl_Dim_1, Pnl_Dim_2, Pnl_Special_Size, Pnl_Completed, Pnl_Comments, Pnl_Notes" 
 
   nOrderBy = 1
@@ -811,6 +826,8 @@ define class AisPnlQuery as L7Query
 
   cID = null 
   
+  lInactive = .f.  && whole record deleted
+
   cAsm = null
   cFac = null
   
@@ -832,7 +849,11 @@ define class AisPnlQuery as L7Query
 
     with this 
       .lWhereBuilt = .T.
-      .cWhereClause = [WHERE Pnl_Inactive = .F.] 
+      if isnull(.lInactive)
+        .cWhereClause = [WHERE .t.]
+      else
+        .cWhereClause = [WHERE Pnl_Inactive = ] + IIF(.lInactive, [.T.], [.F.])
+      endif 
 
       if !isnull(.cID)
         .cWhereClause = .cWhereClause + [ and Pnl_Id = '] + .cId + [']
