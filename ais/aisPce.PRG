@@ -3,6 +3,41 @@
 #INCLUDE WCONNECT.H
 #INCLUDE AIS.H
 
+* --------------------------------------------------------- *
+function aisReleasePieces(toPnl)
+  * Create a panel from a "starter" piece. 
+  * NOTE: no piece data resides with the panel, instead
+  * pieces are connected to their parent panel by FK. 
+  local vp_cPnl_PK, loNewRec, loTrans
+  vp_cPnl_PK = toPnl.Pnl_PK
+  
+  use V_Panel_Piece_Set in select("V_Panel_Piece_Set")
+  cursorsetprop("Buffering", 5, "V_Panel_Piece_Set")
+  select V_Panel_Piece_Set
+  scan
+    if toPnl.Pnl_Single_Piece && assume they should both be deleted
+      replace Pce_Inactive with .t. ;
+        Pce_Notes with "Deleted along with Panel." + CRLF + Pce_Notes
+        
+    else
+      replace Pce_Pnl_FK with "" ;
+        Pce_Notes with "Released from Panel upon deletion." + CRLF + Pce_Notes
+
+    endif 
+    StampRec( CurrentUser, Environ.item("appManager.startTime") )
+  endscan 
+  
+  * Now save using a transaction:
+  local loTrans, loExc
+  
+  loTrans = goL7App.CreateTransaction()
+  loTrans.AddCursor("V_Panel_Piece_Set")
+
+  if !loTrans.Save()  
+    error "Error saving panel: " + loTrans.GetErrorInfo()
+  endif 
+  return 
+endfunc  && aisReleasePieces
 
 *** ========================================================= ***
 define class aisPcePage as aisPage 

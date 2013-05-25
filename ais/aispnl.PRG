@@ -679,6 +679,11 @@ define class ais_PnlForm as aisPnlPage
         StampRec( CurrentUser, THIS.tNow )
         scatter memo name loNewRec 
         
+        * delete/free Pieces if deleted:
+        if !this.lAdding and loNewRec.Pnl_Inactive and !loOldRec.Pnl_Inactive && just deleted
+          aisReleasePieces(m.loNewRec)
+        endif
+
         * Now save the record using a transaction:
         local loTrans, loExc, lcMailMessage, lcExcMessage, llSendEmail
         llSendEmail = .f.  
