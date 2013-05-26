@@ -50,6 +50,11 @@ define class AisLocData AS AisViewData
   cPrefix = "LOC"
 enddefine    
 
+*** ============================================== ***
+define class AisDonData AS AisViewData 
+  cTable = "Donation"
+  cPrefix = "DON"
+enddefine    
 
 
 *** ===================================================== ***

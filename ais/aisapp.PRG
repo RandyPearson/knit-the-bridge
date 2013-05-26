@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     24
+#DEFINE THISAPP_DATABASE_REVISION     25
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -459,6 +459,11 @@ define class AisApp AS KtbApp
       index on Pnl_Special_Size tag Special 
       use in select("Panel")
 
+    case m.lnRev = 25
+      do CreateTable ;
+        with "Donation", this.cDataPath, this.cDataBase
+      use in select("Donation")
+
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
@@ -505,6 +510,7 @@ function CreateEmptyDatabase( lcPath)
 
     ART = Artist
     ASM = Assembly
+    DON = Donation 
     FAC = Facility (storage)
     FIL = Files
     LOC = Location (installation point)
@@ -537,6 +543,7 @@ function CreateEmptyDatabase( lcPath)
   do CreatePieceTable
   do CreatePanelTable
   do CreatePanelLocationTable
+  do CreateDonationTable
 
   *!* do CreateRecipientTable
 
@@ -924,6 +931,49 @@ function CreateFacilityTable  && TABLE added in Rev 11
     [One record per Facility.] )
 endfunc  && CreateFacilityTable
 
+* --------------------------------------------------------- *
+function CreateDonationTable  && Rev 25
+  * Don't declare this PRIVATE. This command allows this procedure
+  * to be run by itself, as in DO <thisproc> IN <thisfile>.PRG:
+  poEnv = GetEnvObject()
+
+  create table ("Donation") name Donation ;
+    ( ;
+      Don_PK C(32) primary key default GetGuid32(), ;
+      Don_Inactive L default .F., ;
+      Don_Art_FK C(32), ;
+      Don_How_Donated C(THISAPP_HOW_DONATED_LEN), ;  && 20
+      Don_Date_Donated D, ;
+      Don_Cash_Amount Y, ;
+      Don_In_Kind_Amount Y, ;
+      Don_Received L, ;
+      Don_List_Name C(60), ;
+      Don_Acknowledged L, ;  
+      Don_Date_Acknowledged D, ;  
+      Don_Acknowledge_Ref M, ;
+      Don_Comments M, ;
+      Don_Notes M, ;
+      Don_Orig_Art_FK C(32), ;
+      Don_Orig_Time T, ;
+      Don_Rev_Art_FK C(32), ;
+      Don_Rev_Time T, ;
+      Don_Revision I NOT NULL DEFAULT 0 ;
+    )
+
+  * Standard 2 Indexes:
+  index on deleted() tag Deleted
+  index on Don_Inactive tag Inactive
+  * Foreign Keys:
+  index on Don_Art_FK tag Art_FK
+  * Other Keys:
+  index on Don_Received tag received
+  index on Don_Acknowledged tag ack 
+     
+  * Comment:
+  dbsetprop("Donation", "Table", "Comment", ;
+    [One record per Donation.] )
+endfunc  && CreateDonationTable
+
 * ---------------------------------------------------------- *
 function CreateFilesTable
   * Don't declare this PRIVATE. This command allows this procedure
@@ -1226,6 +1276,7 @@ FUNCTION CreateViews(lcOneTable, lcDataPath, lcDataBase)
 
     * Sub-sets:
     do CreateChildView WITH "V_Artist_Piece_Set", "Piece", "Pce_Art_FK", "Artist", [Pce_Inactive=.F.]
+    do CreateChildView WITH "V_Artist_Donation_Set", "Donation", "Don_Art_FK", "Donation", [Don_Inactive=.F.]
     do CreateChildView WITH "V_Panel_Piece_Set", "Piece", "Pce_Pnl_FK", "Panel",  [Pce_Inactive=.F.]
     do CreateChildView WITH "V_Panel_File_Set",  "Files", "Fil_Pnl_FK", "Panel",  [Fil_Inactive=.F.]
     do CreateChildView WITH "V_Piece_File_Set",  "Files", "Fil_Pce_FK", "Piece",  [Fil_Inactive=.F.]
@@ -1238,6 +1289,7 @@ FUNCTION CreateViews(lcOneTable, lcDataPath, lcDataBase)
     do CreateAllRecordsView WITH "V_Artists_by_Location", "Artist", "Art_PK", [!Art_Inactive and !empty(Art_ID) and !Art_Hidden], [Art_Neighborhood]
     do CreateAllRecordsView WITH "V_Artists_by_Reg_Time", "Artist", "Art_PK", [!Art_Inactive and !empty(Art_ID) and !Art_Hidden], [Art_Register_Time]
 
+    do CreateAllRecordsView WITH "V_All_Donations",  "Donation", "Don_PK", [!Don_Inactive], [Don_Date_Donated]
     do CreateAllRecordsView WITH "V_All_Locations",  "Location", "Loc_PK", [!Loc_Inactive], [Loc_Side, Loc_No]
     do CreateAllRecordsView WITH "V_All_Facilities", "Facility", "Fac_PK", [!Fac_Inactive], [Fac_Name]
 

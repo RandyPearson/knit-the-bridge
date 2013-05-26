@@ -474,6 +474,9 @@ define class ais_ArtHome as aisArtPage
     if poContext.lAdmin and empty(this.oArt.Art_Group_Art_FK)
       this.addMenuItem("main\This", "Add Contributing Artist...", StuffUrl(this.cUrlA, 2, "AddContributor", "art", this.cArt))
     endif 
+    if poContext.lAdmin 
+      this.addMenuItem("main\This", "Add Donation from Artist...", StuffUrl(this.cUrlA, 2, "DonNew", "art", this.cArt))
+    endif 
 
     dodefault()
     return 
@@ -551,6 +554,12 @@ define class ais_ArtHome as aisArtPage
       .AddRow("Participation", L7ParseOnView(aisFormatParticipation(loData)), .t.)
       
       .AddRow("Participation (from blog)", L7ParseOnView(loData.ART_PARTICIPATION), .t., "private")
+
+      lcStr = this.page_getDonations()
+      if !empty(m.lcStr)
+        .AddHeading('Donations')
+        .AddRow(null, m.lcStr)
+      endif   
 
       .AddRow("Description and Comments", L7ParseOnView(loData.ART_COMMENTS))
       .AddRow("Register Time", loData.ART_REGISTER_TIME, .F.)
@@ -684,7 +693,49 @@ define class ais_ArtHome as aisArtPage
     endif 
     
     return m.lcRet
-  endfunc && page_getPieceInfo
+  endfunc && page_getContributors
+
+  * ----------------------------------------------------- *  
+  function page_getDonations()
+    local lcRet, loQ, loTbl, loCol
+    lcRet = ''
+    loQ = createobject("AisDonQuery")
+    with loQ
+      .cArt = this.cArt
+      .Execute()
+    endwith 
+    if loQ.nTally = 0
+    else
+      urls.add(StuffUrl(this.cUrlA, 2, "DonHome"), "DonHome")
+      
+      select (loQ.cAlias)
+      loTbl = createobject("AisTable")
+      with loTbl
+        .cDataRowClass = .cDataRowClass + iif(empty(.cDataRowClass), [], [ + ]) + [iif(Don_Inactive, " deleted", "")]
+
+        loCol = .addCursorColumn("Don_How_Donated", "How Donated")
+        loCol = .addCursorColumn("Don_Date_Donated", "Date Donated")
+        loCol = .addCursorColumn("Don_Cash_Amount", "Cash Amount")
+        loCol = .addCursorColumn("Don_In_Kind_Amount", "In-Kind Value")
+        loCol = .addCursorColumn("Don_Comments", "Comments")
+        loCol = .addCursorColumn("Don_Received", "Received?")
+        loCol = .addCursorColumn("Don_Acknowledged", "Acknowledged?")
+        loCol = .addCursorColumn("Don_Date_Acknowledged", "Date Acknowledged")
+        loCol = .addCursorColumn("Don_Acknowledge_Ref", "Acknowledge Ref")
+
+        if poContext.lAdmin
+          loCol = .addCursorColumn("Don_Notes", "Notes",, "private")
+          loCol = .addCursorColumn("Don_PK", "Donation Entry", ;
+            'HTLink(StuffUrl(urls.item("DonHome"), "don", Don_PK), "[Donation Details...]")', 'no-print')
+          loCol.cHeadingClass = "nosort no-print" 
+        endif 
+
+        lcRet = m.lcRet + .Render()
+      endwith 
+    endif 
+    
+    return m.lcRet
+  endfunc && page_getDonations
 enddefine && ArtHome
 
 *** ========================================================= ***
