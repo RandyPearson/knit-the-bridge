@@ -717,10 +717,11 @@ define class ais_ArtHome as aisArtPage
         loCol = .addCursorColumn("Don_Date_Donated", "Date Donated")
         loCol = .addCursorColumn("Don_Cash_Amount", "Cash Amount")
         loCol = .addCursorColumn("Don_In_Kind_Amount", "In-Kind Value")
-        loCol = .addCursorColumn("Don_Received", "Received?")
         loCol = .addCursorColumn("Don_Comments", "Comments")
+        loCol = .addCursorColumn("Don_Received", "Received?")
         loCol = .addCursorColumn("Don_Acknowledged", "Acknowledged?")
         loCol = .addCursorColumn("Don_Date_Acknowledged", "Date Acknowledged")
+        loCol = .addCursorColumn("Don_Acknowledge_Ref", "Acknowledge Ref")
 
         if poContext.lAdmin
           loCol = .addCursorColumn("Don_Notes", "Notes",, "private")
