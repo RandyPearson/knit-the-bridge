@@ -46,8 +46,8 @@ define class aisLocPage as aisPage
       .AddSubMenu("This", "BRIDGE LOCATIONS")
       .addMenuItem(m.lcMenu, 'Special Sizes', StuffUrl(this.cUrlA, 2, "LocList", "special", "1"))
       .addMenuItem(m.lcMenu, 'Trapezoids', StuffUrl(this.cUrlA, 2, "LocList", "trapezoid", "1"))
-      .addMenuItem(m.lcMenu, 'Downtown Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Down"))
-      .addMenuItem(m.lcMenu, 'Uptown Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Up"))
+      .addMenuItem(m.lcMenu, 'Down-River Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Down"))
+      .addMenuItem(m.lcMenu, 'Up-River Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Up"))
       .addMenuItem(m.lcMenu, 'All Bridge Locations', StuffUrl(.cUrlA, 2, "LocList"))
       if poContext.lDeveloper
         .addMenuItem(m.lcMenu, "Edit All Locations...", StuffUrl(.cUrlB, 2, "LocBrowse"))
@@ -134,13 +134,13 @@ define class ais_LocList as aisLocPage
 
       if empty(this.cPage_Side) or "Down" $ this.cPage_Side
         .cFilter = [Loc_Side = "Down"]
-        .cTableCaption = "Downtown Side (toward 6th St and The Point)"
+        .cTableCaption = "Down-River Side (toward 6th St and The Point)"
         response.write(.render())
         .Reset()
       endif
       if empty(this.cPage_Side) or "Up" $ this.cPage_Side
         .cFilter = [Loc_Side = "Up  "]
-        .cTableCaption = "Uptown Side (toward 9th St and The Strip)"
+        .cTableCaption = "Up-River Side (toward 9th St and The Strip)"
         response.write(.render())
         .Reset()
       endif
