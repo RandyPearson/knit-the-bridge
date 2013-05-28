@@ -1757,8 +1757,9 @@ define class Ais_Broadcast AS AisPage
 
         loQry = createobject("AisArtQuery")
         with loQry
-          .lAdmin = .t. && admins get everything 
-          
+          if loForm.chkAdmin.vNewValue
+            .lAdmin = .t. 
+          endif
           if loForm.chkCore.vNewValue
             .lCore = .t.
           endif
@@ -1866,7 +1867,8 @@ define class AisBroadcastForm AS AisForm
         .cCssStyle = "width: 40%;"
         .lAutoRender = .T.
         .cDefaultControlPattern = [(%l%s)%c(%s%i)(%b%v)]
-        .cLabel = "Send to Whom"
+        .cLabel = "Limit Sending to Whom"
+        .cInstructions = "If nothing checked, message goes to EVERYBODY!"
         .cInterControlText = L7BR  && CHR(38) + 'nbsp;'       && &nbsp
       endwith
       
@@ -1876,62 +1878,78 @@ define class AisBroadcastForm AS AisForm
         .cLabel = "Artists"
       endwith
 
-      .colWhom.AddObjectToParent("chkCore", "L7Checkbox")
-      with .chkCore
-        .cCaption = "Send to Core Team"
-        .cLabel = "Core Team"
-      endwith
-
       .colWhom.AddObjectToParent("chkInstall", "L7Checkbox")
       with .chkInstall
         .cCaption = "Send to all Installers"
         .cLabel = "Installers"
       endwith
 
+      .colWhom.AddObjectToParent("chkCore", "L7Checkbox")
+      with .chkCore
+        .cCaption = "Send to Core Team"
+        .cLabel = "Core Team"
+      endwith
+
+      .colWhom.AddObjectToParent("chkAdmin", "L7Checkbox")
+      with .chkAdmin
+        .cCaption = "Send to Admins"
+        .cLabel = "AIS Admins"
+      endwith
+
       * From info:
       .AddObject("txtFromName", "L7Textbox")
       WITH .txtFromName
-        .cGroupID = "FROM"
+        *.cGroupID = "FROM"
         .cLabel = "From"
+        .lRequired = .t. 
         .nSize = 30
-        .SetValue(CurrentUser.GetUserName())
+        .SetValue(Config.cActionFrom)
+        *!* .SetValue(CurrentUser.GetUserName())
       ENDWITH
+      .AddObject("txtReplyTo", "L7Textbox")
+      with .txtReplyTo
+        *.cGroupID = "FROM"
+        .cLabel = "Reply-To"
+        .nSize = 30
+        .cInstructions = "Optional reply email address. Use this in conjunction with From field to appear to come from someone else! "
+        *!* .SetValue(TRIM(CurrentUser.oData.Art_Email))
+        .SetValue(Config.cActionEmail)
+      endwith 
+
       .AddObject("txtFromEmail", "L7Textbox")
       WITH .txtFromEmail
-        .cGroupID = "FROM"
+        *.cGroupID = "FROM"
         .cLabel = "From Email *"
+        .lRequired = .t. 
         .cInstructions = "* MUST be a Cycla.com address to survive anti-SPAM measures! Use reply-to to specify a different client address if necessary."
         .nSize = 30
         .SetValue(Config.cAdminEmail) && TRIM(CurrentUser.oData.Par_Email))
       ENDWITH
-      .AddObject("txtReplyTo", "L7Textbox")
-      WITH .txtReplyTo
-        .cGroupID = "FROM"
-        .cLabel = "Reply-To"
-        .nSize = 30
-        .cInstructions = "Optional reply email address. Use this in conjunction with From field to appear to come from someone else! "
-        .SetValue(TRIM(CurrentUser.oData.Art_Email))
-      ENDWITH
-      .AddObject("chkBCC", "L7Checkbox")
-      WITH .chkBCC
-        .cGroupID = "FROM"
-        .cLabel = ""
-        .lNoLabel = .T.
-        .cCaption= "bcc: to myself"
-        .SetValue(.f.)
-      ENDWITH
+
+      *!*        .AddObject("chkBCC", "L7Checkbox")
+      *!*        WITH .chkBCC
+      *!*          .cGroupID = "FROM"
+      *!*          .cLabel = ""
+      *!*          .lNoLabel = .T.
+      *!*          .cCaption= "bcc: to myself"
+      *!*          .SetValue(.f.)
+      *!*        ENDWITH
+
       .AddObject("txtSubject", "L7Textbox")
       WITH .txtSubject
         .cGroupID = "SUBJECT"
-        .cLabel = "Email Subject Line"
+        .lRequired = .t. 
+        .cLabel = "Email Subject (required)"
         .nSize = 80
-      ENDWITH
+      endwith 
+      
       .AddObject("edtMessage", "L7Textarea")
       WITH .edtMessage
         .cLabel = "Body of Message"
         .nRows = 10
         .lRequired = .T.
       ENDWITH
+      
       * Link checkboxes.
       .AddObject("chkMainLink", "L7Checkbox")
       WITH .chkMainLink
@@ -1942,15 +1960,9 @@ define class AisBroadcastForm AS AisForm
         .vOldValue = .T.
         .cCaption= "Include Hyperlink to AIS"
         .SetValue(.f.)
-      ENDWITH
-      *!*        .AddObject("txtNameSrch", "L7Textbox")
-      *!*        WITH .txtNameSrch
-      *!*          .cGroupID = "SEARCH"
-      *!*          .nSize = 30
-      *!*          .cCssStyle = "width: 50%;"
-      *!*          .cLabel = "Person Name Includes"
-      *!*          .cInstructions = "Limits broadcast to people having this string in their name. Supports regular expression searches."
-      *!*        ENDWITH
+      endwith 
+
+      * TESTING-ONLY: 
       .AddObject("chkTesting", "L7Checkbox")
       WITH .chkTesting
         .cGroupID = "TESTING"
@@ -1961,12 +1973,11 @@ define class AisBroadcastForm AS AisForm
         .cCaption= "Don't Broadcast -- Just Testing"
       endwith
     endwith
+    return 
   endfunc 
 enddefine && AisBroadcastForm 
+
 *** ========================================================= ***
-
-
-*** ===================================================== ***
 define class AisArtQuery AS L7Query
   cBaseTable = "Artist"
   cDefaultFieldList = ;
