@@ -526,11 +526,15 @@ define class ais_PnlHome as aisPnlPage
     loElem = createobject("aisRecordElement")
     with loElem
       loRow = .getRowObject()
-      .cCaption = this.cSubTitle
       if m.llDeleted
         .cCssClass = .cCssClass + " deleted"
-        .cCaption = .cCaption + " [DELETED]"
+        this.cSubTitle = this.cSubTitle + " [DELETED]"
       endif
+      if this.oPnl.Pnl_Excluded
+        .cCssClass = .cCssClass + " excluded"
+        this.cSubTitle = this.cSubTitle + " [EXCLUDED]"
+      endif
+      .cCaption = this.cSubTitle
       .AddHeading('Key Information')
       
       loRow.clear()
@@ -596,6 +600,7 @@ define class ais_PnlHome as aisPnlPage
     loQ = createobject("AisPceQuery")
     with loQ
       .cPnl = this.cPnl
+      .lExcluded = null
       .lJoinArtist = .t. 
       .lJoinFacility = .t.
       .Execute()
@@ -741,6 +746,17 @@ define class aisPanelForm as AisForm
         .lDisabled = !m.poContext.lAdmin
         .cCssClass = "FormControlPrivate"
       endwith
+
+      .AddObject("chkExcluded", "L7Checkbox")
+      with .chkExcluded
+        .cGroupID = "ID"
+        .cControlSource = "V_Panel.Pnl_Excluded"
+        .cLabel = "Exclude?"
+        .cCaption = "Excluded"
+        .cInstructions = "Excluding makes panel unavailable for installation."
+        .lDisabled = !m.poContext.lAdmin
+        .cCssClass = "FormControlPrivate"
+      endwith
       
       .AddObject("cboLoc_FK", "L7Popup")
       with .cboLoc_FK
@@ -823,7 +839,7 @@ define class AisPnlQuery as L7Query
   cBaseTable = "Panel"
   cDefaultFieldList = ;
     "Pnl_PK, Pnl_ID, Pnl_Inactive, Pnl_Stitcher_Art_FK, Pnl_Asm_FK, Pnl_Fac_FK, Pnl_Single_Piece" + ;  
-    ", Pnl_Dim_1, Pnl_Dim_2, Pnl_Special_Size, Pnl_Completed, Pnl_Comments, Pnl_Notes" 
+    ", Pnl_Dim_1, Pnl_Dim_2, Pnl_Special_Size, Pnl_Completed, Pnl_Excluded, Pnl_Comments, Pnl_Notes" 
 
   nOrderBy = 1
   dimension aOrderBy[ 1, 2]
@@ -832,6 +848,7 @@ define class AisPnlQuery as L7Query
   cID = null 
   
   lInactive = .f.  && whole record deleted
+  lExcluded = .f.  && by default, omit excluded panels
 
   cAsm = null
   cFac = null
@@ -858,6 +875,9 @@ define class AisPnlQuery as L7Query
         .cWhereClause = [WHERE .t.]
       else
         .cWhereClause = [WHERE Pnl_Inactive = ] + IIF(.lInactive, [.T.], [.F.])
+      endif 
+      if !isnull(.lExcluded)
+        .cWhereClause = .cWhereClause + [ and Pnl_Excluded = ] + iif(.lExcluded, [.t.], [.f.])
       endif 
 
       if !isnull(.cID)

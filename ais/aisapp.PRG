@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     25
+#DEFINE THISAPP_DATABASE_REVISION     26
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -464,6 +464,17 @@ define class AisApp AS KtbApp
         with "Donation", this.cDataPath, this.cDataBase
       use in select("Donation")
 
+    case m.lnRev = 26
+      alter table Panel add column Pnl_Excluded L
+      select Panel
+      index on Pnl_Excluded tag Excluded
+      use in select("Panel")
+
+      alter table Piece add column Pce_Excluded L
+      select Piece
+      index on Pce_Excluded tag Excluded
+      use in select("Piece")
+
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
@@ -725,6 +736,7 @@ function CreatePieceTable
       Pce_PK C(32) primary key default GetGuid32(), ;
       Pce_Inactive L default .F., ;
       Pce_ID C(8), ;
+      Pce_Excluded L, ;  && Rev 26
       Pce_Art_FK C(32), ;
       Pce_Pnl_FK C(32), ;
       Pce_Fac_FK C(32), ; && Rev 12
@@ -758,6 +770,7 @@ function CreatePieceTable
   index on Pce_Received tag received
   index on Pce_Acknowledged tag ack 
   index on Pce_Whole_Panel tag wholePanel
+  index on Pce_Excluded tag Excluded && Rev 26
      
   * Comment:
   dbsetprop("Piece", "Table", "Comment", ;
@@ -776,6 +789,7 @@ function CreatePanelTable
       Pnl_Inactive L default .F., ;
       Pnl_ID C(8), ;
       Pnl_Completed L, ;
+      Pnl_Excluded L, ;  && Rev 26
       Pnl_Stitcher_Art_FK C(32), ;
       Pnl_Asm_FK C(32), ;
       Pnl_Fac_FK C(32), ; && Rev 11
@@ -804,6 +818,7 @@ function CreatePanelTable
   index on Pnl_ID tag Pnl_ID
   index on Pnl_Single_Piece tag Single
   index on Pnl_Special_Size tag Special && Rev 24 
+  index on Pnl_Excluded tag Excluded && Rev 26
      
   * Comment:
   dbsetprop("Panel", "Table", "Comment", ;

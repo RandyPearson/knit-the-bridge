@@ -608,6 +608,7 @@ define class ais_ArtHome as aisArtPage
       .lJoinPanel = .t. 
       if poContext.lAdmin
         .lInactive = null 
+        .lExcluded = null
       endif
       .Execute()
     endwith 
@@ -623,7 +624,8 @@ define class ais_ArtHome as aisArtPage
       select (loQ.cAlias)
       loTbl = createobject("AisTable")
       with loTbl
-        .cDataRowClass = .cDataRowClass + iif(empty(.cDataRowClass), [], [ + ]) + [iif(Pce_Inactive, " deleted", "")]
+        .cDataRowClass = .cDataRowClass + ;
+          iif(empty(.cDataRowClass), [], [ + ]) + [iif(Pce_Inactive, " deleted", "") + iif(Pce_Excluded, " excluded", "")] 
         
         loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
         loCol = .addCursorColumn("Pce_ID", "Piece ID", ;

@@ -169,6 +169,7 @@ define class ais_PceList as aisPcePage
       .addMenuItem(m.lcMenu, "Railings by Facility", StuffUrl(.cUrlB, "order", "fac", "type", "Railings"))
 
       .addMenuItem(m.lcMenu, 'Deleted Pieces',       StuffUrl(.cUrlA, 2, "PceList", "flags", "inactive"))
+      .addMenuItem(m.lcMenu, 'Excluded Pieces',       StuffUrl(.cUrlA, 2, "PceList", "flags", "excluded"))
 
     endwith 
     dodefault()
@@ -186,6 +187,9 @@ define class ais_PceList as aisPcePage
 
       if "," + "inactive" + "," $ "," + this.cPage_Flags + ","
         .lInactive = .t. 
+      endif 
+      if "," + "excluded" + "," $ "," + this.cPage_Flags + ","
+        .lExcluded = .t. 
       endif 
       .lOrphans    = this.lPage_Orphans 
       .lWholePanel = this.lPage_Whole 
@@ -328,7 +332,7 @@ define class ais_PceHome as aisPcePage
   * ----------------------------------------------------- *  
   function AddDefaultMenu
     this.AddSubMenu("This", "This Piece")
-    if this.oPce.Pce_Type = "Panels" and empty(this.oPce.Pce_Pnl_FK)
+    if this.oPce.Pce_Type = "Panels" and empty(this.oPce.Pce_Pnl_FK) and !this.oPce.Pce_Excluded
       this.addMenuItem("main\This,page", "Start Panel from This Piece...", ;
         StuffUrl(this.cUrlA, 2, "PceToPanel", "pce", this.cPce))
     endif 
@@ -558,6 +562,17 @@ define class aisPieceForm as AisForm
         .cCssClass = "FormControlPrivate"
       endwith
 
+      .AddObject("chkExcluded", "L7Checkbox")
+      with .chkExcluded
+        .cGroupID = "ID"
+        .cControlSource = "V_Piece.Pce_Excluded"
+        .cLabel = "Exclude?"
+        .cCaption = "Excluded"
+        .cInstructions = "Excluding makes piece unavailable for inclusion in panels."
+        .lDisabled = !m.poContext.lAdmin
+        .cCssClass = "FormControlPrivate"
+      endwith
+
       if this.cCustom_Type = "Panels"
         .AddObject("chkWhole_Panel", "L7Checkbox")
         with .chkWhole_Panel
@@ -581,7 +596,7 @@ define class aisPieceForm as AisForm
           .cFieldType = "C"
           .cControlSource = "V_piece.Pce_Pnl_Fk"
           .cLabel = "Panel Internal Key"
-          .lDisabled = .t. 
+          .lDisabled = !poContext.lDeveloper
           .cCssClass = "FormControlPrivate"
         endwith 
       endif
@@ -686,7 +701,7 @@ enddefine  && PieceForm
 define class AisPceQuery as L7Query
   cBaseTable = "Piece"
   cDefaultFieldList = ;
-    "Pce_PK, Pce_ID, Pce_Inactive, Pce_Art_FK, Pce_Pnl_FK, Pce_Fac_FK, Pce_Whole_Panel" + ;  
+    "Pce_PK, Pce_ID, Pce_Inactive, Pce_Excluded, Pce_Art_FK, Pce_Pnl_FK, Pce_Fac_FK, Pce_Whole_Panel" + ;  
     ", Pce_Dim_1, Pce_Dim_2, Pce_Comments, Pce_Notes, Pce_Type, Pce_Shipped, Pce_Ship_Date, Pce_Received, Pce_Acknowledged"
 
   nOrderBy = 1
@@ -696,6 +711,7 @@ define class AisPceQuery as L7Query
   cID = null 
 
   lInactive = .f.  && whole record deleted
+  lExcluded = .f.  && by default, omit excluded panels
 
   cArt = null
   cPnl = null
@@ -745,6 +761,9 @@ define class AisPceQuery as L7Query
         .cWhereClause = [WHERE .t.]
       else
         .cWhereClause = [WHERE Pce_Inactive = ] + IIF(.lInactive, [.T.], [.F.])
+      endif 
+      if !isnull(.lExcluded)
+        .cWhereClause = .cWhereClause + [ and Pce_Excluded = ] + iif(.lExcluded, [.t.], [.f.])
       endif 
 
       if !isnull(.cID)
