@@ -24,6 +24,7 @@ classes
 ; L7 removed, and for now ignore: 
 package.json
 json.fll
+vfpencryption71.fll
 
 JUNK
 junk*
