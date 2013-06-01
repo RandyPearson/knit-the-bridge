@@ -472,6 +472,31 @@ DEFINE CLASS L7JsonResponse AS L7Response
   ENDFUNC
 ENDDEFINE  && json response
 
+*** ========================================================= ***
+define class L7HtmlFragmentResponse as L7HtmlResponse
+  * --------------------------------------------------------- *
+  function  CreateHttpHeader
+    return poPieces.oHttpHeader
+  endfunc 
+  * --------------------------------------------------------- *
+  function RenderImplementation(tcText, toHeader)
+    local lcRet
+
+    with m.Page
+      if .lRendered = .T.
+        tcText = m.tcText + .cResult
+        return 
+      endif 
+      
+      lcRet = .oBody.Render()
+      tcText = m.tcText + m.lcRet 
+
+      .lRendered = .T.  && ???
+    endwith 
+    return   
+  endfunc 
+  * --------------------------------------------------------- *
+enddefine   && L7HtmlFragmentResponse 
 
 *** ========================================================= ***
 DEFINE CLASS L7StandardResponse AS L7HtmlResponse
@@ -482,9 +507,10 @@ DEFINE CLASS L7StandardResponse AS L7HtmlResponse
   * --------------------------------------------------------- *
   FUNCTION RenderImplementation(tcText, toHeader)
     WITH m.Page
-      IF .lRendered = .T.
-        RETURN .cResult
-      ENDIF
+      if .lRendered = .T.
+        tcText = m.tcText + .cResult
+        return 
+      endif 
       LOCAL lcBody, lcBodyTag
       IF NOT .lError AND ;
         VARTYPE( .oBody) = "O" AND ;

@@ -172,7 +172,7 @@ DEFINE CLASS L7WwRequest AS wwRequest
   endfunc   && afterInitializeRequest
   * --------------------------------------------------------- *
   function isAJAX
-    return this.GetExtraHeader("HTTP_X_REQUESTED_WITH") = "XMLHttpRequest"
+    return lower(this.GetExtraHeader("HTTP_X_REQUESTED_WITH")) = "xmlhttprequest"
   endfunc 
   * --------------------------------------------------------- *
   function SetPostMode

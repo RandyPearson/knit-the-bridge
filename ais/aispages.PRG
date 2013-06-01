@@ -403,6 +403,24 @@ define class aisPage as L7Page
   endfunc 
 
   * --------------------------------------------------------- *
+  function isAjaxResponse
+    return request.isAJAX()
+  endfunc 
+  * --------------------------------------------------------- *
+  function SetupBodyElement
+    with this
+      if .isAjaxResponse()
+        .oApp.cActiveResponse = "HtmlFragmentResponse"
+        .oBody = createobject("L7PageElement")
+        .oBody.cTag = ""  && no DIV wrapping 
+        .oCurrent = .oBody      
+      else
+        dodefault()
+      endif
+    endwith 
+    return 
+  endfunc  && SetupBodyElement
+  * --------------------------------------------------------- *
   FUNCTION SetupErrorOutput
     THIS.oBody = NULL  && kills any current body
     THIS.SetupBodyElement()
@@ -798,7 +816,55 @@ define class ais_Login as aisPage
     response.write(loForm.Render())
     return
 
-  endfunc
+  endfunc  && ProcessRequest
+enddefine 
+
+*** ========================================================= ***
+define class ais_AjaxHome as aisPage 
+  * --------------------------------------------------------- *
+  function processRequest
+    local lcTmp, lcRet
+    text to lcTmp noshow
+      <h2>Heading</h2>
+      <div id="moreH">Content: </div><div id="moreC"></div>
+      <script>
+        $j(document).ready(function() {
+          $j('#moreH').click(function() {
+            $j("#moreC").load("AjaxInsert.ktb");
+            return false;
+          });
+        }); 
+        
+      </script>
+    endtext
+    lcRet = textmerge(m.lcTmp)
+    response.write(m.lcTmp)
+    return
+  endfunc  && ProcessRequest
+enddefine 
+
+*** ========================================================= ***
+define class ais_AjaxInsert as aisPage 
+  * --------------------------------------------------------- *
+  function processRequest
+      *!*      if !request.isAJAX()
+      *!*        this.badRequest("Only AJAX supported here.")
+      *!*        return 
+      *!*      endif
+      *!*      with this
+      *!*        .lProcessPage = .F.
+      *!*        .oApp.cActiveResponse = "FileResponse"
+      *!*        .oHTTPHeader.cStatus = "200 OK"
+      *!*        .oHTTPHeader.cContentType = "text/html"
+      *!*        
+      *!*        lcMsg = HTWrap("More content", "span")
+      *!*        .cFileContents = m.lcMsg  && avoids need for disk presence
+
+      *!*        .App_Log(L7_SEVERITY_INFO, "OK (200) fragment response sent " )
+      *!*      endwith 
+      response.write(HTWrap("More content", "span"))
+    return
+  endfunc  && ProcessRequest
 enddefine 
 
 
