@@ -9,6 +9,9 @@ function AisArtQueryFlags()
     '{"root": "core", "prompt": "Core Team"}' + ;
     ',{"root": "starred", "prompt": "Starred for KtB Follow-Up"}' + ;
     ',{"root": "install", "field": "Art_Help_Install", "prompt": "Help Install"}' + ;
+    ',{"root": "deinstall", "field": "Art_Help_Deinstall", "prompt": "Help Deinstall"}' + ;
+    ',{"root": "stitching", "field": "Art_Help_Stitching", "prompt": "Help Stitching"}' + ;
+    ',{"root": "monitoring", "field": "Art_Help_Monitoring", "prompt": "Help Monitoring"}' + ;
     ',{"root": "outreach", "field": "Art_Help_Outreach"}' + ;
     ',{"root": "organizer", "prompt": "Community Organizer"}' + ;
     ',{"root": "towers", "prompt": "Machine Knit for Towers"}' + ;
@@ -2009,6 +2012,10 @@ define class AisArtQuery AS L7Query
   lArtist = .F.
   lStarred = null
   lInstall = .F.
+  lDeinstall = .f.
+  lMonitoring = .f. 
+  lStitching = .f.
+
   lOrganizer = .F.
   lOutreach = .f. 
   lTowers = .F.
@@ -2028,6 +2035,7 @@ define class AisArtQuery AS L7Query
   * --------------------------------------------------------- *
   function addParticipationFields
     this.addFields("Art_Towers, Art_Help_Install, Art_Help_Materials, Art_Help_Money, Art_Organizer, Art_Help_Outreach, Art_Help_Other" + ;
+      ", Art_Help_Deinstall, Art_Help_Monitoring, Art_Help_Stitching" + ;
       ", Art_Partial_Panel, Art_Panel_Info, Art_Panel_Count, Art_Railing_1_Count, Art_Railing_2_Count, Art_Railing_3_Count")
     return 
   endfunc

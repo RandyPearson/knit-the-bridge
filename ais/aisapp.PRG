@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     26
+#DEFINE THISAPP_DATABASE_REVISION     27
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -475,6 +475,12 @@ define class AisApp AS KtbApp
       index on Pce_Excluded tag Excluded
       use in select("Piece")
 
+    case m.lnRev = 27
+      alter table Artist add column Art_Help_Deinstall L
+      alter table Artist add column Art_Help_Monitoring L
+      alter table Artist add column Art_Help_Stitching L
+      use in select("Artist")
+
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
@@ -671,6 +677,9 @@ function CreateArtistTable
       Art_Storage_Location M, ;
       Art_Towers L, ; 
       Art_Help_Install L, ;
+      Art_Help_Deinstall L, ;  && Rev 27
+      Art_Help_Monitoring L, ; && Rev 27
+      Art_Help_Stitching L, ;  && Rev 27
       Art_Help_Materials L, ;
       Art_Help_Money L, ;  && Rev 10
       Art_Organizer L, ; && Rev 4 renamed from Art_Help_Meet_Up
