@@ -636,7 +636,7 @@ define class ais_Home as aisPage
     addproperty(m.loState, "estimatedWholePanels", 0)
     addproperty(m.loState, "estimatedBitPanels", 0)
     addproperty(m.loState, "estimatedShortfall", 0)
-    addproperty(m.loState, "noShowFraction", 0.33)
+    addproperty(m.loState, "noShowFraction", 0.75)
     addproperty(m.loState, "bitsPerPerson", 1.70)
     return m.loState
   endfunc && page_getState
