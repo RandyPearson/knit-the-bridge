@@ -1006,6 +1006,24 @@ define class aisArtistForms AS AisForm
         .cCaption = "Help with Installation"
       endwith
       
+      .colPart.AddObjectToParent("chkHelp_Deinstall", "L7Checkbox")
+      with .chkHelp_Deinstall
+        .cControlSource = "V_artist.Art_Help_Deinstall"
+        .cCaption = "Help with Deinstallation"
+      endwith
+
+      .colPart.AddObjectToParent("chkHelp_Monitoring", "L7Checkbox")
+      with .chkHelp_Monitoring
+        .cControlSource = "V_artist.Art_Help_Monitoring"
+        .cCaption = "Help with Monitoring"
+      endwith
+
+      .colPart.AddObjectToParent("chkHelp_Stitching", "L7Checkbox")
+      with .chkHelp_Stitching
+        .cControlSource = "V_artist.Art_Help_Stitching"
+        .cCaption = "Help with Stitching"
+      endwith
+
       .colPart.AddObjectToParent("chkHelp_Materials", "L7Checkbox")
       with .chkHelp_Materials
         .cControlSource = "V_artist.Art_Help_Materials"
