@@ -95,11 +95,15 @@ function aisFormatParticipation(toData)
       "* 9 x 80 Railing pieces: " + transform(loData.Art_Railing_3_Count) + crlf) + ;
     iif(!loData.ART_TOWERS, "", "* Machine Knitting for Towers" + crlf) + ;
     iif(!loData.ART_HELP_INSTALL, "", "* Helping with *Installation*" + crlf) + ;
+    iif(!loData.ART_HELP_DEINSTALL, "", "* Helping with *Deinstallation*" + crlf) + ;
+    iif(!loData.ART_HELP_Monitoring, "", "* Helping with *Monitoring*" + crlf) + ;
+    iif(!loData.ART_HELP_Stitching, "", "* Helping with *Stitching*" + crlf) + ;
     iif(!loData.ART_HELP_MATERIALS, "", "* Donating Materials" + crlf) + ;
     iif(!loData.ART_HELP_Money, "", "* Donating Money" + crlf) + ;
     iif(!loData.ART_Organizer, "", "* Community Organizer" + crlf) + ;
     iif(!loData.ART_HELP_OUTREACH, "", "* Helping with Outreach" + crlf) + ;
     iif(empty(loData.ART_HELP_OTHER), "", "* " + loData.ART_HELP_OTHER)
+
   return m.lcRet
 endfunc && aisFormatParticipation
 *** ========================================================= ***
