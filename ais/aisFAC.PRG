@@ -100,6 +100,7 @@ define class ais_FacList as aisFacPage
       loCol = .addCursorColumn("Fac_Address", "Comments", [L7ParseOnView(Fac_Comments)])
       loCol = .addCursorColumn("Fac_PK", "Edit Facility", ;
         'HTLink(StuffUrl(urls.item("FacForm"), "fac", Fac_PK), "[Edit Facility...]")')
+      loCol = .addCursorColumn("Fac_Order", "Order")
       response.write(.render())
     endwith 
     
@@ -271,12 +272,11 @@ define class ais_FacForm as aisFacPage
             "Error " + TRANSFORM( loTrans.aFailures[1, 1]) + [ :] + ;
             loTrans.aFailures[1, 2] )
         endif  && Save()
-        
-      endif 
+      endif && Valid
 
-    endwith 
+    endwith && form
     response.write(loForm.render())
-  endfunc 
+  endfunc && ProcessRequest 
 enddefine && ais_FacForm
 
 *** ========================================================= ***
