@@ -560,6 +560,9 @@ define class ais_PnlHome as aisPnlPage
       .AddRow("Width", loData.Pnl_Dim_2)
       .AddRow("Special Size?", iif(loData.Pnl_Special_Size, "Special Size", "no"))
       .AddRow("Description and Comments", L7ParseOnView(loData.Pnl_COMMENTS), .t.)
+      if poContext.lCore
+        .AddRow("Internal KtB Notes", L7ParseOnView(loData.Pnl_NOTES), .t., "private")
+      endif
 
       .AddRow("Completed?", loData.Pnl_Completed)
       .AddRow("Artist Name", ;
@@ -574,10 +577,6 @@ define class ais_PnlHome as aisPnlPage
       
       .AddHeading('Pieces Comprising Panel')
       .AddRow(null, this.page_getPieceInfo())
-
-      if poContext.lCore
-        .AddRow("Internal KtB Notes", L7ParseOnView(loData.Pnl_NOTES), .t., "private")
-      endif
 
       if poContext.lCore
         .AddHeading('Administrative Information')
@@ -725,7 +724,7 @@ define class aisPanelForm as AisForm
           .cGroupID = "ID"
           .cFieldType = "C"
           .cControlSource = "V_Panel.Pnl_Id"
-          .cLabel = "Pacel ID"
+          .cLabel = "Panel ID"
           .lDisabled = .t. 
         endwith
       endif 

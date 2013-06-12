@@ -390,6 +390,9 @@ define class ais_PceHome as aisPcePage
 
       endif
       .AddRow("Description and Comments", L7ParseOnView(loData.Pce_COMMENTS))
+      if poContext.lCore
+        .AddRow("Internal KtB Notes", L7ParseOnView(loData.Pce_NOTES), .F., "private")
+      endif
 
       .AddHeading('Logistical Information')
       .AddRow("Shipped/Delivered?", loData.Pce_Shipped)
@@ -397,9 +400,6 @@ define class ais_PceHome as aisPcePage
       .AddRow("Received?", loData.Pce_RECEIVED)
       .AddRow("Acknowledged?", loData.Pce_Acknowledged)
       .AddRow("Current Storage Facility", iif(m.llPanel, "(panel) " + AisFacilityName(this.oPnl.Pnl_Fac_FK), AisFacilityName(loData.Pce_Fac_FK)))
-      if poContext.lCore
-        .AddRow("Internal KtB Notes", L7ParseOnView(loData.Pce_NOTES), .F., "private")
-      endif
 
       if poContext.lCore
         .AddHeading('Administrative Information')
@@ -451,7 +451,8 @@ define class ais_PceForm as aisPcePage
     this.cCancelUrl = iif(this.lAdding, StuffURL(THIS.cUrlA, 2, "ArtHome", "art", this.cArt), ;
       StuffURL(THIS.cUrlB, 2, "PceHome"))
 
-    local loForm, vp_cPce_PK, loOldRec, loNewRec, loPnl
+    local loForm, vp_cPce_PK, loOldRec, loNewRec, loPnl, loConfirmMsgs 
+    loConfirmMsgs = createobject("Collection")
     vp_cPce_PK = IIF(THIS.lAdding, space(32), THIS.cPce)
     use V_Piece in select("V_Piece")
     if !this.lAdding
@@ -477,7 +478,9 @@ define class ais_PceForm as aisPcePage
         endif 
         if empty(Pce_Id)
           replace Pce_ID with AisAssignID(icase(Pce_Type = "Railings", "RLG", "PCE"))
+          loConfirmMsgs.add("PIECE ID assigned: " + Pce_ID) 
         endif
+
         .UpdateControlSources()
         select V_Piece  && UpdateControlSources can alter work area
         StampRec( CurrentUser, THIS.tNow )
@@ -486,7 +489,8 @@ define class ais_PceForm as aisPcePage
         * create Panel if indicated:
         if loNewRec.Pce_Whole_Panel and empty(loNewRec.Pce_Pnl_FK)
           loPnl = AisCreatePanel(m.loNewRec)
-          select v_piece
+          loConfirmMsgs.add("PANEL ID assigned: " + loPnl.Pnl_ID) 
+          select v_Piece
           replace Pce_Pnl_FK with loPnl.Pnl_PK
           scatter memo name loNewRec && re-scatter needed 
         endif
@@ -499,7 +503,8 @@ define class ais_PceForm as aisPcePage
 
         if loTrans.Save()  
           select V_Piece
-          Response.Redirect(THIS.cCancelUrl)
+          *!* Response.Redirect(THIS.cCancelUrl)
+          this.ConfirmOrRedirect(m.loConfirmMsgs, this.cCancelUrl)
           return 
         else 
           this.ErrorMsg( "Database Failure Saving Record!", ;
@@ -512,6 +517,21 @@ define class ais_PceForm as aisPcePage
     response.write(loForm.render())
     return 
   endfunc  && ProcessRequest 
+  * --------------------------------------------------------- *
+  function ConfirmOrRedirect(toMsgs, tcUrl)
+    local lcMsg, lcMsgs
+    if toMsgs.count = 0
+      response.redirect(m.tcUrl)
+    else
+      lcMsgs = "<ul>"
+      for each lcMsg in toMsgs
+        lcMsgs = m.lcMsgs + HtWrap(m.lcMsg, "li")
+      next 
+      lcMsgs = m.lcMsgs + "</ul>"
+      this.confirm(m.lcMsgs, m.tcUrl)
+    endif
+    return 
+  endfunc && ConfirmOrRedirect
 enddefine && ais_PceForm
 
 *** ========================================================= ***
@@ -519,7 +539,7 @@ define class aisPieceForm as AisForm
   cTitle = "Piece Form"
   cCustom_Type = null 
   * --------------------------------------------------------- *
-  function  AddControls
+  function AddControls
     with this
       if !this.lNewRecord
         .AddObject("txtId", "L7Textbox")
@@ -532,8 +552,8 @@ define class aisPieceForm as AisForm
         endwith
       endif 
       
-      .AddObject("txtArt_Fk", "L7Label")
-      with .txtArt_Fk
+      .AddObject("lblArt_Fk", "L7Label")
+      with .lblArt_Fk
         .cGroupID = "ID"
         .cFieldType = "C"
         .cControlSource = "V_piece.Pce_Art_Fk"
@@ -544,6 +564,18 @@ define class aisPieceForm as AisForm
         .lDisabled = .t.  && !m.poContext.lAdmin
         .cShowExpression = [aisArtistName(Page.cArt)]
       endwith 
+      
+      if poContext.lDeveloper and !this.lNewRecord
+        .AddObject("txtArt_Fk", "L7Textbox")
+        with .txtArt_Fk
+          .cGroupID = "ID"
+          .cFieldType = "C"
+          .cControlSource = "V_piece.Pce_Art_Fk"
+          .cLabel = "Artist Internal Key"
+          .lDisabled = !poContext.lDeveloper
+          .cCssClass = "FormControlPrivate"
+        endwith 
+      endif 
 
       .AddObject("lblPk", "L7Label")
       with .lblPk
@@ -573,6 +605,25 @@ define class aisPieceForm as AisForm
         .cCssClass = "FormControlPrivate"
       endwith
 
+      .AddObject("cboLoc_FK", "L7Popup")
+      with .cboLoc_FK
+        .cControlSource = "V_Piece.Pce_Fac_FK"
+        .lRequired = .T.
+        .cLabel = "Piece Location"
+        .cInstructions = "Not applicable once panel exists. Track panel location instead." 
+        .lAutoRender = .T.
+        .nRowSourceType = L7_ROWSOURCETYPE_ALIAS
+        .cRowSource = goL7App.cFacAlias  
+        *!* ex: .cFilterExpression = [Fac_Storage = .t.]
+        .cValueExpression = [Fac_PK]
+        .cLabelExpression = [Fac_Name]
+        .vFirstItemValue = space(32) && 0 for integer keys
+        .cFirstItemLabel = "[ select from choices below ]"
+        if this.lNewRecord
+          .SetValue(THISAPP_DEFAULT_FACILITY) 
+        endif 
+      endwith 
+
       if this.cCustom_Type = "Panels"
         .AddObject("chkWhole_Panel", "L7Checkbox")
         with .chkWhole_Panel
@@ -590,15 +641,17 @@ define class aisPieceForm as AisForm
           .cInterControlText = NULL 
         endwith 
         
-        .AddObject("txtPnl_Fk", "L7Textbox")
-        with .txtPnl_Fk
-          .cGroupID = "PANEL"
-          .cFieldType = "C"
-          .cControlSource = "V_piece.Pce_Pnl_Fk"
-          .cLabel = "Panel Internal Key"
-          .lDisabled = !poContext.lDeveloper
-          .cCssClass = "FormControlPrivate"
-        endwith 
+        if !this.lNewRecord
+          .AddObject("txtPnl_Fk", "L7Textbox")
+          with .txtPnl_Fk
+            .cGroupID = "PANEL"
+            .cFieldType = "C"
+            .cControlSource = "V_piece.Pce_Pnl_Fk"
+            .cLabel = "Panel Internal Key"
+            .lDisabled = !poContext.lDeveloper
+            .cCssClass = "FormControlPrivate"
+          endwith 
+        endif 
       endif
       
       .AddObject("txtDim_1", "L7Textbox")
@@ -635,22 +688,31 @@ define class aisPieceForm as AisForm
 
       .AddObject("edtComments", "L7Textarea")
       with .edtComments
-        * .cGroupID = "NOTES"
+        .cGroupID = "NOTES"
         .cControlSource = "V_piece.Pce_Comments"
         .cLabel = "Description and Comments"
         .nRows = 2
       endwith 
 
+      .AddObject("edtNotes", "L7Textarea")
+      with .edtNotes
+        .cGroupID = "NOTES"
+        .cControlSource = "V_piece.Pce_Notes"
+        .cLabel = "Internal KtB Notes"
+        .nRows = 2
+        .cCssClass = "FormControlPrivate"
+      endwith
+
       .AddObject("chkShipped", "L7Checkbox")
       with .chkShipped
-        .cGroupID = "STATUS"
+        *.cGroupID = "STATUS"
         .cControlSource = "V_piece.Pce_Shipped"
         .cLabel = "Shipped/Delivered?"
       endwith 
 
       .AddObject("txtShip_Date", "L7Textbox")
       with .txtShip_Date
-        .cGroupID = "STATUS"
+        *.cGroupID = "STATUS"
         .cFieldType = "D"
         .cControlSource = "V_Piece.Pce_Ship_Date"
         .cLabel = "Ship/delivery date (expected or actual)"
@@ -659,39 +721,12 @@ define class aisPieceForm as AisForm
 
       .AddObject("chkReceived", "L7Checkbox")
       with .chkReceived
-        .cGroupID = "STATUS"
+        *.cGroupID = "STATUS"
         .cControlSource = "V_piece.Pce_Received"
         .cLabel = "Received?"
         .cCssClass = "FormControlPrivate"
       endwith 
 
-      .AddObject("cboLoc_FK", "L7Popup")
-      with .cboLoc_FK
-        .cControlSource = "V_Piece.Pce_Fac_FK"
-        .lRequired = .F.
-        .cLabel = "Piece Location"
-        .cInstructions = "Not applicable once panel exists. Track panel location instead." 
-        .lAutoRender = .T.
-        .nRowSourceType = L7_ROWSOURCETYPE_ALIAS
-        .cRowSource = goL7App.cFacAlias  
-        *!* ex: .cFilterExpression = [Fac_Storage = .t.]
-        .cValueExpression = [Fac_PK]
-        .cLabelExpression = [Fac_Name]
-        .vFirstItemValue = space(32) && 0 for integer keys
-        .cFirstItemLabel = "[ select from choices below ]"
-        if this.lNewRecord
-          *!* .SetValue(something from Page context....)
-        endif 
-      endwith 
-
-      .AddObject("edtNotes", "L7Textarea")
-      with .edtNotes
-        .cGroupID = "NOTES"
-        .cControlSource = "V_piece.Pce_Notes"
-        .cLabel = "Internal KtB Notes"
-        .nRows = 3
-        .cCssClass = "FormControlPrivate"
-      endwith
     endwith
     return 
   endfunc && AddControls 

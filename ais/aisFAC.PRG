@@ -291,7 +291,7 @@ define class aisFacilityForm as AisForm
           .cGroupID = "ID"
           .cFieldType = "C"
           .cControlSource = "V_Facility.Fac_Id"
-          .cLabel = "Pacel ID"
+          .cLabel = "Facility ID"
           .lDisabled = .t. 
         endwith
       endif 
