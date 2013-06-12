@@ -417,7 +417,7 @@ enddefine  && FacilityForm
 define class AisFacQuery as L7Query
   cBaseTable = "Facility"
   cDefaultFieldList = ;
-    "Fac_PK, Fac_ID, Fac_Name, Fac_Storage, Fac_DropOff" + ;  
+    "Fac_PK, Fac_ID, Fac_Name, Fac_Order, Fac_Storage, Fac_DropOff" + ;  
     ", Fac_Address, Fac_Contact, Fac_Comments" 
 
   nOrderBy = 1
