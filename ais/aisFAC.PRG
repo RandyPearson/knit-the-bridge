@@ -144,20 +144,25 @@ define class ais_FacPanelMove as aisFacPage
         return 
       endif
     endwith 
-*!*      text to lcStr noshow pretext 7 
-*!*      <a id="check-all" href="#">Check All</a>
-*!*      <a id="check-none" href="#">Check None</a>
-*!*      <script> 
-*!*        $j(document).ready(function() {
-*!*          $j('#check-all').click( function() {
-*!*            $j('form input:checkbox').each(function() {this.attr('checked', 'checked');});
-*!*            return false;
-*!*          });
-*!*        });
-*!*      </script>
-*!*      
-*!*      endtext
-*!*      response.write(m.lcStr)
+    * check all/none links:    
+    text to lcStr noshow pretext 7 
+      <a id="check-all" href="">[Check All]</a>
+      <a id="check-none" href="">[Check None]</a>
+      <script> 
+        $j(document).ready(function() {
+          $j('#check-all').click( function() {
+            $j('form input:checkbox').each(function() {$j(this).attr('checked', true);});
+            return false;
+          });
+          $j('#check-none').click( function() {
+            $j('form input:checkbox').each(function() {$j(this).attr('checked', false);});
+            return false;
+          });
+        });
+      </script>
+    
+    endtext
+    response.write(m.lcStr)
     response.write(loForm.render())    
     return 
   endfunc 

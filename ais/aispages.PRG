@@ -844,6 +844,27 @@ define class ais_AjaxHome as aisPage
     endtext
     lcRet = textmerge(m.lcTmp)
     response.write(m.lcTmp)
+
+    text to lcTmp noshow
+      <a id="lnkCheckAll">Check All</a>
+      <form id="frm">
+        <input id="chk1" type="checkbox" value="ON"></input> A<br>
+        <input id="chk2" type="checkbox" value="ON"></input> B<br>
+      </form>
+      
+      <script>
+        $j(document).ready(function() {
+          $j('#lnkCheckAll').click(function() {
+            $j("form input:checkbox").each(function() {$j(this).attr('checked', 'checked');});
+            return false;
+          });
+        }); 
+        
+      </script>
+    endtext
+    lcRet = textmerge(m.lcTmp)
+    response.write(m.lcTmp)
+
     return
   endfunc  && ProcessRequest
 enddefine 
