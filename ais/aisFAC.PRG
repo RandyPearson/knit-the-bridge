@@ -109,11 +109,157 @@ define class ais_FacList as aisFacPage
 enddefine 
 
 *** ========================================================= ***
+define class ais_FacPanelMove as aisFacPage 
+  cPage_Alias = "V_Facility_Panel_Set"
+  cPage_Entity = "Panel" 
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    this.cCancelUrl = StuffUrl(this.cUrlB, 2, "FacHome")
+    local loForm, vp_cFac_PK, loOldRec, loNewRec, lcXml, lcFacName, lcFac_PK, lnMoves
+    lnMoves = 0
+    vp_cFac_PK = THIS.cFac
+    use (this.cPage_Alias) in select(this.cPage_Alias)
+    cursorsetprop("Buffering", 5, this.cPage_Alias)
+    
+    loForm = this.createForm('aisFacMoveForm', this.cUrlC)
+    with loForm
+      .cCustom_Entity = this.cPage_Entity
+      .AddControls()
+      .DoEvents()
+      if .Valid() and this.page_Valid(m.loForm)
+        lcFac_PK = .cboLoc_FK.vNewValue
+        lcFacName = AisFacilityName(m.lcFac_PK)
+        select (this.cPage_Alias)
+        scan
+          if request.form("chkMove_" + Pnl_PK) = "ON"
+            replace Pnl_Fac_FK with m.lcFac_PK
+            replace Pnl_History with Pnl_History + dtoc(date()) + " moved to: " + m.lcFacName + CRLF 
+            StampRec( CurrentUser, THIS.tNow )
+            lnMoves = m.lnMoves + 1 
+          endif 
+        endscan 
+        lcXml = ''
+        this.AssertTransaction(this.cPage_Alias, @lcXml)
+        this.confirm(textmerge('<<m.lnMoves>> items moved'), this.cCancelUrl)
+        return 
+      endif
+    endwith 
+*!*      text to lcStr noshow pretext 7 
+*!*      <a id="check-all" href="#">Check All</a>
+*!*      <a id="check-none" href="#">Check None</a>
+*!*      <script> 
+*!*        $j(document).ready(function() {
+*!*          $j('#check-all').click( function() {
+*!*            $j('form input:checkbox').each(function() {this.attr('checked', 'checked');});
+*!*            return false;
+*!*          });
+*!*        });
+*!*      </script>
+*!*      
+*!*      endtext
+*!*      response.write(m.lcStr)
+    response.write(loForm.render())    
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_Valid(loForm)
+    local llValid
+    llValid = .t.
+    if loForm.cboLoc_FK.vNewValue = this.cFac
+      loForm.cboLoc_FK.addValidationMessage("Cannot move to same facility!")
+      llValid = .f.
+    endif
+    return m.llValid
+  endfunc 
+  * ----------------------------------------------------- *  
+enddefine && ais_FacPanelMove
+
+*** ========================================================= ***
+define class aisFacMoveForm as AisForm
+  cTitle = "Facility Bulk <<this.cCustom_Entity>> Move"
+  cCustom_Entity = null 
+  cCustom_Alias = null
+  cCustom_Prefix = null
+  * --------------------------------------------------------- *
+  function  AddControls
+    with this
+      this.cTitle = textmerge(this.cTitle)
+      this.cCustom_Alias = "V_Facility_" + this.cCustom_Entity + "_Set"
+      this.cCustom_Prefix = iif(lower(this.cCustom_Entity) == "panel", "Pnl", "Pce")
+
+      .AddObject("lblFrom", "L7Label")
+      with .lblFrom
+        .cFieldType = "C"
+        .cLabel = "Move From Where?"
+        .cShowExpression = [AisFacilityName(page.cFac)]
+      endwith 
+
+      .AddObject("cboLoc_FK", "L7Popup")
+      with .cboLoc_FK
+        .lRequired = .t.
+        .cLabel = "Move Where?"
+        .lAutoRender = .T.
+        .nRowSourceType = L7_ROWSOURCETYPE_ALIAS
+        .cRowSource = goL7App.cFacAlias  
+        .cValueExpression = [Fac_PK]
+        .cLabelExpression = [Fac_Name]
+        .vFirstItemValue = space(32) && 0 for integer keys
+        .cFirstItemLabel = "[ select from choices below ]"
+      endwith 
+
+      .AddObject('grdBrowse', 'L7Grid')
+      with .grdBrowse
+        .cChildAlias = this.cCustom_Alias
+        .cChildKeyExpression = this.cCustom_Alias + "." + this.cCustom_Prefix + "_PK"
+        .nExtraRows = 0 && don't permit adds 
+        .cGridTableCssClass = "sortable " + .cGridTableCssClass 
+        .cColumnHeaderCssClass = "nosort" && sortable doesn't work for live controls, so override on specific labels
+      
+        .AddObject("lblId", "L7Label")
+        with .lblId
+          .cFieldType = "C"
+          .cControlSource = this.cCustom_Alias + "." + this.cCustom_Prefix + "_ID"
+          .cLabel = "ID"
+          .cColumnHeaderCssClass = "sort" 
+        endwith 
+
+        .AddObject("chkMove", "L7Checkbox")
+        with .chkMove
+          .cHtmlName = ""
+          .cIDPrefix = ""
+          .cLabel = "Move Which?"
+          .cCaption = "Move"
+          .SetValue(.t.)
+        endwith 
+
+        if this.cCustom_Entity = "Panel"
+          .AddObject("lblImage", "L7Label")
+          with .lblImage
+            .cFieldType = "C"
+            .cShowExpression = [AisPanelImage(Pnl_Id, "_h25")]
+            .cLabel = "Image"
+          endwith 
+        endif 
+
+        .AddObject("lblComments", "L7Label")
+        with .lblComments
+          .cFieldType = "C"
+          .cControlSource = this.cCustom_Alias + "." + this.cCustom_Prefix + "_Comments"
+          .cLabel = "Comments"
+        endwith 
+        
+      endwith && GRID
+    endwith  && FORM
+  endfunc
+enddefine && aisFacMoveForm 
+
+*** ========================================================= ***
 define class ais_FacHome as aisFacPage 
   * ----------------------------------------------------- *  
   function AddDefaultMenu
     this.AddSubMenu("This", "This Facility")
     this.addMenuItem("main\This,page", "Edit Facility...", StuffUrl(this.cUrlA, 2, "FacForm", "Fac", this.cFac))
+    this.addMenuItem("main\This,page", "Move All Panels...", StuffUrl(this.cUrlA, 2, "FacPanelMove", "Fac", this.cFac))
     this.addMenuItem("main\This,page", "List of Facilities", StuffUrl(this.cUrlA, 2, "FacList"))
     dodefault()
     return 
@@ -124,7 +270,7 @@ define class ais_FacHome as aisFacPage
     response.write(this.page_getMainRecord())
 
     if poContext.lAdmin
-      response.write(HTWrap(L7ShowObject(this.oFac, , [class="record"]),'div','admin'))
+      *!*        response.write(HTWrap(L7ShowObject(this.oFac, , [class="record"]),'div','admin'))
     endif
     return 
   endfunc 

@@ -348,7 +348,7 @@ define class ais_PceHome as aisPcePage
     response.write(this.page_getMainRecord())
 
     if poContext.lAdmin
-      response.write(HTWrap(L7ShowObject(this.oPce, , [class="record"]),'div','admin'))
+    *!*        response.write(HTWrap(L7ShowObject(this.oPce, , [class="record"]),'div','admin'))
     endif
     return 
   endfunc 
@@ -609,7 +609,7 @@ define class aisPieceForm as AisForm
       with .cboLoc_FK
         .cControlSource = "V_Piece.Pce_Fac_FK"
         .lRequired = .T.
-        .cLabel = "Piece Location"
+        .cLabel = "Current Storage Facility"
         .cInstructions = "Not applicable once panel exists. Track panel location instead." 
         .lAutoRender = .T.
         .nRowSourceType = L7_ROWSOURCETYPE_ALIAS

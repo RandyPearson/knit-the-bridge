@@ -585,7 +585,8 @@ define class ais_Home as aisPage
 
     loQ = createobject("AisArtQuery")
     with loQ
-      .lPanelsSubmitted = .f. && don't count folks who have submitted
+      * .lPanelsSubmitted = .f. && don't count folks who have submitted
+      .lBitsOrPanelsSubmitted = .f.
       .lArrayResults = .t.
       .ClearFields()
       .AddFields([sum(Art_Panel_Count)])
@@ -661,33 +662,36 @@ define class ais_Home as aisPage
           <tr><th>x 2 = Total Panel Requirement</th>
             <td></td><td class="total"><<2 * (loState.Locations - loState.skippedLocations)>></td></tr>
             
+          <tr><th>Total (non-excluded) Panels Logged</th>
+            <td></td><td class="total"><<loState.actualPanels>></td></tr>
+
           <tr><th>- Panels with Locations Assigned</th>
             <td></td><td><<loState.locatedPanels>></td></tr>
 
-          <tr><th>- Panels Available for Assignment</th>
+          <tr><th>- Panels Available for Location Assignment</th>
             <td></td><td><<loState.unlocatedPanels>></td></tr>
             
           <tr><th>Panels Still Needed</th>
             <td></td><td class="total"><<loState.neededPanels>></td></tr>
 
-          <tr><th>Pessimistic No-Show Percent</th>
-            <td><<round(100 * loState.noShowFraction,0)>>%</td><td></td></tr>
-
-          <tr><th>Whole Panels Pending Delivery</th>
+          <tr><th>Whole Panels No-Shows</th>
             <td><<loState.duePanels>></td><td></td></tr>
 
-          <tr><th>- Est. Contribution from Pending Panels</th>
-            <td></td><td><<loState.estimatedWholePanels>></td></tr>
-
-          <tr><th>- Est. Contribution from Pending Bits</th>
-            <td></td><td><<loState.estimatedBitPanels>></td></tr>
-
-          <tr class="total"><th>Pessimistic Panel Shortfall</th>
-            <td></td><td class="<<iif(loState.estimatedShortfall <= 0,'good','bad')>>"><<loState.estimatedShortfall>></td></tr>
 
         </tbody>
       </table>
     endtext 
+
+*!*            <tr><th>Pessimistic No-Show Percent</th>
+*!*              <td><<round(100 * loState.noShowFraction,0)>>%</td><td></td></tr>
+*!*            <tr class="total"><th>Pessimistic Panel Shortfall</th>
+*!*              <td></td><td class="<<iif(loState.estimatedShortfall <= 0,'good','bad')>>"><<loState.estimatedShortfall>></td></tr>
+*!*            <tr><th>- Est. Contribution from Pending Panels</th>
+*!*              <td></td><td><<loState.estimatedWholePanels>></td></tr>
+
+*!*            <tr><th>- Est. Contribution from Pending Bits</th>
+*!*              <td></td><td><<loState.estimatedBitPanels>></td></tr>
+
     return m.lcTmp
   endfunc && page_getTemplate
 enddefine && Home 

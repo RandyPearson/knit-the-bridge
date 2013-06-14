@@ -512,7 +512,7 @@ define class ais_PnlHome as aisPnlPage
     response.write(this.page_getMainRecord())
 
     if poContext.lAdmin
-      response.write(HTWrap(L7ShowObject(this.oPnl, , [class="record"]),'div','admin'))
+    *!*        response.write(HTWrap(L7ShowObject(this.oPnl, , [class="record"]),'div','admin'))
     endif
     return 
   endfunc 
@@ -582,6 +582,7 @@ define class ais_PnlHome as aisPnlPage
         .AddHeading('Administrative Information')
         .AddRow("Pk", TRIM(loData.Pnl_PK), .F., "private")
         .AddRow("Deleted", loData.Pnl_INACTIVE, .t., "private")
+        .AddRow("History", L7ParseOnView(loData.Pnl_History))
         .AddRow("Created", TRANSFORM(loData.Pnl_ORIG_TIME) + [ by ] + AisArtistName(loData.Pnl_Orig_Art_FK), .F., "private")
         .AddRow("Last Modified", TRANSFORM(loData.Pnl_REV_TIME) + [ by ] + AisArtistName(loData.Pnl_Rev_Art_FK), .F., "private")
       endif
@@ -761,7 +762,7 @@ define class aisPanelForm as AisForm
       with .cboLoc_FK
         .cControlSource = "V_Panel.Pnl_Fac_FK"
         .lRequired = .t.
-        .cLabel = "Current Location"
+        .cLabel = "Current Storage Facility"
         .lAutoRender = .T.
         .nRowSourceType = L7_ROWSOURCETYPE_ALIAS
         .cRowSource = goL7App.cFacAlias  

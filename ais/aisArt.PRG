@@ -2022,6 +2022,8 @@ define class AisArtQuery AS L7Query
   
   lBitsSubmitted = null 
   lPanelsSubmitted = null 
+  lBitsOrPanelsSubmitted = null
+  
   lKtbResponse = null
   lNoCount = null 
   cGroupArt = null 
@@ -2125,16 +2127,21 @@ define class AisArtQuery AS L7Query
         .cWhereClause = .cWhereClause + [ AND ] + IIF(.lKtbResponse, [!], []) + [empty(Art_KTB_Response)]
       endif 
 
+      if !isnull(.lBitsOrPanelsSubmitted)
+        .cWhereClause = .cWhereClause + [ and Art_PK] + iif(.lBitsOrPanelsSubmitted, [ in ], [ not in ]) + ;
+          [(select Pce_Art_FK from Piece where !Pce_Inactive and Pce_Type = 'Panels')]
+      endif 
+      
       if !isnull(.lPanelsSubmitted)
         .cWhereClause = .cWhereClause + [ and Art_PK] + iif(.lPanelsSubmitted, [ in ], [ not in ]) + ;
-          [(select Pce_Art_FK from Piece where !Pce_Inactive and Pce_Whole_Panel)]
+          [(select Pce_Art_FK from Piece where !Pce_Inactive and Pce_Type = 'Panels' and Pce_Whole_Panel)]
       endif 
 
       if !isnull(.lBitsSubmitted)
         .cWhereClause = .cWhereClause + [ and Art_PK] + iif(.lBitsSubmitted, [ in ], [ not in ]) + ;
           [(select Pce_Art_FK from Piece where !Pce_Inactive and Pce_Type = 'Panels' and !Pce_Whole_Panel)]
       endif 
-
+      
       if !isnull( .lNoCount)
         .cWhereClause = .cWhereClause + [ AND Art_No_Count = ] + IIF(.lNoCount, [.T.], [.F.])
       endif 

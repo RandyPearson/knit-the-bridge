@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     27
+#DEFINE THISAPP_DATABASE_REVISION     28
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -481,6 +481,21 @@ define class AisApp AS KtbApp
       alter table Artist add column Art_Help_Stitching L
       use in select("Artist")
 
+    case m.lnRev = 28
+      alter table Panel add column Pnl_History M
+      select Panel
+      scan for !empty(Pnl_Fac_FK)
+        replace Pnl_History with "Until " + dtoc(date()) + " storage was: " + AisFacilityName(Pnl_Fac_FK) + CRLF 
+      endscan
+      use in select("Panel")
+
+      alter table Piece add column Pce_History M
+      select Piece
+      scan for !empty(Pce_Fac_FK)
+        replace Pce_History with "Until " + dtoc(date()) + " storage was: " + AisFacilityName(Pce_Fac_FK) + CRLF 
+      endscan
+      use in select("Piece")
+
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
@@ -758,6 +773,7 @@ function CreatePieceTable
       Pce_Received L, ;
       Pce_Acknowledged L, ;  && Rev 16
       Pce_Comments M, ;
+      Pce_History M, ;  && Rev 28
       Pce_Notes M, ;
       Pce_Orig_Art_FK C(32), ;
       Pce_Orig_Time T, ;
@@ -807,6 +823,7 @@ function CreatePanelTable
       Pnl_Dim_2 C(12), ;
       Pnl_Special_Size L, ; && Rev 24
       Pnl_Comments M, ;
+      Pnl_History M, ;  && Rev 28
       Pnl_Notes M, ;
       Pnl_Orig_Art_FK C(32), ;
       Pnl_Orig_Time T, ;
@@ -1306,6 +1323,9 @@ FUNCTION CreateViews(lcOneTable, lcDataPath, lcDataBase)
     do CreateChildView WITH "V_Piece_File_Set",  "Files", "Fil_Pce_FK", "Piece",  [Fil_Inactive=.F.]
     do CreateChildView WITH "V_Artist_File_Set", "Files", "Fil_Art_FK", "Artist", [Fil_Inactive=.F.]
     do CreateChildView WITH "V_Contributing_Artist_Set", "Artist", "Art_Group_Art_FK", "Artist", [Art_Inactive=.F.] 
+
+    do CreateChildView WITH "V_Facility_Panel_Set", "Panel", "Pnl_Fac_FK", "Facility",  [Pnl_Inactive=.F.]
+    do CreateChildView WITH "V_Facility_Piece_Set", "Piece", "Pce_Fac_FK", "Facility",  [Pce_Inactive=.F.]
 
     * All-record views (for master "browse" forms):
     do CreateAllRecordsView WITH "V_Unapproved_Artists",  "Artist", "Art_PK", [!Art_Inactive and !Art_Approved]
