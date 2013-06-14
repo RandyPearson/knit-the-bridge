@@ -107,6 +107,58 @@ define class aisPnlPage as aisPage
 enddefine && AisPnlPage
 
 *** ========================================================= ***
+define class ais_PnlSummary as aisPnlPage 
+  lPnlRequired = .f.
+  cSubTitle = "Panel Summary"
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    local loQry, loTbl, loCol, loGrp
+       
+    loQry = createobject("AisPnlQuery")
+    with loQry
+      .lJoinFacility = .t.
+      
+      .ClearFields()  && remove default fields
+      .AddField([Fac_Order])
+      .AddField([Pnl_Fac_FK])
+      .AddField([Fac_Name])
+      .AddField([SUM(iif(Pnl_Completed, 1, 0))], "Cmpl_")
+      .AddField([COUNT(*)], "Total_")
+      .BuildFieldList() && stops AddFields in BuildWhereClause from injecting
+      
+      .AddOrderBy([Fac_Order])
+      .AddOrderBy([Pnl_Fac_FK], , .t.)
+      .AddOrderBy([Fac_Name], , .t.)
+      .nGrouping = 3
+      
+      .execute()
+    endwith 
+    
+    urls.add(StuffUrl(this.cUrlA, 2, "FacHome"), "FacHome")
+    select (loQry.cAlias)
+    loTbl = createobject("AisTable")
+    with loTbl
+      loCol = .addCursorColumn("Fac_Name", "Storage Facility", ;
+        [HTLink(StuffUrl(urls.item("FacHome"), "fac", Pnl_Fac_FK), trim(Fac_Name))], 'facility')
+
+      loCol = .addCursorColumn("Total_ - Cmpl_", "Incomplete<br>Panels")
+      loCol.nCalcType = L7_CALCTYPE_SUM
+
+      loCol = .addCursorColumn("Cmpl_", "Completed<br>Panels")
+      loCol.nCalcType = L7_CALCTYPE_SUM
+
+      loCol = .addCursorColumn("Total_", "Total<br>Panel Count")
+      loCol.nCalcType = L7_CALCTYPE_SUM
+    endwith
+        
+    response.Write(loTbl.Render())    
+    response.write(HTWrap(loQry.cSqlStatement, 'div', 'admin'))
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+enddefine && PnlSummary
+
+*** ========================================================= ***
 define class ais_PnlList as aisPnlPage 
   lPnlRequired = .f.
   cSubTitle = "Panel List"
@@ -150,7 +202,7 @@ define class ais_PnlList as aisPnlPage
   endfunc 
   * ----------------------------------------------------- *  
   function ProcessRequest
-    local loQry, loTbl, loCol, loGrp
+    local loQry
        
     loQry = createobject("AisPnlQuery")
     with loQry
@@ -630,7 +682,7 @@ define class ais_PnlHome as aisPnlPage
 
       if poContext.lAdmin
         loCol = .addCursorColumn("Pce_Notes", "Notes",, "private")
-        * This was encouraging editing the piece, not the panel:
+        * This was encouraging people to edit the piece, not the panel:
         *!*          loCol = .addCursorColumn("Pce_PK", "Edit Piece", ;
         *!*            'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit&nbsp;Piece...]")')
       endif
