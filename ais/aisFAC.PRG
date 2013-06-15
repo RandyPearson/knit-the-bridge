@@ -144,18 +144,17 @@ define class ais_FacPanelMove as aisFacPage
         return 
       endif
     endwith 
+    
     * check all/none links:    
     text to lcStr noshow pretext 7 
-      <a id="check-all" href="">[Check All]</a>
-      <a id="check-none" href="">[Check None]</a>
+      <a id="check-all" href="">[Check All/None]</a>
       <script> 
         $j(document).ready(function() {
           $j('#check-all').click( function() {
-            $j('form input:checkbox').each(function() {$j(this).attr('checked', true);});
-            return false;
-          });
-          $j('#check-none').click( function() {
-            $j('form input:checkbox').each(function() {$j(this).attr('checked', false);});
+            // use state of first checkbox
+            var isChecked = $j('form input:checkbox').prop('checked');
+            // to set all checkboxes
+            $j('form input:checkbox').each(function() {$j(this).prop('checked', !isChecked);});
             return false;
           });
         });
@@ -185,6 +184,7 @@ define class aisFacMoveForm as AisForm
   cCustom_Entity = null 
   cCustom_Alias = null
   cCustom_Prefix = null
+  cSubmitCaption = "Move"
   * --------------------------------------------------------- *
   function  AddControls
     with this
@@ -253,6 +253,13 @@ define class aisFacMoveForm as AisForm
           .cLabel = "Comments"
         endwith 
         
+        .AddObject("lblNotes", "L7Label")
+        with .lblNotes
+          .cFieldType = "C"
+          .cControlSource = this.cCustom_Alias + "." + this.cCustom_Prefix + "_Notes"
+          .cLabel = "Notes"
+        endwith 
+
       endwith && GRID
     endwith  && FORM
   endfunc

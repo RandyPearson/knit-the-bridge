@@ -276,6 +276,7 @@ define class ais_PnlList as aisPnlPage
       loCol = .addCursorColumn("Pnl_ID", "Image", ;
         [AisPanelImage(Pnl_Id, "_h25", urls.item("PnlFilNew"), Pnl_PK, poContext.lAdmin)])
 
+      loCol = .addCursorColumn("Pnl_Notes", "Notes",, "private")
       loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pnl_Stitcher_Art_FK), aisArtistName(THISRECORD))], 'artist')
       loCol = .addCursorColumn("Pnl_Completed", "Completed?")
@@ -286,7 +287,6 @@ define class ais_PnlList as aisPnlPage
       loCol.lDisplayTextmerge = .t. 
 
       if poContext.lAdmin
-        loCol = .addCursorColumn("Pnl_Notes", "Notes",, "private")
         loCol = .addCursorColumn("Pnl_PK", "Edit Panel", ;
           'HTLink(StuffUrl(urls.item("PnlForm"), "pnl", Pnl_PK), "[Edit&nbsp;Panel...]")', 'panel', "no-print")
         loCol.cHeadingClass = "nosort no-print" 
@@ -733,6 +733,13 @@ define class ais_PnlForm as aisPnlPage
         endif
         .UpdateControlSources()
         select V_Panel  && UpdateControlSources can alter work area
+        if this.lAdding
+          replace Pnl_History with Pnl_History + dtoc(date()) + " initial location: " + AisFacilityName(Pnl_Fac_FK) + CRLF 
+        else
+          if !loOldRec.Pnl_Fac_FK == Pnl_Fac_FK
+            replace Pnl_History with Pnl_History + dtoc(date()) + " moved to: " + AisFacilityName(Pnl_Fac_FK) + CRLF 
+          endif
+        endif 
         StampRec( CurrentUser, THIS.tNow )
         scatter memo name loNewRec 
         
@@ -858,6 +865,14 @@ define class aisPanelForm as AisForm
         .cLabel = "Width" && "Dimension 2 (inches)"
         * .cInstructions = "If not equal, please enter LARGER dimension second!"
       endwith 
+
+      .AddObject("chkSpecial_Size", "L7Checkbox")
+      with .chkSpecial_Size
+        .cGroupID = "DIM"
+        .cControlSource = "V_Panel.Pnl_Special_Size"
+        .cLabel = "Special Size?"
+        .cCaption = "Special Size"
+      endwith
 
       .AddObject("chkCompleted", "L7Checkbox")
       with .chkCompleted
