@@ -55,6 +55,8 @@ define class aisPage as L7Page
             
             loQ = createobject("AisPnlQuery")
             loQ.cID = m.lcStr && upper(.cPnl)
+            loQ.lExcluded = null && find excluded panels
+            loQ.lInactive = null && find deleted records
             loQ.execute()
             if loQ.nTally = 1
               .cPnl = Pnl_PK
@@ -87,6 +89,7 @@ define class aisPage as L7Page
             loQ = createobject("AisArtQuery")
             loQ.cID = upper(.cArt)
             loQ.lHidden = null 
+            loQ.lInactive = null && find deleted records
             loQ.execute()
             if loQ.nTally = 1
               .cArt = Art_PK

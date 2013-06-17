@@ -104,6 +104,27 @@ define class aisPnlPage as aisPage
   cPnl = ""
   oPnl = null
   lPnlRequired = .t.
+  * ----------------------------------------------------- *  
+  function AddDefaultMenu
+    local lcMenu
+    with this
+      lcMenu = "main\This"
+      if !.lPnlRequired  && general lists/pages
+        .AddSubMenu("This", "PANELS")
+
+        .addMenuItem(m.lcMenu, 'Panel w/Bridge Locations', StuffUrl(this.cUrlA, 2, "PnlList", "location", "1"))
+        .addMenuItem(m.lcMenu, 'Panels Still Available', StuffUrl(this.cUrlA, 2, "PnlList", "location", "0"))
+        .addMenuItem(m.lcMenu, 'ALL Active Panels', StuffUrl(this.cUrlA, 2, "PnlList", "location", .f.))
+
+        .addMenuItem(m.lcMenu, 'Special-Size Panels', StuffUrl(this.cUrlA, 2, "PnlList", "flags", "special"))
+        .addMenuItem(m.lcMenu, 'Incomplete Panels', StuffUrl(this.cUrlA, 2, "PnlList", "complete", "0"))
+        .addMenuItem(m.lcMenu, 'Excluded Panels', StuffUrl(this.cUrlA, 2, "PnlList", "flags", "excluded"))
+        .addMenuItem(m.lcMenu, 'Deleted Panels', StuffUrl(this.cUrlA, 2, "PnlList", "flags", "inactive"))
+      endif
+    endwith 
+    dodefault()
+    return 
+  endfunc 
 enddefine && AisPnlPage
 
 *** ========================================================= ***
@@ -164,6 +185,7 @@ define class ais_PnlList as aisPnlPage
   cSubTitle = "Panel List"
 
   lPage_Location = null
+  lPage_Complete = null
   cPage_Style = null 
   cPage_Flags = null
   * --------------------------------------------------------- *
@@ -173,6 +195,9 @@ define class ais_PnlList as aisPnlPage
     lcStr = this.ReadQueryString("location", .t., .t.)
     this.lPage_Location = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
     
+    lcStr = this.ReadQueryString("complete", .t., .t.)
+    this.lPage_Complete = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+
     this.cPage_Style = evl(this.ReadQueryString("style", .t., .t.), "table")
     this.cPage_Flags = this.ReadQueryString("flags", .t., .t.)
 
@@ -183,18 +208,12 @@ define class ais_PnlList as aisPnlPage
   function AddDefaultMenu
     local lcMenu
     with this
-      .AddSubMenu("This", "PANELS")
       lcMenu = "main\This"
       if this.cPage_Style = "table"
         .addMenuItem(m.lcMenu, 'Show as Gallery', StuffUrl(this.cUrlC, "style", "gallery"))
       else
         .addMenuItem(m.lcMenu, 'Show as Table', StuffUrl(this.cUrlC, "style", "table"))
       endif 
-      .addMenuItem(m.lcMenu, 'Panel w/Bridge Locations', StuffUrl(this.cUrlA, 2, "PnlList", "location", "1"))
-      .addMenuItem(m.lcMenu, 'Panels Still Available', StuffUrl(this.cUrlA, 2, "PnlList", "location", "0"))
-      .addMenuItem(m.lcMenu, 'ALL Panels', StuffUrl(this.cUrlA, 2, "PnlList", "location", .f.))
-
-      .addMenuItem(m.lcMenu, 'Deleted Panels', StuffUrl(this.cUrlA, 2, "PnlList", "flags", "inactive"))
       
     endwith 
     dodefault()
@@ -207,14 +226,23 @@ define class ais_PnlList as aisPnlPage
     loQry = createobject("AisPnlQuery")
     with loQry
       .lHasLocation = this.lPage_Location 
+      .lCompleted = this.lPage_Complete
       .lJoinFacility = .t.
       .lJoinLocation = .t. 
       .lJoinArtist = .t. 
+      if "," + "special" + "," $ "," + this.cPage_Flags + ","
+        .lSpecialSize = .t. 
+      endif 
+      if "," + "excluded" + "," $ "," + this.cPage_Flags + ","
+        .lExcluded = .t. 
+      endif 
       if "," + "inactive" + "," $ "," + this.cPage_Flags + ","
         .lInactive = .t. 
       endif 
 
       .execute()
+
+      this.cSubTitle = this.cSubTitle + ": " + .GetCaption()
     endwith 
     
     urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
@@ -927,11 +955,33 @@ define class AisPnlQuery as L7Query
 
   lCompleted = null
   lSinglePiece = null
+  lSpecialSize = null
   
   lJoinArtist = .f. 
   lJoinPiece = .f. 
   lJoinFacility = .f.
   lJoinLocation = .f. 
+  * --------------------------------------------------------- *
+  function GetCaption 
+    local lcRet
+    lcRet = ""
+    with this
+      lcRet = m.lcRet + ;
+        iif(isnull(.lInactive), " DELETED and NON-DELETED", iif(.lInactive, " DELETED", "")) + ;
+        iif(isnull(.lExcluded), " Excluded and Non-Excluded", iif(.lExcluded, " Excluded", " Non-Excluded")) + ;
+        iif(isnull(.lHasLocation), "", iif(.lHasLocation, " Assigned", " Un-Assigned")) + ;
+        iif(isnull(.lSpecialSize), "", iif(.lSpecialSize, " Special-Size", " Normal-Size")) + ;
+        iif(isnull(.lSinglePiece), "", iif(.lSinglePiece, " Single-Piece", " Multiple-Piece")) 
+      lcRet = m.lcRet + " Panels"
+      if !isnull(.lCompleted) 
+        lcRet = m.lcRet + ", w/ Status: " + substr( ;
+          iif(isnull(.lCompleted), "", " and " + iif(.lCompleted, "Completed", "not Completed")), ;
+          1 + len(" and "))
+        
+      endif 
+    endwith 
+    return m.lcRet
+  endfunc 
   * --------------------------------------------------------- *
   function BuildWhereClause
     local lcStr
@@ -1004,6 +1054,9 @@ define class AisPnlQuery as L7Query
       endif 
       if !isnull(.lSinglePiece)
         .cWhereClause = .cWhereClause + [ and Pnl_Single_Piece = ] + iif(.lSinglePiece, [.t.], [.f.])
+      endif 
+      if !isnull(.lSpecialSize)
+        .cWhereClause = .cWhereClause + [ and Pnl_Special_Size= ] + iif(.lSpecialSize, [.t.], [.f.])
       endif 
       if !isnull(.lCompleted)
         .cWhereClause = .cWhereClause + [ and Pnl_Completed = ] + iif(.lCompleted, [.t.], [.f.])
