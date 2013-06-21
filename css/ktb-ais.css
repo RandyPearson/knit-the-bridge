@@ -96,6 +96,10 @@ p.break { margin-bottom: 5em }
 .gallery-item a {text-align: center;}
 .gallery-item-info {font-weight: bold; text-align: center;}
 
+div.loc-display{width: 200px; height: 90%; float: left; overflow-y: scroll;}
+div.loc-display table{}
+td.loc-pnl{border-color: black; border-width: 6px;}
+
 table.mgmt-report{border: 0;}
 .mgmt-report th{font-weight: normal; color: brown; text-align: right;}
 .mgmt-report td{text-align: right;}

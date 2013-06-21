@@ -60,6 +60,116 @@ define class aisLocPage as aisPage
 enddefine && AisLocPage
 
 *** ========================================================= ***
+define class ais_LocDisplay as aisLocPage 
+  lLocRequired = .f.
+  cSubTitle = "Panels Displayed by Locations"
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    local loLocQry, loPlcQry, loHandler
+       
+    loHandler = createobject("aisLocDisplayHandler")
+    bindevent(this, "page_onLocation", m.loHandler, "onLocation", 2)
+    bindevent(this, "page_onPanelLocation", m.loHandler, "onPanelLocation", 2)
+    
+    * Secondary query of Panel Assignments: 
+    loPlcQry = createobject("AisPlcQuery")
+    with loPlcQry
+      .cAlias = "PlcQuery_"
+      .lJoinPanel = .t.
+      .lJoinLocation = .t.
+      .execute()
+    endwith 
+
+    * Main Location query:
+    loLocQry = createobject("AisLocQuery")
+    with loLocQry
+      .execute()
+    endwith 
+    
+    select (loLocQry.cAlias)
+    scan
+      scatter memo name loLoc
+      raiseevent(this, "page_onLocation", m.loLoc)
+      
+      select (loPlcQry.cAlias)
+      scan for Plc_Loc_FK = m.loLoc.Loc_PK
+        scatter memo name loPlc
+        raiseevent(this, "page_onPanelLocation", m.loLoc, m.loPlc)
+      endscan
+    endscan
+    response.write(textmerge([Down: <<loHandler.Down.count>><br>]))
+    response.write(textmerge([Up: <<loHandler.Up.count>><br>]))
+    response.write(this.page_getDisplay(loHandler))
+    unbindevents(m.loHandler)
+    loHandler = null 
+    return 
+  endfunc 
+
+  * ----------------------------------------------------- *  
+  function page_getDisplay(loHandler)
+    local llVert, lcRet, lcOut, lcSide, lcStr, lnIter, lnOrient, lnSide
+    llVert = .t. 
+    store "" to lcRet
+    for lnSide = 1 to 2
+      lcSide = iif(m.lnSide = 1, "Down", "Up")
+      lcOut = ''
+      lcOut = m.lcOut + textmerge('<div class="loc-display" id="side-<<m.lcSide>>"><table><tbody>') + CRLF
+      loColl = loHandler.&lcSide
+      for lnIter = 1 to 2
+        for each loLoc in m.loColl
+          if m.llVert and m.lnIter = 1
+            lcRow = '<tr>' + crlf + ;
+              '<td></td>' + crlf + ;
+              '<td class="loc-pnl"></td>' + crlf + ;
+              textmerge('<td><<left(loLoc.Loc_Side, 1)>><<padl(transform(loLoc.Loc_No), 3, "0")>></td>') + crlf + ;
+              '<td class="loc-pnl"></td>' + crlf + ;
+              '<td></td>' + crlf + ;
+              '</tr>' + crlf 
+            lcOut = m.lcOut + m.lcRow
+          endif
+        next && loLoc
+      next && lnIter
+      lcOut = m.lcOut + '</tbody></table></div>' + CRLF
+      lcRet = m.lcRet + m.lcOut
+    next 
+    return m.lcRet
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_onLocation(loLoc)
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_onPanelLocation(loLoc, loPlc)
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+enddefine
+
+*** ========================================================= ***
+define class aisLocDisplayHandler as custom
+  add object Up as collection
+  add object Down as collection
+  * ----------------------------------------------------- *  
+  function onLocation(loLoc)
+    local loColl
+    addproperty(m.loLoc, "Inner", null)
+    addproperty(m.loLoc, "Outer", null)
+    loColl = iif(loLoc.Loc_Side = "Up", this.Up, this.Down)
+    loColl.add(m.loLoc, m.loLoc.Loc_PK)
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function onPanelLocation(loLoc, loPlc)
+    * parent guaranteed to exist
+    local lcProp
+    lcProp = trim(loPlc.Plc_Orientation) && Inner/Outer
+    loLoc.&lcProp = m.loPlc
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+enddefine 
+
+*** ========================================================= ***
 define class ais_LocList as aisLocPage 
   lLocRequired = .f.
   cSubTitle = "Bridge Locations"
@@ -87,8 +197,6 @@ define class ais_LocList as aisLocPage
       .cAlias = "PlcQuery_"
       .lJoinPanel = .t.
       .lJoinLocation = .t.
-      *!*        .lTrapezoid = this.lPage_Trapezoid
-      *!*        .lSpecial = this.lPage_Special 
       .execute()
       index on Plc_Loc_FK + Plc_Orientation tag LocOrient 
     endwith 
