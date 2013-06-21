@@ -253,10 +253,10 @@ define class ais_ArtList as aisMultiArtPage
         .addParticipationFields()
       endif 
       if this.oPage_Fields.getkey("registry") > 0
-        .addFields("Art_Register_Time, Art_KTB_Response, Art_Participation, Art_Notes")
+        .addFields("Art_Register_Time, Art_KTB_Response, Art_Participation, Art_Comments, Art_Notes")
       endif 
       if this.oPage_Fields.getkey("contact") > 0
-        .addFields("Art_Email, Art_Phone, Art_Contact_Orig, Art_Notes")
+        .addFields("Art_Email, Art_Phone, Art_Contact_Orig, Art_Comments, Art_Notes")
       endif 
       
       do case
@@ -311,6 +311,7 @@ define class ais_ArtList as aisMultiArtPage
 
       if poContext.lAdmin
         if this.oPage_Fields.getkey("registry") > 0 or this.oPage_Fields.getkey("contact") > 0
+          loCol = .addCursorColumn("Art_Comments", "Comments")
           loCol = .addCursorColumn("Art_Notes", "KtB Notes")
         endif
 
@@ -2065,7 +2066,7 @@ define class AisArtQuery AS L7Query
   endfunc
   * --------------------------------------------------------- *
   function BuildWhereClause
-    local lcStr, lcInnerWhere, loFlags, lnFlag, loFlag, lcField, lnWords, lcWord1, lcWord2
+    local lcStr, lcInnerWhere, loFlags, lnFlag, loFlag, lcField, lnWords, lcWord1, lcWord2, lcSearchFields
     store "" to lcInnerWhere
 
     with this 
@@ -2085,16 +2086,18 @@ define class AisArtQuery AS L7Query
       endif 
 
       if !empty(.cSrch1)
+        lcSearchFields = "Art_Last_Name + Art_First_Name + Art_Full_Name + Art_Email + Art_ID + Art_Comments + Art_Notes + Art_Participation"
+
         lcStr = lower(.cSrch1)
         lnWords = getwordcount(m.lcStr)
         if m.lnWords = 2
           lcWord1 = alltrim(getwordnum(m.lcStr, 1))
           lcWord2 = alltrim(getwordnum(m.lcStr, 2))
-          .cWhereClause = .cWhereClause + [ AND ('] + m.lcWord1 + [' $ lower(Art_Last_Name + Art_First_Name + Art_Full_Name + Art_Email + Art_ID + Art_Notes + Art_Participation)] + ;
-            [ OR '] + m.lcWord2 + [' $ lower(Art_Last_Name + Art_First_Name + Art_Full_Name + Art_Email + Art_ID + Art_Notes + Art_Participation)] + [)]
+          .cWhereClause = .cWhereClause + [ AND ('] + m.lcWord1 + [' $ lower(] + m.lcSearchFields + [)] + ;
+            [ OR '] + m.lcWord2 + [' $ lower(] + m.lcSearchFields + [)] + [)]
         else
           lcWord1 = m.lcStr
-          .cWhereClause = .cWhereClause + [ AND '] + m.lcWord1 + [' $ lower(Art_Last_Name + Art_First_Name + Art_Full_Name + Art_Email + Art_ID + Art_Notes + Art_Participation)]
+          .cWhereClause = .cWhereClause + [ AND '] + m.lcWord1 + [' $ lower(] + m.lcSearchFields + [)]
         endif
       endif 
       if !empty(.cUser_Id)
