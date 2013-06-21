@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     28
+#DEFINE THISAPP_DATABASE_REVISION     29
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -496,6 +496,12 @@ define class AisApp AS KtbApp
       endscan
       use in select("Piece")
 
+    case m.lnRev = 29
+      alter table Panel add column Pnl_Design_Category C(5)
+      select Panel
+      index on Pnl_Design_Category tag Design_Cat
+      use in select("Panel")
+
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
@@ -822,6 +828,7 @@ function CreatePanelTable
       Pnl_Dim_1 C(12), ;
       Pnl_Dim_2 C(12), ;
       Pnl_Special_Size L, ; && Rev 24
+      Pnl_Design_Category C(5), ;  && Rev 29
       Pnl_Comments M, ;
       Pnl_History M, ;  && Rev 28
       Pnl_Notes M, ;
@@ -845,6 +852,7 @@ function CreatePanelTable
   index on Pnl_Single_Piece tag Single
   index on Pnl_Special_Size tag Special && Rev 24 
   index on Pnl_Excluded tag Excluded && Rev 26
+  index on Pnl_Design_Category tag Design_Cat && Rev 29
      
   * Comment:
   dbsetprop("Panel", "Table", "Comment", ;
@@ -1336,6 +1344,7 @@ FUNCTION CreateViews(lcOneTable, lcDataPath, lcDataBase)
     do CreateAllRecordsView WITH "V_All_Donations",  "Donation", "Don_PK", [!Don_Inactive], [Don_Date_Donated]
     do CreateAllRecordsView WITH "V_All_Locations",  "Location", "Loc_PK", [!Loc_Inactive], [Loc_Side, Loc_No]
     do CreateAllRecordsView WITH "V_All_Facilities", "Facility", "Fac_PK", [!Fac_Inactive], [Fac_Name]
+    do CreateAllRecordsView WITH "V_Active_Panel_Set",  "Panel", "Pnl_PK", [!Pnl_Inactive and !Pnl_Excluded], [Pnl_ID]
 
   endif 
   return 

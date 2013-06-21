@@ -300,6 +300,7 @@ define class ais_PnlList as aisPnlPage
       loCol = .addCursorColumn("Pnl_Dim_1", "Height")
       loCol = .addCursorColumn("Pnl_Dim_2", "Width")
       loCol = .addCursorColumn("Pnl_Special_Size", "Special<br>Size", [iif(Pnl_Special_Size,"Special Size","")])
+      loCol = .addCursorColumn("Pnl_Design_Category", "Des<br>Cat")
       loCol = .addCursorColumn("Pnl_Comments", "Comments")
       loCol = .addCursorColumn("Pnl_ID", "Image", ;
         [AisPanelImage(Pnl_Id, "_h25", urls.item("PnlFilNew"), Pnl_PK, poContext.lAdmin)])
@@ -639,6 +640,7 @@ define class ais_PnlHome as aisPnlPage
       .AddRow("Height", loData.Pnl_Dim_1)
       .AddRow("Width", loData.Pnl_Dim_2)
       .AddRow("Special Size?", iif(loData.Pnl_Special_Size, "Special Size", "no"))
+      .AddRow("Design Category", loData.Pnl_Design_Category)
       .AddRow("Description and Comments", L7ParseOnView(loData.Pnl_COMMENTS), .t.)
       if poContext.lCore
         .AddRow("Internal KtB Notes", L7ParseOnView(loData.Pnl_NOTES), .t., "private")
@@ -902,6 +904,15 @@ define class aisPanelForm as AisForm
         .cCaption = "Special Size"
       endwith
 
+      .AddObject("txtDesign_Category", "L7Textbox")
+      with .txtDesign_Category
+        .cGroupID = "DIM"
+        .cFieldType = "C"
+        .cControlSource = "V_Panel.Pnl_Design_Category"
+        .cLabel = "Design Category" 
+        .cInstructions = "(upper case)"
+      endwith 
+
       .AddObject("chkCompleted", "L7Checkbox")
       with .chkCompleted
         .cGroupID = "DIM"
@@ -934,7 +945,7 @@ define class AisPnlQuery as L7Query
   cBaseTable = "Panel"
   cDefaultFieldList = ;
     "Pnl_PK, Pnl_ID, Pnl_Inactive, Pnl_Stitcher_Art_FK, Pnl_Asm_FK, Pnl_Fac_FK, Pnl_Single_Piece" + ;  
-    ", Pnl_Dim_1, Pnl_Dim_2, Pnl_Special_Size, Pnl_Completed, Pnl_Excluded, Pnl_Comments, Pnl_Notes" 
+    ", Pnl_Dim_1, Pnl_Dim_2, Pnl_Special_Size, Pnl_Design_Category, Pnl_Completed, Pnl_Excluded, Pnl_Comments, Pnl_Notes" 
 
   nOrderBy = 1
   dimension aOrderBy[ 1, 2]
@@ -947,6 +958,8 @@ define class AisPnlQuery as L7Query
 
   cAsm = null
   cFac = null
+  
+  cDesign_Category = null
   
   cArtPiece = null
   cArtStitcher = null 
@@ -999,6 +1012,10 @@ define class AisPnlQuery as L7Query
 
       if !isnull(.cID)
         .cWhereClause = .cWhereClause + [ and Pnl_Id = '] + .cId + [']
+      endif
+      
+      if !isnull(.cDesign_Category)
+        .cWhereClause = .cWhereClause + [ and Pnl_Design_Category = '] + .cDesign_Category + [']
       endif
       
       if !isnull(.cArtPiece) or .lJoinPiece

@@ -355,6 +355,7 @@ define class ais_FacHome as aisFacPage
       loCol = .addCursorColumn("Pnl_Dim_1", "Height")
       loCol = .addCursorColumn("Pnl_Dim_2", "Width")
       loCol = .addCursorColumn("Pnl_Special_Size", "Special<br>Size", [iif(Pnl_Special_Size,"Special Size","")])
+      loCol = .addCursorColumn("Pnl_Design_Category", "Des<br>Cat")
       loCol = .addCursorColumn("Pnl_Comments", "Comments")
       loCol = .addCursorColumn("Pnl_ID", "Image", ;
         [AisPanelImage(Pnl_Id, "_h25", urls.item("PnlFilNew"), Pnl_PK, poContext.lAdmin)])
