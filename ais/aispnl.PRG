@@ -583,24 +583,6 @@ define class Ais_PnlBrowse as AisPnlPage
     endwith 
     return   
   endfunc 
-  * --------------------------------------------------------- *
-  function page_addScript()
-    local lcTemp
-    text to lcTemp noshow
-      $j(document).ready(function() {
-        var inputs = $j('input[name*="TXTCAT"]');
-        inputs.each(function() {
-          this.style.textTransform = 'uppercase';
-          })
-          .keyup(function() {
-            this.value = this.value.toUpperCase();
-          });
-      });
-      
-    endtext
-    Page.oHead.addJavaScript(m.lcTemp) 
-    return 
-  endfunc
 enddefine  && Ais_PnlBrowse
 
 *** ========================================================= ***

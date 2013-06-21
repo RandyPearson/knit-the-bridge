@@ -522,6 +522,24 @@ define class aisPage as L7Page
     return 
   endfunc  && addDefaultMenu
   * --------------------------------------------------------- *
+  function page_addScript()
+    local lcTemp
+    text to lcTemp noshow
+      $j(document).ready(function() {
+        var inputs = $j('input[name*="TXTCAT"]');
+        inputs.each(function() {
+          this.style.textTransform = 'uppercase';
+          })
+          .keyup(function() {
+            this.value = this.value.toUpperCase();
+          });
+      });
+      
+    endtext
+    Page.oHead.addJavaScript(m.lcTemp) 
+    return 
+  endfunc
+  * --------------------------------------------------------- *
 enddefine && AisPage
 
 *** ========================================================= ***
