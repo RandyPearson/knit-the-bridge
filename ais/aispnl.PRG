@@ -578,7 +578,7 @@ define class Ais_PnlBrowse as AisPnlPage
         return 
       endif 
       Response.Write(.Render())
-      this.page_addScript()
+      this.page_upperCaseScript('_TXTCAT')
 
     endwith 
     return   
@@ -935,6 +935,7 @@ define class ais_PnlForm as aisPnlPage
 
     endwith 
     response.write(loForm.render())
+    this.page_upperCaseScript('TXTDESIGN_CATEGORY')
     return 
   endfunc 
 enddefine && ais_PnlForm
@@ -1047,7 +1048,6 @@ define class aisPanelForm as AisForm
         .cFieldType = "C"
         .cControlSource = "V_Panel.Pnl_Design_Category"
         .cLabel = "Design Category" 
-        .cInstructions = "(upper case)"
       endwith 
 
       .AddObject("chkCompleted", "L7Checkbox")

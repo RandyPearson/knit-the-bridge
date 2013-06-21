@@ -522,11 +522,11 @@ define class aisPage as L7Page
     return 
   endfunc  && addDefaultMenu
   * --------------------------------------------------------- *
-  function page_addScript()
+  function page_upperCaseScript(tcSub)
     local lcTemp
     text to lcTemp noshow
       $j(document).ready(function() {
-        var inputs = $j('input[name*="TXTCAT"]');
+        var inputs = $j('input[name*="<<m.tcSub>>"]');
         inputs.each(function() {
           this.style.textTransform = 'uppercase';
           })
@@ -536,6 +536,7 @@ define class aisPage as L7Page
       });
       
     endtext
+    lcTemp = textmerge(m.lcTemp)
     Page.oHead.addJavaScript(m.lcTemp) 
     return 
   endfunc
