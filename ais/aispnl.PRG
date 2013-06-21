@@ -706,20 +706,37 @@ define class ais_PnlHome as aisPnlPage
             StuffUrl(.cUrlA, 2, "PnlAddPiece", "pnl", .cPnl))
         endif
         lcUrl = StuffUrl(.cUrlB, 2, "PnlSetLoc")
-        if isnull(this.oPage_Location)
-          .AddMenuItem("main\This,page", "Assign Up-River Inner Location...", ;
-            StuffUrl(m.lcUrl, "side", "Up", "orient", "Inner"))
-          .AddMenuItem("main\This,page", "Assign Up-River Outer Location...", ;
-            StuffUrl(m.lcUrl, "side", "Up", "orient", "Outer"))
-          .AddMenuItem("main\This,page", "Assign Down-River Inner Location...", ;
-            StuffUrl(m.lcUrl, "side", "Down", "orient", "Inner"))
-          .AddMenuItem("main\This,page", "Assign Down-River Outer Location...", ;
-            StuffUrl(m.lcUrl, "side", "Down", "orient", "Outer"))
+        if isnull(.oPage_Location)
+          if !.oPnl.Pnl_Inactive and !.oPnl.Pnl_Excluded
+            .AddMenuItem("main\This,page", "Assign Up-River Inner Location...", ;
+              StuffUrl(m.lcUrl, "side", "Up", "orient", "Inner"))
+            .AddMenuItem("main\This,page", "Assign Up-River Outer Location...", ;
+              StuffUrl(m.lcUrl, "side", "Up", "orient", "Outer"))
+            .AddMenuItem("main\This,page", "Assign Down-River Inner Location...", ;
+              StuffUrl(m.lcUrl, "side", "Down", "orient", "Inner"))
+            .AddMenuItem("main\This,page", "Assign Down-River Outer Location...", ;
+              StuffUrl(m.lcUrl, "side", "Down", "orient", "Outer"))
+          endif
         else 
           .addMenuItem("main\This,page", "Remove Panel Location...", ;
-            StuffUrl(.cUrlB, 2, "PnlRemLoc", "plc", this.oPage_Location.plc_pk))
+            StuffUrl(.cUrlB, 2, "PnlRemLoc", "plc", .oPage_Location.plc_pk))
         endif 
       endif 
+      use v_Active_Panel_Set again in select("v_Active_Panel_Set")
+      select v_Active_Panel_Set
+      locate for Pnl_Id = this.oPnl.Pnl_Id
+      if found()
+        skip
+        if !eof()
+          .addMenuItem("main\This,page", "Next Panel (" + Pnl_Id + ")", StuffUrl(.cUrlA, "pnl", Pnl_PK))
+        endif
+        locate for Pnl_Id = this.oPnl.Pnl_Id
+        skip -1
+        if !bof()
+          .addMenuItem("main\This,page", "Previous Panel (" + Pnl_Id + ")", StuffUrl(.cUrlA, "pnl", Pnl_PK))
+        endif
+      endif
+      use in select("v_Active_Panel_Set")
     endwith 
     dodefault()
     return 
