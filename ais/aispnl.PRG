@@ -120,6 +120,8 @@ define class aisPnlPage as aisPage
         .addMenuItem(m.lcMenu, 'Incomplete Panels', StuffUrl(this.cUrlA, 2, "PnlList", "complete", "0"))
         .addMenuItem(m.lcMenu, 'Excluded Panels', StuffUrl(this.cUrlA, 2, "PnlList", "flags", "excluded"))
         .addMenuItem(m.lcMenu, 'Deleted Panels', StuffUrl(this.cUrlA, 2, "PnlList", "flags", "inactive"))
+
+        .addMenuItem(m.lcMenu, 'Edit Panel Metadata', StuffUrl(this.cUrlA, 2, "PnlBrowse"))
       endif
     endwith 
     dodefault()
@@ -543,6 +545,140 @@ define class aisPanelSetLocForm as AisForm
     return 
   endfunc 
 enddefine 
+
+*** ===================================================== ***
+define class Ais_PnlBrowse as AisPnlPage
+  lPnlRequired = .f.
+  * --------------------------------------------------------- *
+  function ProcessRequest
+    this.cCancelUrl = StuffUrl(this.cUrlA, 2, "PnlList")
+    local loForm, lcXml, lcAlias, lcFldState, lcStub
+    lcAlias = "V_Active_Panel_Set"
+    use (m.lcAlias) in select(m.lcAlias)
+    cursorsetprop("Buffering", 5, m.lcAlias)
+    select (m.lcAlias)
+    loForm = this.CreateForm("AisPnlBrowseForm", this.cUrlC)
+    with loForm
+      .cAlias = m.lcAlias
+      .AddControls()
+      .DoEvents()
+      if .Valid()
+        .UpdateControlSources()
+        select (m.lcAlias)
+        scan   
+          lcFldState = getfldstate(-1)
+          if empty( strtran( m.lcFldState, "1"))  && no change
+            loop 
+          endif 
+          StampRec( CurrentUser, THIS.tNow )
+        endscan 
+        lcXml = ''
+        this.AssertTransaction(m.lcAlias, @lcXml)
+        Response.Redirect(this.cCancelUrl)
+        return 
+      endif 
+      Response.Write(.Render())
+    endwith 
+    return   
+  endfunc 
+  
+enddefine  && Ais_PnlBrowse
+
+*** ========================================================= ***
+define class AisPnlBrowseForm AS AisForm
+  cTitle = "Panel Metadata Form"
+  cAlias = null && client should set 
+  cCssStyle = "width: 100%;"
+  * --------------------------------------------------------- *
+  function AddControls
+    with this
+      .AddObject('grd1', 'L7Grid')
+      with .grd1
+        .cChildAlias = this.cAlias
+        .cChildKeyExpression = this.cAlias + ".Pnl_PK"
+        .nExtraRows = 0 && don't permit adds 
+        .cGridTableCssClass = "sortable " + .cGridTableCssClass 
+        .cColumnHeaderCssClass = "nosort" && sortable doesn't work for live controls, so override on specific labels
+      
+        .AddObject("lblId", "L7Label")
+        with .lblId
+          .cFieldType = "C"
+          .cControlSource = this.cAlias + ".Pnl_Id"
+          .cLabel = "ID"
+          .cColumnHeaderCssClass = "sort" 
+        endwith 
+
+        .AddObject("txtDim_1", "L7Textbox")
+        with .txtDim_1
+          .cControlSource = this.cAlias + ".Pnl_Dim_1"
+          .cFieldType = "N"
+          .cLabel = "Width"
+        endwith
+
+        .AddObject("txtDim_2", "L7Textbox")
+        with .txtDim_2
+          .cControlSource = this.cAlias + ".Pnl_Dim_2"
+          .cFieldType = "N"
+          .cLabel = "Width"
+        endwith
+
+        .AddObject("chkSp", "L7Checkbox")
+        with .chkSp
+          .cControlSource = this.cAlias + ".Pnl_Special_Size"
+          .cLabel = "Special Size?"
+          .cCaption = "SPECIAL"
+        endwith
+
+        .AddObject("txtCat", "L7Textbox")
+        with .txtCat
+          .cControlSource = this.cAlias + ".Pnl_Design_Category"
+          .cLabel = "Design Cat"
+        endwith
+
+        .AddObject("lblImage", "L7Label")
+        with .lblImage
+          .cFieldType = "C"
+          .cShowExpression = [AisPanelImage(] + this.cAlias + [.Pnl_Id, "_h25")]
+          .cLabel = "Image"
+        endwith 
+
+        .AddObject("lblComments", "L7Label")
+        with .lblComments
+          .cControlSource = this.cAlias + ".Pnl_Comments"
+          .cLabel = "Comments"
+        endwith
+
+        .AddObject("chkCmpl", "L7Checkbox")
+        with .chkCmpl
+          .cControlSource = this.cAlias + ".Pnl_Completed"
+          .cLabel = "Complete?"
+          .cCaption = "COMPLETE"
+          .cCssClass = "FormControlPrivate"
+        endwith
+
+        .AddObject("lblId2", "L7Label") && << -- REPEATED FOR CONVENIENCE
+        with .lblId2
+          .cFieldType = "C"
+          .cControlSource = this.cAlias + ".Pnl_Id"
+          .cLabel = "ID"
+          .cColumnHeaderCssClass = "sort" 
+        endwith 
+
+
+        *!*          .AddObject("chkExcl", "L7Checkbox")
+        *!*          with .chkExcl
+        *!*            .cControlSource = this.cAlias + ".Pnl_Excluded"
+        *!*            .cLabel = "Exclude?"
+        *!*            .cCaption = "EXCLUDED"
+        *!*            .cCssClass = "FormControlPrivate"
+        *!*          endwith
+
+      endwith && grid 
+    endwith && form
+    return 
+  endfunc  && AddControls
+enddefine && PnlBrowseForm 
+
 
 *** ========================================================= ***
 define class ais_PnlHome as aisPnlPage 
