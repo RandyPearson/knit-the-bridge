@@ -297,7 +297,7 @@ define class aisLocAssignForm as AisForm
         .cRowSource = "Available_Panels_"
         *!* ex: .cFilterExpression = [Fac_Storage = .t.]
         .cValueExpression = [Pnl_PK]
-        .cLabelExpression = [Pnl_ID]
+        .cLabelExpression = [Pnl_ID + " (" + trim(Pnl_Dim_1) + "x" + trim(Pnl_Dim_2) + ", " + trim(Pnl_Design_Category) + ")"]
         .vFirstItemValue = space(32) && 0 for integer keys
         .cFirstItemLabel = "[ select from choices below ]"
       endwith 
