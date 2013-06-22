@@ -97,8 +97,6 @@ define class ais_LocDisplay as aisLocPage
         raiseevent(this, "page_onPanelLocation", m.loLoc, m.loPlc)
       endscan
     endscan
-    response.write(textmerge([Down: <<loHandler.Down.count>><br>]))
-    response.write(textmerge([Up: <<loHandler.Up.count>><br>]))
     response.write(this.page_getDisplay(loHandler))
     unbindevents(m.loHandler)
     loHandler = null 
@@ -107,31 +105,53 @@ define class ais_LocDisplay as aisLocPage
 
   * ----------------------------------------------------- *  
   function page_getDisplay(loHandler)
-    local llVert, lcRet, lcOut, lcSide, lcStr, lnIter, lnOrient, lnSide
+    local llVert, lcRet, lnSide, loColl, lcSide, laCells[1], lnItem, loLoc, lnOrient, lcOrient, lnCol, loPlc, lcCell, lcOut, lcRow 
     llVert = .t. 
     store "" to lcRet
     for lnSide = 1 to 2
       lcSide = iif(m.lnSide = 1, "Down", "Up")
+      loColl = loHandler.&lcSide
+      dimension laCells[loColl.count, 5]
+      laCells = ""
+      for lnItem = 1 to loColl.count
+        loLoc = m.loColl[m.lnItem]
+
+        laCells[m.lnItem, 3] = textmerge('<td class="loc-id"><<left(loLoc.Loc_Side, 1)>><<padl(transform(loLoc.Loc_No), 3, "0")>></td>') + crlf
+        for lnOrient = 1 to 2
+          lcOrient = iif(m.lnOrient = 1, "Outer", "Inner")
+          loPlc = loLoc.&lcOrient
+          * trick to make sides of bridge flipped, so Outer is left for Down and Right for Up
+          lnCol = iif(m.lcSide = "Down", iif(m.lcOrient = "Outer", 2, 4), iif(m.lcOrient = "Outer", 4, 2))
+          if isnull(m.loPlc)
+            lcCell = '<td class="loc-pnl"><div class="loc-img"></div></td>' + crlf
+          else
+            lcCell = '<td class="loc-pnl"><div class="loc-img">' + AisPanelImage(loPlc.Pnl_Id, "_h50r") + '</div></td>' + crlf 
+          endif
+          laCells[m.lnItem, m.lnCol] = m.lcCell
+
+          lnCol = iif(m.lcSide = "Down", iif(m.lcOrient = "Outer", 1, 5), iif(m.lcOrient = "Outer", 5, 1))
+          if isnull(m.loPlc)
+            lcCell = '<td class="loc-link"></td>' + crlf 
+          else
+            lcCell = '<td class="loc-link">' + loPlc.Pnl_Id + '</td>' + crlf 
+          endif
+          laCells[m.lnItem, m.lnCol] = m.lcCell
+        next && orient
+      next && loLoc
+
       lcOut = ''
       lcOut = m.lcOut + textmerge('<div class="loc-display" id="side-<<m.lcSide>>"><table><tbody>') + CRLF
-      loColl = loHandler.&lcSide
-      for lnIter = 1 to 2
-        for each loLoc in m.loColl
-          if m.llVert and m.lnIter = 1
-            lcRow = '<tr>' + crlf + ;
-              '<td></td>' + crlf + ;
-              '<td class="loc-pnl"></td>' + crlf + ;
-              textmerge('<td><<left(loLoc.Loc_Side, 1)>><<padl(transform(loLoc.Loc_No), 3, "0")>></td>') + crlf + ;
-              '<td class="loc-pnl"></td>' + crlf + ;
-              '<td></td>' + crlf + ;
-              '</tr>' + crlf 
-            lcOut = m.lcOut + m.lcRow
-          endif
-        next && loLoc
-      next && lnIter
+      for lnRow = 1 to loColl.count
+        lcRow = '<tr>' + crlf
+        for lnCol = 1 to 5
+          lcRow = m.lcRow + laCells[m.lnRow, m.lnCol]
+        next  && col
+        lcRow = m.lcRow + '</tr>' + crlf
+        lcOut = m.lcOut + m.lcRow + CRLF
+      next && row
       lcOut = m.lcOut + '</tbody></table></div>' + CRLF
-      lcRet = m.lcRet + m.lcOut
-    next 
+      lcRet = m.lcRet + HtWrap(m.lcSide + "-River Side", 'div,strong') + m.lcOut
+    next && side
     return m.lcRet
   endfunc 
   * ----------------------------------------------------- *  
