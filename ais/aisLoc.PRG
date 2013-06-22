@@ -119,6 +119,7 @@ define class ais_LocDisplay as aisLocPage
       .execute()
     endwith
     
+    urls.add(StuffUrl(this.cUrlA, 2, "LocUnassign"), "LocUnassign")
     urls.add(StuffUrl(this.cUrlA, 2, "LocAssign"), "LocAssign")
     urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
 
@@ -178,6 +179,7 @@ define class ais_LocDisplay as aisLocPage
             lcCell = '<td class="loc-link">' + ;
               '<span class="id-field panel">' + HtLink(stuffUrl(urls.item("PnlHome"), "pnl", loPlc.Pnl_Id), loPlc.Pnl_Id) + '</span>' + ;
               '<br>(' + trim(loPlc.Pnl_Dim_1) + 'x' + trim(loPlc.Pnl_Dim_2) + ', ' + trim(loPlc.Pnl_Design_Category) + ')' + ;
+              L7BR + HTLink(StuffUrl(urls.item("LocUnassign"), "plc", loPlc.Plc_PK), "Remove...", "Detach panel from location") + ;
               '</td>' + crlf 
           endif
           laCells[m.lnItem, m.lnCol] = m.lcCell
@@ -381,6 +383,38 @@ define class ais_LocSumList as aisLocPage
   endfunc 
 enddefine && LocSumList
 
+*** ========================================================= ***
+define class ais_LocUnassign as aisLocPage 
+  lLocRequired = .f.
+  cPlc = null
+  * --------------------------------------------------------- *
+  function BeforeProcessRequest
+    this.cPlc = this.readQueryString("plc", .t., .t.)
+    dodefault()
+    return 
+  endfunc   
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    this.Assert(poContext.lAdmin)
+    local vp_cPlc_PK, lcXml
+    vp_cPlc_PK = this.cPlc
+    use V_PanelLocation in select("V_PanelLocation")
+    cursorsetprop("Buffering", 5, "V_PanelLocation")
+    select V_PanelLocation
+    this.Assert(!eof(), "PLC not found")
+    this.cCancelUrl = stuffUrl(this.cUrlA, 2, "LocDisplay")
+    this.Assert(!Plc_Inactive, "PLC already removed")
+    
+    replace Plc_Inactive with .t.
+    StampRec( CurrentUser, THIS.tNow )
+    
+    lcXml = ''
+    this.AssertTransaction("V_PanelLocation", @lcXml)
+    this.confirm(textmerge('Link from Panel to Location removed'), this.cCancelUrl)
+    return
+  endfunc
+enddefine  && ais_LocUnassign 
+    
 *** ========================================================= ***
 define class ais_LocAssign as aisLocPage 
   cPage_Orient = null 
@@ -656,7 +690,7 @@ enddefine && LocBrowseForm
 *** ===================================================== ***
 define class AisPlcQuery as L7Query
   cBaseTable = "PanelLocation"
-  cDefaultFieldList = "Plc_Pnl_FK, Plc_Loc_FK, Plc_Orientation"
+  cDefaultFieldList = "Plc_PK, Plc_Pnl_FK, Plc_Loc_FK, Plc_Orientation"
 
   cSide = null
   cOrient = null 
