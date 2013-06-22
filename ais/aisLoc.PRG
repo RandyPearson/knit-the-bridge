@@ -106,10 +106,19 @@ define class ais_LocDisplay as aisLocPage
 
   * ----------------------------------------------------- *  
   function page_getDisplay(loHandler)
-    local llVert, lcRet, lnCols, lnSide, loColl, lcSide, laCells[1], lnItem, loLoc, lnOrient, lcOrient, lnCol, loPlc, lcCell, lcOut, lcRow 
+    local llVert, lcRet, lnCols, loCatQ, lnSide, loColl, lcSide, laCells[1], lnItem, loLoc, lnOrient, lcOrient, lnCol, lcUrl, loPlc, lcCell, lcOut, lcRow 
     llVert = .t. 
     store "" to lcRet
     lnCols = 5
+    loCatQ = createobject("AisPnlQuery")
+    with loCatQ
+      .lDistinct = .t.
+      .ClearFields()
+      .AddFields("Pnl_Design_Category")
+      .AddOrderBy("Pnl_Design_Category")
+      .execute()
+    endwith
+    
     urls.add(StuffUrl(this.cUrlA, 2, "LocAssign"), "LocAssign")
     urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
 
@@ -121,35 +130,49 @@ define class ais_LocDisplay as aisLocPage
       for lnItem = 1 to loColl.count
         loLoc = m.loColl.item(m.lnItem)
 
+        * Middle column showing Location info:
         laCells[m.lnItem, 3] = textmerge('<td class="loc-id"><div style="min-height: <<int(loLoc.Loc_W1)>>px;">' + ;
           '<span class="id-field location"><<left(loLoc.Loc_Side, 1)>><<padl(transform(loLoc.Loc_No), 3, "0")>></span>' + ;
-          '<br>(<<int(loLoc.Loc_H1)>>x<<int(loLoc.Loc_W1)>>)' + ;
+          '<br>(<<int(loLoc.Loc_H1)>>x<<int(loLoc.Loc_W1)>><<iif(loLoc.Loc_H2 = 0,"", "x" + transform(loLoc.Loc_H2))>>)' + ;
           '<<iif(empty(loLoc.Loc_Marker), "", "<br>" + trim(m.loLoc.Loc_Marker))>>' + ;
           '<<iif(empty(loLoc.Loc_Comments), "", "<br>" + m.loLoc.Loc_Comments)>>' + ;
           '</div></td>') + crlf
           
-        for lnOrient = 1 to 2
+        for lnOrient = 1 to 2 && iterate between Inner/Outer orientations, creating left 2 and right 2 columns: 
           lcOrient = iif(m.lnOrient = 1, "Outer", "Inner")
           loPlc = loLoc.&lcOrient
-          * trick to make sides of bridge flipped, so Outer is left for Down and Right for Up
+          
+          * Show IMAGE if there's a Panel:
           lnCol = iif(m.lcSide = "Down", iif(m.lcOrient = "Outer", 2, 4), iif(m.lcOrient = "Outer", 4, 2))
-          if isnull(m.loPlc)
+          * (trick to make sides of bridge flipped, so Outer is left for Down and Right for Up)
+          if isnull(m.loPlc) && no Panel here
             lcCell = '<td class="loc-pnl"><div class="loc-img">' + ;
               iif(m.loLoc.Loc_Skip, '<span class="skipped">Skipped (Unusable Space)</span>', '') + ;
               '</div></td>' + crlf
-          else
-            lcCell = '<td class="loc-pnl"><div id="' + loPlc.Plc_Pnl_FK + '" class="loc-img">' + AisPanelImage(loPlc.Pnl_Id, "_h50r") + '</div></td>' + crlf 
+          else 
+            lcCell = '<td class="loc-pnl">' + ;
+              '<div id="' + loPlc.Plc_Pnl_FK + '" class="loc-img">' + AisPanelImage(loPlc.Pnl_Id, "_h50r") + ;
+              '</div></td>' + crlf 
           endif
           laCells[m.lnItem, m.lnCol] = m.lcCell
 
+          * Show PANEL INFO or links to ASSIGN a panel:
           lnCol = iif(m.lcSide = "Down", iif(m.lcOrient = "Outer", 1, 5), iif(m.lcOrient = "Outer", 5, 1))
           if isnull(m.loPlc)  && no panel 
             if m.loLoc.Loc_Skip
               lcCell = '<td class="loc-link"></td>' + crlf 
             else
-              lcCell = '<td class="loc-link">' + ;
-                HTLink(StuffUrl(urls.item("LocAssign"), "loc", loLoc.Loc_PK, "orient", m.lcOrient) , "assign...") + ;
-                '</td>' + crlf 
+              lcUrl = StuffUrl(urls.item("LocAssign"), "loc", loLoc.Loc_PK, "orient", m.lcOrient)
+              lcCell = '<td class="loc-link">' + crlf
+              lcCell = m.lcCell + HTLink(m.lcUrl, "any...")
+              if !(loLoc.Loc_H1 = 36 and loLoc.Loc_W1 = 75 and loLoc.Loc_H2 = 0)
+                lcCell = m.lcCell + L7BR + HTLink(StuffUrl(m.lcUrl, "special", .t.), "special...")
+              endif
+              select (loCatQ.cAlias)
+              scan for !empty(Pnl_Design_Category)
+                lcCell = m.lcCell + L7BR + HTLink(StuffUrl(m.lcUrl, "categ", trim(Pnl_Design_Category)), trim(Pnl_Design_Category) + "...")
+              endscan 
+              lcCell = m.lcCell + '</td>' + crlf 
             endif 
           else
             lcCell = '<td class="loc-link">' + ;
@@ -165,7 +188,7 @@ define class ais_LocDisplay as aisLocPage
       ** lcOut = m.lcOut + '<div class="clear"></div>' + crlf && prep for floats 
       
       lcOut = m.lcOut + textmerge('<div class="loc-display" id="side-<<m.lcSide>>"><table><tbody>') + CRLF
-      lcOut = m.lcOut + textmerge('<tr><th colspan="<<m.lnCols>>">NORTH SIDE</th></tr>') + crlf
+      lcOut = m.lcOut + textmerge('<tr><th colspan="<<m.lnCols>>"><<upper(m.lcSide)>>-RIVER, NORTH SIDE</th></tr>') + crlf
       for lnRow = loColl.count to 1 step -1 && backward to show North Side at top 
         lcRow = '<tr>' + crlf
         for lnCol = 1 to m.lnCols
@@ -174,9 +197,9 @@ define class ais_LocDisplay as aisLocPage
         lcRow = m.lcRow + '</tr>' + crlf
         lcOut = m.lcOut + m.lcRow + CRLF
       next && row
-      lcOut = m.lcOut + textmerge('<tr><th colspan="<<m.lnCols>>">DOWNTOWN PITTSBURGH</th></tr>') + crlf
+      lcOut = m.lcOut + textmerge('<tr><th colspan="<<m.lnCols>>"><<upper(m.lcSide)>>-RIVER, DOWNTOWN PITTSBURGH</th></tr>') + crlf
       lcOut = m.lcOut + '</tbody></table></div>' + CRLF
-      lcRet = m.lcRet + HtWrap(m.lcSide + "-River Side", 'div,strong') + m.lcOut
+      lcRet = m.lcRet + HtWrap(m.lcSide + "-River Side of Bridge", 'div,strong') + m.lcOut
     next && side
     return m.lcRet
   endfunc 
@@ -362,10 +385,14 @@ enddefine && LocSumList
 define class ais_LocAssign as aisLocPage 
   cPage_Orient = null 
   cPage_Side = null
+  cPage_Special = null
+  cPage_Categ = null
   * --------------------------------------------------------- *
   function BeforeProcessRequest
     this.cPage_Orient = this.readQueryString("orient", .t., .t.)
     this.cPage_Side = this.readQueryString("side", .t., .t.)
+    this.cPage_Categ = this.readQueryString("categ", .t., .t.)
+    this.cPage_Special = this.readQueryString("special", .t., .t.)
     dodefault()
     return 
   endfunc   
@@ -384,6 +411,12 @@ define class ais_LocAssign as aisLocPage
     with loQ
       .cAlias = "Available_Panels_"
       .lHasLocation = .f.
+      if !empty(this.cPage_Categ)
+        .cDesign_Category = this.cPage_Categ
+      endif
+      if !empty(this.cPage_Special)
+        .lSpecialSize = left(this.cPage_Special, 1) $ 'yYtT1'
+      endif
       .Execute()
     endwith 
     this.assert(loQ.nTally > 0, "No available panels remain.")
@@ -437,6 +470,30 @@ define class aisLocAssignForm as AisForm
   * --------------------------------------------------------- *
   function AddControls
     with this
+      .AddObject("lblLoc_Side", "L7Label")
+      with .lblLoc_Side
+        .cFieldType = "C"
+        .cShowExpression = [left(Page.oLoc.Loc_Side,1) + padl(transform(Page.oLoc.Loc_No), 3, "0")]
+        .cLabel = "Location"
+      endwith 
+
+      .AddObject("lblLoc_Orient", "L7Label")
+      with .lblLoc_Orient
+        .cFieldType = "C"
+        .cShowExpression = [Page.cPage_Orient]
+        .cLabel = "Orientation"
+      endwith 
+      
+      .AddObject("lblDimensions", "L7Label")
+      with .lblDimensions
+        .cFieldType = "C"
+        .cShowExpression = [transform(Page.oLoc.Loc_H1) + "x" + transform(Page.oLoc.Loc_W1)]
+        if Page.oLoc.Loc_H2 > 0
+          .cShowExpression = .cShowExpression + [ + "x" + transform(Page.oLoc.Loc_H2)]
+        endif
+        .cLabel = "Location Dimensions"
+      endwith 
+
       .AddObject("cboPnl_FK", "L7Popup")
       with .cboPnl_FK
         .cControlSource = "V_PanelLocation.Plc_Pnl_FK"
