@@ -106,18 +106,25 @@ define class ais_LocDisplay as aisLocPage
 
   * ----------------------------------------------------- *  
   function page_getDisplay(loHandler)
-    local llVert, lcRet, lnSide, loColl, lcSide, laCells[1], lnItem, loLoc, lnOrient, lcOrient, lnCol, loPlc, lcCell, lcOut, lcRow 
+    local llVert, lcRet, lnCols, lnSide, loColl, lcSide, laCells[1], lnItem, loLoc, lnOrient, lcOrient, lnCol, loPlc, lcCell, lcOut, lcRow 
     llVert = .t. 
     store "" to lcRet
+    lnCols = 5
     for lnSide = 1 to 2
       lcSide = iif(m.lnSide = 1, "Down", "Up")
       loColl = loHandler.&lcSide
-      dimension laCells[loColl.count, 5]
+      dimension laCells[loColl.count, m.lnCols]
       laCells = ""
       for lnItem = 1 to loColl.count
         loLoc = m.loColl.item(m.lnItem)
 
-        laCells[m.lnItem, 3] = textmerge('<td class="loc-id"><<left(loLoc.Loc_Side, 1)>><<padl(transform(loLoc.Loc_No), 3, "0")>></td>') + crlf
+        laCells[m.lnItem, 3] = textmerge('<td class="loc-id"><div style="min-height: <<int(loLoc.Loc_W1)>>px;">' + ;
+          '<span class="id-field location"><<left(loLoc.Loc_Side, 1)>><<padl(transform(loLoc.Loc_No), 3, "0")>></span>' + ;
+          '<br>(<<int(loLoc.Loc_H1)>>x<<int(loLoc.Loc_W1)>>)' + ;
+          '<<iif(empty(loLoc.Loc_Marker), "", "<br>" + trim(m.loLoc.Loc_Marker))>>' + ;
+          '<<iif(empty(loLoc.Loc_Comments), "", "<br>" + m.loLoc.Loc_Comments)>>' + ;
+          '</div></td>') + crlf
+          
         for lnOrient = 1 to 2
           lcOrient = iif(m.lnOrient = 1, "Outer", "Inner")
           loPlc = loLoc.&lcOrient
@@ -134,22 +141,26 @@ define class ais_LocDisplay as aisLocPage
           if isnull(m.loPlc)
             lcCell = '<td class="loc-link"></td>' + crlf 
           else
-            lcCell = '<td class="loc-link">' + loPlc.Pnl_Id + '</td>' + crlf 
+            lcCell = '<td class="loc-link"><span class="id-field panel">' + loPlc.Pnl_Id + '</span></td>' + crlf 
           endif
           laCells[m.lnItem, m.lnCol] = m.lcCell
         next && orient
       next && loLoc
 
-      lcOut = ''
+      lcOut = ""
+      ** lcOut = m.lcOut + '<div class="clear"></div>' + crlf && prep for floats 
+      
       lcOut = m.lcOut + textmerge('<div class="loc-display" id="side-<<m.lcSide>>"><table><tbody>') + CRLF
-      for lnRow = 1 to loColl.count
+      lcOut = m.lcOut + textmerge('<tr><th colspan="<<m.lnCols>>">NORTH SIDE</th></tr>') + crlf
+      for lnRow = loColl.count to 1 step -1 && backward to show North Side at top 
         lcRow = '<tr>' + crlf
-        for lnCol = 1 to 5
+        for lnCol = 1 to m.lnCols
           lcRow = m.lcRow + laCells[m.lnRow, m.lnCol]
         next  && col
         lcRow = m.lcRow + '</tr>' + crlf
         lcOut = m.lcOut + m.lcRow + CRLF
       next && row
+      lcOut = m.lcOut + textmerge('<tr><th colspan="<<m.lnCols>>">DOWNTOWN PITTSBURGH</th></tr>') + crlf
       lcOut = m.lcOut + '</tbody></table></div>' + CRLF
       lcRet = m.lcRet + HtWrap(m.lcSide + "-River Side", 'div,strong') + m.lcOut
     next && side
@@ -235,12 +246,7 @@ define class ais_LocList as aisLocPage
 
     loTbl = createobject("AisTable")
     with loTbl
-      * loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
-
-      *!*        loCol = .addCursorColumn("Loc_Side", "Side")
-      *!*        loCol = .addCursorColumn("Loc_No", "No")
-      
-      loCol = .addCursorColumn("Loc_No", "Side-No", [left(Loc_Side,1) + padl(transform(Loc_No), 3, "0")] )
+      loCol = .addCursorColumn("Loc_No", "Side-No", [HtWrap(left(Loc_Side,1) + padl(transform(Loc_No), 3, "0"), 'span', , 'id-field location')] )
       
       loCol = .addCursorColumn("Loc_H1", "Height-L")
       loCol = .addCursorColumn("Loc_W1", "Width")
@@ -259,7 +265,8 @@ define class ais_LocList as aisLocPage
       loCol = .addCursorColumn("Loc_Notes", "Description", [L7ParseOnView(Loc_Comments)])
       loCol = .addCursorColumn("Loc_Notes", "Notes", [L7ParseOnView(Loc_Notes)])
       
-      loCol = .addCursorColumn("Loc_No", "Side-No", [left(Loc_Side,1) + padl(transform(Loc_No), 3, "0")] )
+      * repeat for convenience: 
+      loCol = .addCursorColumn("Loc_No", "Side-No", [HtWrap(left(Loc_Side,1) + padl(transform(Loc_No), 3, "0"), 'span', , 'id-field location')] )
 
       if empty(this.cPage_Side) or "Down" $ this.cPage_Side
         .cFilter = [Loc_Side = "Down"]

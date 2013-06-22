@@ -96,12 +96,13 @@ p.break { margin-bottom: 5em }
 .gallery-item a {text-align: center;}
 .gallery-item-info {font-weight: bold; text-align: center;}
 
-div.loc-display{width: 320px; height: 99%; float: left; overflow-y: scroll; text-align: right;}
+div.loc-display{width: 400px; float: left; overflow-y:visible; padding: 0 20px;}
 div.loc-display table{background-color: #ffe; }
-div.loc-display td div.loc-img {min-height: 60px;}
+div.loc-display th{color: white; background-color: black; padding: 10px 0px; text-align: center;}
+/* div.loc-display td div.loc-img {min-height: 60px;} */
 td.loc-pnl {width: 50px; border-width: 6px !important; border-color: black !important; text-align: center; vertical-align: middle;}
 td.loc-link{width: 25px;}
-td.loc-id  {width: 40px; text-align: center; }
+td.loc-id  {width: 60px; text-align: center; }
 
 table.mgmt-report{border: 0;}
 .mgmt-report th{font-weight: normal; color: brown; text-align: right;}
