@@ -44,7 +44,7 @@ define class aisLocPage as aisPage
     lcMenu = "main\This"
     with this
       .AddSubMenu("This", "BRIDGE LOCATIONS")
-      .addMenuItem(m.lcMenu, 'Special Sizes', StuffUrl(this.cUrlA, 2, "LocList", "special", "1"))
+      .addMenuItem(m.lcMenu, 'Special Size Locations', StuffUrl(this.cUrlA, 2, "LocList", "special", "1"))
       .addMenuItem(m.lcMenu, 'Trapezoids', StuffUrl(this.cUrlA, 2, "LocList", "trapezoid", "1"))
       .addMenuItem(m.lcMenu, 'Down-River Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Down"))
       .addMenuItem(m.lcMenu, 'Up-River Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Up"))
@@ -53,6 +53,7 @@ define class aisLocPage as aisPage
         .addMenuItem(m.lcMenu, "Edit All Locations...", StuffUrl(.cUrlB, 2, "LocBrowse"))
       endif
       .addMenuItem(m.lcMenu, 'Panel Requirements', StuffUrl(.cUrlA, 2, "LocSumList"))
+      .addMenuItem(m.lcMenu, 'Picture Panels on Bridge!', StuffUrl(.cUrlA, 2, "LocDisplay"  ))
     endwith 
     dodefault()
     return 
@@ -114,7 +115,7 @@ define class ais_LocDisplay as aisLocPage
       dimension laCells[loColl.count, 5]
       laCells = ""
       for lnItem = 1 to loColl.count
-        loLoc = m.loColl[m.lnItem]
+        loLoc = m.loColl.item(m.lnItem)
 
         laCells[m.lnItem, 3] = textmerge('<td class="loc-id"><<left(loLoc.Loc_Side, 1)>><<padl(transform(loLoc.Loc_No), 3, "0")>></td>') + crlf
         for lnOrient = 1 to 2
