@@ -498,4 +498,12 @@ define class AisPasswordTextbox AS L7Textbox
 enddefine   
 
 *** ========================================================= ***
+define class AisRadioCheckbox AS L7Checkbox
+  nMode = L7_MULTI_RADIOBUTTON
+  nStyle = L7_MULTISTYLE_VERTICAL  && only applies to radio-button transforms
+  lFalseBeforeTrue = .T.
+  cInterControlText = NULL 
+enddefine 
+
+*** ========================================================= ***
 * End: AisClasses.PRG

@@ -121,8 +121,8 @@ define class aisPnlPage as aisPage
         .addMenuItem(m.lcMenu, 'Excluded Panels', StuffUrl(this.cUrlA, 2, "PnlList", "flags", "excluded"))
         .addMenuItem(m.lcMenu, 'Deleted Panels', StuffUrl(this.cUrlA, 2, "PnlList", "flags", "inactive"))
 
-        .addMenuItem(m.lcMenu, 'Edit Panel Metadata', StuffUrl(this.cUrlA, 2, "PnlBrowse"))
       endif
+      .addMenuItem(m.lcMenu, 'Edit ALL Panel Metadata', StuffUrl(this.cUrlA, 2, "PnlBrowse"))
     endwith 
     dodefault()
     return 
@@ -590,6 +590,7 @@ define class AisPnlBrowseForm AS AisForm
   cTitle = "Panel Metadata Form"
   cAlias = null && client should set 
   cCssStyle = "width: 100%;"
+  cID = "frmPnlBrow"
   * --------------------------------------------------------- *
   function AddControls
     with this
@@ -614,6 +615,7 @@ define class AisPnlBrowseForm AS AisForm
           .cControlSource = this.cAlias + ".Pnl_Dim_1"
           .cFieldType = "C"
           .cLabel = "Width"
+          .lDisabled = .t.
         endwith
 
         .AddObject("txtDim_2", "L7Textbox")
@@ -621,6 +623,7 @@ define class AisPnlBrowseForm AS AisForm
           .cControlSource = this.cAlias + ".Pnl_Dim_2"
           .cFieldType = "C"
           .cLabel = "Width"
+          .lDisabled = .t.
         endwith
 
         .AddObject("chkSp", "L7Checkbox")
@@ -628,6 +631,7 @@ define class AisPnlBrowseForm AS AisForm
           .cControlSource = this.cAlias + ".Pnl_Special_Size"
           .cLabel = "Special Size?"
           .cCaption = "SPECIAL"
+          .lDisabled = .t.
         endwith
 
         .AddObject("txtCat", "L7Textbox")
@@ -728,12 +732,12 @@ define class ais_PnlHome as aisPnlPage
       if found()
         skip
         if !eof()
-          .addMenuItem("main\This,page", "Next Panel (" + Pnl_Id + ")", StuffUrl(.cUrlA, "pnl", Pnl_PK))
+          .addMenuItem("main\This,page", "NEXT Panel (" + Pnl_Id + ")", StuffUrl(.cUrlA, "pnl", Pnl_PK))
         endif
         locate for Pnl_Id = this.oPnl.Pnl_Id
         skip -1
         if !bof()
-          .addMenuItem("main\This,page", "Previous Panel (" + Pnl_Id + ")", StuffUrl(.cUrlA, "pnl", Pnl_PK))
+          .addMenuItem("main\This,page", "PREVIOUS Panel (" + Pnl_Id + ")", StuffUrl(.cUrlA, "pnl", Pnl_PK))
         endif
       endif
       use in select("v_Active_Panel_Set")
@@ -1002,40 +1006,18 @@ define class aisPanelForm as AisForm
         .cCssClass = "FormControlPrivate"
       endwith
       
-      .AddObject("cboLoc_FK", "L7Popup")
-      with .cboLoc_FK
-        .cControlSource = "V_Panel.Pnl_Fac_FK"
-        .lRequired = .t.
-        .cLabel = "Current Storage Facility"
-        .lAutoRender = .T.
-        .nRowSourceType = L7_ROWSOURCETYPE_ALIAS
-        .cRowSource = goL7App.cFacAlias  
-        *!* ex: .cFilterExpression = [Fac_Storage = .t.]
-        .cValueExpression = [Fac_PK]
-        .cLabelExpression = [Fac_Name]
-        .vFirstItemValue = space(32) && 0 for integer keys
-        .cFirstItemLabel = "[ select from choices below ]"
-        if this.lNewRecord
-          *!* .SetValue(something from Page context....)
-        endif 
-      endwith 
-      
-      .AddObject("chkSingle_Piece", "L7Checkbox")
+      .AddObject("chkSingle_Piece", "AisRadioCheckbox")
       with .chkSingle_Piece
-        .cGroupID = "DIM"
+        * .cGroupID = "LOG"
         .cControlSource = "V_Panel.Pnl_Single_Piece"
         .cLabel = "Is this a single-piece panel?"
-        .nMode = L7_MULTI_RADIOBUTTON
-        .nStyle = L7_MULTISTYLE_VERTICAL  && only applies to radio-button transforms
         .cCaption = "Yes - single piece"
         .cFalseCaption = "No - multiple pieces" 
-        .lFalseBeforeTrue = .T.
-        .cInterControlText = NULL 
       endwith 
       
       .AddObject("txtDim_1", "L7Textbox")
       with .txtDim_1
-        .cGroupID = "DIM"
+        *.cGroupID = "DIM"
         .cFieldType = "C"
         .cControlSource = "V_Panel.Pnl_Dim_1"
         .cLabel = "Height" && "Dimension 1 (inches)"
@@ -1044,19 +1026,20 @@ define class aisPanelForm as AisForm
        
       .AddObject("txtDim_2", "L7Textbox")
       with .txtDim_2
-        .cGroupID = "DIM"
+        *.cGroupID = "DIM"
         .cFieldType = "C"
         .cControlSource = "V_Panel.Pnl_Dim_2"
         .cLabel = "Width" && "Dimension 2 (inches)"
         * .cInstructions = "If not equal, please enter LARGER dimension second!"
       endwith 
 
-      .AddObject("chkSpecial_Size", "L7Checkbox")
+      .AddObject("chkSpecial_Size", "AisRadioCheckbox")
       with .chkSpecial_Size
-        .cGroupID = "DIM"
+        *.cGroupID = "DIM"
         .cControlSource = "V_Panel.Pnl_Special_Size"
         .cLabel = "Special Size?"
         .cCaption = "Special Size"
+        .cFalseCaption = "Normal Size"
       endwith
 
       .AddObject("txtDesign_Category", "L7Textbox")
@@ -1067,13 +1050,13 @@ define class aisPanelForm as AisForm
         .cLabel = "Design Category" 
       endwith 
 
-      .AddObject("chkCompleted", "L7Checkbox")
-      with .chkCompleted
-        .cGroupID = "DIM"
-        .cControlSource = "V_Panel.Pnl_Completed"
-        .cLabel = "Completed?"
-      endwith
-      
+      .AddObject("lblImage", "L7Label")
+      with .lblImage
+        .cFieldType = "C"
+        .cShowExpression = [AisPanelImage(V_Panel.Pnl_Id, "_main")]
+        .lNoLabel = .t. 
+      endwith 
+
       .AddObject("edtComments", "L7Textarea")
       with .edtComments
         .cGroupID = "NOTES"
@@ -1090,6 +1073,35 @@ define class aisPanelForm as AisForm
         .nRows = 3
         .cCssClass = "FormControlPrivate"
       endwith
+
+      .AddObject("chkCompleted", "AisRadioCheckbox")
+      with .chkCompleted
+        .cGroupID = "LOGISTICS"
+        .cControlSource = "V_Panel.Pnl_Completed"
+        .cLabel = "Completed?"
+        .cCaption = "Yes - Complete"
+        .cFalseCaption = "No - Still Incomplete" 
+      endwith
+      
+      .AddObject("cboLoc_FK", "L7Popup")
+      with .cboLoc_FK
+        .cGroupID = "LOGISTICS"
+        .cControlSource = "V_Panel.Pnl_Fac_FK"
+        .lRequired = .t.
+        .cLabel = "Current Storage Facility"
+        .lAutoRender = .T.
+        .nRowSourceType = L7_ROWSOURCETYPE_ALIAS
+        .cRowSource = goL7App.cFacAlias  
+        *!* ex: .cFilterExpression = [Fac_Storage = .t.]
+        .cValueExpression = [Fac_PK]
+        .cLabelExpression = [Fac_Name]
+        .vFirstItemValue = space(32) && 0 for integer keys
+        .cFirstItemLabel = "[ select from choices below ]"
+        if this.lNewRecord
+          *!* .SetValue(something from Page context....)
+        endif 
+      endwith 
+
     endwith
   endfunc
 enddefine  && PanelForm
