@@ -138,7 +138,7 @@ define class ais_LocDisplay as aisLocPage
               iif(m.loLoc.Loc_Skip, '<span class="skipped">Skipped (Unusable Space)</span>', '') + ;
               '</div></td>' + crlf
           else
-            lcCell = '<td class="loc-pnl"><div id="' + loPlc.Pnl_Id + '" class="loc-img">' + AisPanelImage(loPlc.Pnl_Id, "_h50r") + '</div></td>' + crlf 
+            lcCell = '<td class="loc-pnl"><div id="' + loPlc.Plc_Pnl_FK + '" class="loc-img">' + AisPanelImage(loPlc.Pnl_Id, "_h50r") + '</div></td>' + crlf 
           endif
           laCells[m.lnItem, m.lnCol] = m.lcCell
 
@@ -270,7 +270,7 @@ define class ais_LocList as aisLocPage
         loCol = .addCursorColumn("Loc_PK", m.lcOrient + "<br>Panel", ;
           [iif(Loc_Skip, "skip", (] + ;
             [iif(seek(Loc_PK + "] + m.lcOrient + [", "PlcQuery_"),] + ;
-              [ HTLink(StuffUrl(Urls.item("PnlHome"), "pnl", PlcQuery_.Plc_Pnl_FK), PlcQuery_.Pnl_ID, "go to panel", "id-field panel")] + [, ] + ;
+              [ HTLink(StuffUrl(Urls.item("PnlHome"), "pnl", PlcQuery_.Plc_Pnl_FK), PlcQuery_.Pnl_ID, 'title="go to panel" id="' + PlcQuery_.Plc_Pnl_FK + '"', "id-field panel")] + [, ] + ;
               [ HTLink(StuffUrl(Urls.item("LocAssign"), "loc", Loc_PK, "orient", "] + m.lcOrient + ["), "--", "assign panel...")] + ;
             [)))])
       next 
@@ -416,13 +416,12 @@ define class ais_LocAssign as aisLocPage
 
         if loTrans.Save()  
           select V_PanelLocation 
-          Response.Redirect(this.cCancelUrl)
+          Response.Redirect(this.cCancelUrl + "#" + V_PanelLocation.Plc_Pnl_FK)
           return 
         else 
           this.ErrorMsg( "Database Failure Saving Record!", ;
             "Error " + TRANSFORM( loTrans.aFailures[1, 1]) + [ :] + ;
             loTrans.aFailures[1, 2] )
-          ** this.ServerError(textmerge('Database Failure Saving Record. Error <<loTrans.aFailures[1, 1]>>: <<loTrans.aFailures[1, 2]>>'))
           return  
         endif  && Save()
         

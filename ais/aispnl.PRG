@@ -815,7 +815,7 @@ define class ais_PnlHome as aisPnlPage
       if isnull(this.oPage_Location)
       else
         loRow.vValue = HTWrap(aisFormatPanelLocation(this.oPage_Location), 'span',, 'id-field location')
-        loRow.links.add(HTLink(StuffUrl(this.cUrlA, 2, "LocDisplay") + "#" + loData.Pnl_ID, "View on Bridge"))
+        loRow.links.add(HTLink(StuffUrl(this.cUrlA, 2, "LocDisplay") + "#" + loData.Pnl_PK, "View on Bridge"))
       endif 
       .AddRowEx(m.loRow)
       
