@@ -131,7 +131,9 @@ define class ais_LocDisplay as aisLocPage
           * trick to make sides of bridge flipped, so Outer is left for Down and Right for Up
           lnCol = iif(m.lcSide = "Down", iif(m.lcOrient = "Outer", 2, 4), iif(m.lcOrient = "Outer", 4, 2))
           if isnull(m.loPlc)
-            lcCell = '<td class="loc-pnl"><div class="loc-img"></div></td>' + crlf
+            lcCell = '<td class="loc-pnl"><div class="loc-img">' + ;
+              iif(m.loLoc.Loc_Skip, '<span class="skipped">Skipped (Unusable Space)</span>', '') + ;
+              '</div></td>' + crlf
           else
             lcCell = '<td class="loc-pnl"><div class="loc-img">' + AisPanelImage(loPlc.Pnl_Id, "_h50r") + '</div></td>' + crlf 
           endif
