@@ -110,7 +110,10 @@ define class ais_LocDisplay as aisLocPage
     llVert = .t. 
     store "" to lcRet
     lnCols = 5
-    for lnSide = 1 to 2
+    urls.add(StuffUrl(this.cUrlA, 2, "LocAssign"), "LocAssign")
+    urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
+
+    for lnSide = 1 to 2  && separate table for each side of bridge (asymetrical)
       lcSide = iif(m.lnSide = 1, "Down", "Up")
       loColl = loHandler.&lcSide
       dimension laCells[loColl.count, m.lnCols]
@@ -135,15 +138,24 @@ define class ais_LocDisplay as aisLocPage
               iif(m.loLoc.Loc_Skip, '<span class="skipped">Skipped (Unusable Space)</span>', '') + ;
               '</div></td>' + crlf
           else
-            lcCell = '<td class="loc-pnl"><div class="loc-img">' + AisPanelImage(loPlc.Pnl_Id, "_h50r") + '</div></td>' + crlf 
+            lcCell = '<td class="loc-pnl"><div id="' + loPlc.Pnl_Id + '" class="loc-img">' + AisPanelImage(loPlc.Pnl_Id, "_h50r") + '</div></td>' + crlf 
           endif
           laCells[m.lnItem, m.lnCol] = m.lcCell
 
           lnCol = iif(m.lcSide = "Down", iif(m.lcOrient = "Outer", 1, 5), iif(m.lcOrient = "Outer", 5, 1))
-          if isnull(m.loPlc)
-            lcCell = '<td class="loc-link"></td>' + crlf 
+          if isnull(m.loPlc)  && no panel 
+            if m.loLoc.Loc_Skip
+              lcCell = '<td class="loc-link"></td>' + crlf 
+            else
+              lcCell = '<td class="loc-link">' + ;
+                HTLink(StuffUrl(urls.item("LocAssign"), "loc", loLoc.Loc_PK, "orient", m.lcOrient) , "assign...") + ;
+                '</td>' + crlf 
+            endif 
           else
-            lcCell = '<td class="loc-link"><span class="id-field panel">' + loPlc.Pnl_Id + '</span></td>' + crlf 
+            lcCell = '<td class="loc-link">' + ;
+              '<span class="id-field panel">' + HtLink(stuffUrl(urls.item("PnlHome"), "pnl", loPlc.Pnl_Id), loPlc.Pnl_Id) + '</span>' + ;
+              '<br>(' + trim(loPlc.Pnl_Dim_1) + 'x' + trim(loPlc.Pnl_Dim_2) + ', ' + trim(loPlc.Pnl_Design_Category) + ')' + ;
+              '</td>' + crlf 
           endif
           laCells[m.lnItem, m.lnCol] = m.lcCell
         next && orient
@@ -177,7 +189,7 @@ define class ais_LocDisplay as aisLocPage
     return 
   endfunc 
   * ----------------------------------------------------- *  
-enddefine
+enddefine  && ais_LocDisplay 
 
 *** ========================================================= ***
 define class aisLocDisplayHandler as custom
@@ -201,7 +213,7 @@ define class aisLocDisplayHandler as custom
     return 
   endfunc 
   * ----------------------------------------------------- *  
-enddefine 
+enddefine && aisLocDisplayHandler 
 
 *** ========================================================= ***
 define class ais_LocList as aisLocPage 
@@ -359,7 +371,8 @@ define class ais_LocAssign as aisLocPage
   endfunc   
   * ----------------------------------------------------- *  
   function ProcessRequest
-    this.cCancelUrl = StuffURL(this.cUrlB, 2, "LocList", "side", this.cPage_Side)
+    this.cCancelUrl = iif(empty(this.cPage_Side), StuffUrl(this.cUrlA, 2, "LocDisplay"), ;
+      StuffURL(this.cUrlB, 2, "LocList", "side", this.cPage_Side))
     this.Assert(poContext.lAdmin)
     this.assert(inlist(this.cPage_Orient, "Outer", "Inner"), "invalid orientation")
 
@@ -618,7 +631,7 @@ define class AisPlcQuery as L7Query
         dimension .aJoins[.nJoins, 3]
         .aJoins[.nJoins, 1] = "Panel"
         .aJoins[.nJoins, 2] = "Plc_Pnl_FK = Pnl_PK"
-        .AddFields("Pnl_ID, Pnl_Stitcher_Art_FK, Pnl_Single_Piece")
+        .AddFields("Pnl_ID, Pnl_Stitcher_Art_FK, Pnl_Single_Piece, Pnl_Dim_1, Pnl_Dim_2, Pnl_Design_Category")
       endif 
 
       if !isnull(.cSide)

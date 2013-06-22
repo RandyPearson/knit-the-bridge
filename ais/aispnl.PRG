@@ -812,7 +812,11 @@ define class ais_PnlHome as aisPnlPage
             
       loRow.clear()
       loRow.cLabel = "Bridge Location"
-      loRow.vValue = aisFormatPanelLocation(this.oPage_Location)
+      if isnull(this.oPage_Location)
+      else
+        loRow.vValue = HTWrap(aisFormatPanelLocation(this.oPage_Location), 'span',, 'id-field location')
+        loRow.links.add(HTLink(StuffUrl(this.cUrlA, 2, "LocDisplay") + "#" + loData.Pnl_ID, "View on Bridge"))
+      endif 
       .AddRowEx(m.loRow)
       
       .AddHeading('Pieces Comprising Panel')
