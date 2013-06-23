@@ -1014,6 +1014,7 @@ define class aisArtistForms AS AisForm
         .cInstructions = "(if none, enter 0)"
       endwith
 
+      #IF THISAPP_TYPE_3_RAILINGS
       .colArt.AddObjectToParent("txtRailing_3_Count", "L7Textbox")
       with .txtRailing_3_Count
         .cFieldType = "I"
@@ -1022,7 +1023,8 @@ define class aisArtistForms AS AisForm
         .cLabel = "# of 9x80 Railing pieces"
         .cInstructions = "(if none, enter 0)"
       endwith
-
+      #ENDIF
+      
       .AddObject("colPart", "L7CollectionControl")  && L7CheckboxCollection
       with .colPart
         .cGroupId = "part"
@@ -2065,10 +2067,12 @@ define class AisArtQuery AS L7Query
   lAccountInactive = null && surrogate is "approved"
   lDuplicates = null
   
-  lPanelSignup = null  
+  lPanelSignup = null
+  lRailingSignup = null   
   lBitsSubmitted = null 
   lPanelsSubmitted = null 
   lBitsOrPanelsSubmitted = null
+  lRailingsSubmitted = null 
  
   lKtbResponse = null
   lNoCount = null 
@@ -2188,6 +2192,10 @@ define class AisArtQuery AS L7Query
         .cWhereClause = .cWhereClause + [ and Art_Panel_Count] + iif(.lPanelSignup, [ > 0], [ = 0])
       endif
 
+      if !isnull(.lRailingSignup)
+        .cWhereClause = .cWhereClause + [ and Art_Railing_1_Count + Art_Railing_2_Count] + iif(.lRailingSignup, [ > 0], [ = 0])
+      endif
+
       if !isnull(.lBitsOrPanelsSubmitted)
         .cWhereClause = .cWhereClause + [ and Art_PK] + iif(.lBitsOrPanelsSubmitted, [ in ], [ not in ]) + ;
           [(select Pce_Art_FK from Piece where !Pce_Inactive and Pce_Type = 'Panels')]
@@ -2202,6 +2210,12 @@ define class AisArtQuery AS L7Query
         .cWhereClause = .cWhereClause + [ and Art_PK] + iif(.lBitsSubmitted, [ in ], [ not in ]) + ;
           [(select Pce_Art_FK from Piece where !Pce_Inactive and Pce_Type = 'Panels' and !Pce_Whole_Panel)]
       endif 
+
+      if !isnull(.lRailingsSubmitted)
+        .cWhereClause = .cWhereClause + [ and Art_PK] + iif(.lRailingsSubmitted, [ in ], [ not in ]) + ;
+          [(select Pce_Art_FK from Piece where !Pce_Inactive and Pce_Type = 'Railings')]
+      endif 
+
       
       if !isnull( .lNoCount)
         .cWhereClause = .cWhereClause + [ AND Art_No_Count = ] + IIF(.lNoCount, [.T.], [.F.])

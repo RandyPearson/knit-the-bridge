@@ -671,7 +671,7 @@ define class ais_Home as aisPage
     local lcTmp
     text to lcTmp noshow 
       <table class="mgmt-report">
-      <caption>Production Accounting Report</caption>
+      <caption>Panel Production Accounting Report</caption>
         <tbody>
           <tr><th>Total Bridge Locations</th>
             <td><<loState.Locations>></td>
