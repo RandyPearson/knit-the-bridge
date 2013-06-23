@@ -110,6 +110,7 @@ table.mgmt-report{border: 0;}
 .mgmt-report th{font-weight: normal; color: brown; text-align: right;}
 .mgmt-report td{text-align: right;}
 .mgmt-report .total{font-weight: bold;}
+.mgmt-report .section, .mgmt-report caption{font-weight: bold; color: brown;}
 .good{color: darkgreen;}
 .bad{color: red;}
 

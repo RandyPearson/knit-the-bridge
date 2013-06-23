@@ -559,9 +559,8 @@ define class ais_Home as aisPage
     this.page_Calculate(m.loState)
     lcRpt = textmerge(m.lcTmp)
     with Response
-      *.Write("Home page content goes here...")
-      *.Write(str(this.oPage_Queries.item("LocQuery").aResults[1]))
       .Write(m.lcRpt)
+      *!* .Write(this.page_RailingReport())
     endwith 
     return 
   endfunc 
@@ -593,7 +592,23 @@ define class ais_Home as aisPage
       .Execute()
       loState.locatedPanels = .aResults[1]
     endwith 
-    this.oPage_Queries.add(m.loQ, "PceQuery")
+    this.oPage_Queries.add(m.loQ, "PlcQuery")
+
+    loQ = createobject("AisPceQuery")
+    with loQ
+      .cType = "Railings"
+      .ClearFields()
+      .AddFields([Pce_Dim_1, Pce_Dim_2, count(*) as Count_])
+      .AddOrderBy([Pce_Dim_1])     
+      .AddOrderBy([Pce_Dim_2], , .t.)     
+      .nGrouping = 2
+      .Execute()
+      locate for Pce_Dim_1 = "9 " and Pce_Dim_2 = "105 "
+      loState.receivedRailing1 = Count_
+      locate for Pce_Dim_1 = "15 " and Pce_Dim_2 = "80 "
+      loState.receivedRailing2 = Count_
+    endwith 
+    this.oPage_Queries.add(m.loQ, "RailingQuery")
 
     loQ = createobject("AisPnlQuery")
     with loQ
@@ -635,6 +650,21 @@ define class ais_Home as aisPage
     endwith 
     this.oPage_Queries.add(m.loQ, "EstBitsQuery")
 
+    loQ = createobject("AisArtQuery")
+    with loQ
+      .lRailingsSubmitted = .f. && don't count folks who have submitted
+      .lArrayResults = .t.
+      .ClearFields()
+      .AddFields([sum(Art_Railing_1_Count), sum(Art_Railing_2_Count)])
+      .BuildFieldList() 
+      .AddOrderBy()     
+      .Execute()
+      loState.dueRailing1 = .aResults[1] 
+      loState.dueRailing2 = .aResults[2] 
+    endwith 
+    this.oPage_Queries.add(m.loQ, "EstRailingsQuery")
+    
+    return 
   endfunc 
   * ----------------------------------------------------- *  
   function page_Calculate(loState)
@@ -644,6 +674,13 @@ define class ais_Home as aisPage
       .estimatedBitPanels = round(.dueBits * .bitsPerPerson * (1 - .noShowFraction) / 8, 0)
       .neededPanels = 2 * (.Locations - .skippedLocations) - .actualPanels
       .estimatedShortfall = .neededPanels - .estimatedBitPanels - .estimatedWholePanels
+
+      .requiredRailing1 = .Locations - .skippedLocations + 2
+      .requiredRailing2 = .Locations - .skippedLocations
+      .neededRailing1 = .requiredRailing1 - .receivedRailing1
+      .neededRailing2 = .requiredRailing2 - .receivedRailing2
+      .shortfallRailing1 = .neededRailing1 - round(.dueRailing1 * (1 - .railingNoShowFraction), 0)
+      .shortfallRailing2 = .neededRailing2 - round(.dueRailing2 * (1 - .railingNoShowFraction), 0)
     endwith
     return 
   endfunc 
@@ -659,11 +696,24 @@ define class ais_Home as aisPage
     addproperty(m.loState, "neededPanels", 0)
     addproperty(m.loState, "dueBits", 0)
     addproperty(m.loState, "duePanels", 0)
+
+    addproperty(m.loState, "requiredRailing1", 0)
+    addproperty(m.loState, "requiredRailing2", 0)
+    addproperty(m.loState, "receivedRailing1", 0)
+    addproperty(m.loState, "receivedRailing2", 0)
+    addproperty(m.loState, "neededRailing1", 0)
+    addproperty(m.loState, "neededRailing2", 0)
+    addproperty(m.loState, "dueRailing1", 0)
+    addproperty(m.loState, "dueRailing2", 0)
+    addproperty(m.loState, "shortfallRailing1", 0)
+    addproperty(m.loState, "shortfallRailing2", 0)
+    
     addproperty(m.loState, "estimatedWholePanels", 0)
     addproperty(m.loState, "estimatedBitPanels", 0)
     addproperty(m.loState, "estimatedShortfall", 0)
     addproperty(m.loState, "noShowFraction", 0.75)
     addproperty(m.loState, "bitsPerPerson", 1.70)
+    addproperty(m.loState, "railingNoShowFraction", 0.40)
     return m.loState
   endfunc && page_getState
   * ----------------------------------------------------- *  
@@ -671,8 +721,10 @@ define class ais_Home as aisPage
     local lcTmp
     text to lcTmp noshow 
       <table class="mgmt-report">
-      <caption>Panel Production Accounting Report</caption>
+      <caption>Production Accounting Report</caption>
         <tbody>
+          <tr><th class="section" colspan="3">LOCATION COUNTS</th></tr>
+
           <tr><th>Total Bridge Locations</th>
             <td><<loState.Locations>></td>
             <td></td></tr>
@@ -684,6 +736,8 @@ define class ais_Home as aisPage
           <tr><th>= Total Panel Locations</th>
             <td><<loState.Locations - loState.skippedLocations>></td><td></td></tr>
             
+          <tr><th class="section" colspan="3">PANEL ESTIMATES</th></tr>
+
           <tr><th>x 2 = Total Panel Requirement</th>
             <td></td><td class="total"><<2 * (loState.Locations - loState.skippedLocations)>></td></tr>
             
@@ -702,6 +756,45 @@ define class ais_Home as aisPage
           <tr><th>Whole Panels No-Shows</th>
             <td><<loState.duePanels>></td><td></td></tr>
 
+          <tr><th class="section" colspan="3">RAILING ESTIMATES: 9 x 105</th></tr>
+
+          <tr><th>9 x 105 Railing Requirement</th>
+            <td></td><td class="total"><<loState.requiredRailing1>></td></tr>
+
+          <tr><th>- 9 x 105 Railings Received</th>
+            <td></td><td><<loState.receivedRailing1>></td></tr>
+
+          <tr><th>9 x 105 Railings Sign-Ups</th>
+            <td><<loState.dueRailing1>></td><td></td></tr>
+
+          <tr><th>Estimated No-Show Percent</th>
+            <td><<round(100 * loState.railingNoShowFraction,0)>>%</td><td></td></tr>
+
+          <tr><th>- Estimated 9 x 105 Railings Pending Submittal</th>
+            <td></td><td><<round(loState.dueRailing1 * (1 - loState.railingNoShowFraction), 0)>></td></tr>
+
+          <tr><th>Estimated 9 x 105 Shortfall</th>
+            <td></td><td class="total"><<loState.shortfallRailing1>></td></tr>
+
+          <tr><th class="section" colspan="3">RAILING ESTIMATES: 15 x 80</th></tr>
+
+          <tr><th>15 x 80 Railing Requirement</th>
+            <td></td><td class="total"><<loState.requiredRailing2>></td></tr>
+
+          <tr><th>- 15 x 80 Railings Received</th>
+            <td></td><td><<loState.receivedRailing2>></td></tr>
+
+          <tr><th>15 x 80 Railings Sign-Ups</th>
+            <td><<loState.dueRailing2>></td><td></td></tr>
+
+          <tr><th>Estimated No-Show Percent</th>
+            <td><<round(100 * loState.railingNoShowFraction,0)>>%</td><td></td></tr>
+
+          <tr><th>- Estimated 15 x 80 Railings Pending Submittal</th>
+            <td></td><td><<round(loState.dueRailing2 * (1 - loState.railingNoShowFraction), 0)>></td></tr>
+
+          <tr><th>Estimated 15 x 80 Shortfall</th>
+            <td></td><td class="total"><<loState.shortfallRailing2>></td></tr>
 
         </tbody>
       </table>
@@ -719,6 +812,22 @@ define class ais_Home as aisPage
 
     return m.lcTmp
   endfunc && page_getTemplate
+
+  * ----------------------------------------------------- *  
+  function Page_RailingReport
+    local loTbl, loCol
+    select this.oPage_Queries.item("RailingQuery").cAlias
+    loTbl = createobject("AisTable")
+    with loTbl
+      .cTableCaption = "Railing Submittal Summary"
+      .cDataRowClass = null 
+      loCol = .AddCursorColumn("Pce_Dim_1", "Dim 1")
+      loCol = .AddCursorColumn("Pce_Dim_2", "Dim 2")
+      loCol = .AddCursorColumn("Count_", "Total")
+    endwith
+    return loTbl.render()
+  endfunc 
+
 enddefine && Home 
 
 *** ========================================================= ***
