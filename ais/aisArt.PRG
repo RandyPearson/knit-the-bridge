@@ -222,7 +222,7 @@ define class ais_ArtList as aisMultiArtPage
   * ----------------------------------------------------- *  
   function ProcessRequest
     local loQry, loFlags, lnIdx, loItem, lcWord, lcProp, loFields, ;
-      loTbl, loCol, loGrp, loRE, loMtchs, loMtch, lcEnt
+      loTbl, loCol, loGrp, loRE, loMtchs, loMtch, lcEnt, loPceQ
     
     * do this late so url has been processed
     if !empty(this.cPage_Srch1)
@@ -279,10 +279,21 @@ define class ais_ArtList as aisMultiArtPage
       
       .execute()
     endwith 
+
+    loPceQ = createobject("AisPceQuery")
+    with loPceQ
+      .addOrderBy('Pce_Art_FK')
+      .nGrouping = 1
+      .clearFields()
+      .addFields('Pce_Art_FK, count(*) as PieceCount')
+      .execute()
+      index on Pce_Art_Fk tag Art
+    endwith 
     
     urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
     urls.add(StuffUrl(this.cUrlA, 2, "ArtForm"), "ArtForm")
 
+    select (loQry.cAlias)
     loTbl = createobject("AisTable")
     with loTbl
       do case
@@ -297,6 +308,9 @@ define class ais_ArtList as aisMultiArtPage
       loCol = .addCursorColumn("Art_ID", "Artist ID", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), Art_ID)], "id-field artist")
 
+      loCol = .AddCursorColumn("Art_PK", 'Work', ;
+        [iif(seek(Art_PK, '] + loPceQ.cAlias + [', 'Art'), ] + loPceQ.cAlias + [.PieceCount, 0)], , ,"N")
+      
       if !isnull(this.lPage_Dupes) && when dupe checking, be explicit
         loCol = .addCursorColumn("Art_First_Name", "First Name")
         loCol = .addCursorColumn("Art_Last_Name", "Last Name")
