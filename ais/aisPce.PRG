@@ -377,9 +377,23 @@ define class ais_PceHome as aisPcePage
       .AddRow("Dimension 2", loData.Pce_Dim_2)
       if m.loData.Pce_Type = "Panels"
         .AddRow("Whole-Panel Piece?", loData.Pce_Whole_Panel)
-        .AddRow("Assigned to Panel?", iif(empty(m.loData.Pce_Pnl_FK), ;
-          "No (see menu options)", ;
-          HtWrap(HTLink(StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", loData.Pce_Pnl_FK), this.oPnl.Pnl_Id), 'span', ,'id-field panel')))
+        
+        * Panel FK and options:
+        loRow.clear()
+        loRow.cLabel = "Assigned to Panel?"
+        if empty(m.loData.Pce_Pnl_FK)
+          loRow.vValue = "No (see menu options)"
+        else
+          loRow.vValue = HtWrap( ;
+            HTLink(StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", loData.Pce_Pnl_FK), this.oPnl.Pnl_Id), ;
+            'span', ,'id-field panel')
+          if poContext.lAdmin and !this.oPce.Pce_Whole_Panel
+            loRow.links.add(HTLink(StuffUrl(this.cUrlB, 2, "PceUnlink"), "Remove piece from panel"))
+          endif 
+        endif
+        .addRowEx(m.loRow)
+
+        * Panel image:
         if !empty(m.loData.Pce_Pnl_FK) 
           lcFileName = forceext(this.oPnl.Pnl_Id + "_main", "jpeg")
           if file(aisPanelFilePath(this.oPnl.Pnl_ID) + m.lcFileName)
@@ -438,6 +452,33 @@ define class ais_PceNew as ais_PceForm
     return    
   endfunc  
 enddefine 
+
+*** ========================================================= ***
+define class ais_PceUnlink as aisPcePage 
+  lAdding = .f.
+  lPceRequired = .t.
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    this.cCancelUrl = stuffUrl(this.cUrlB, 2, "PceHome")
+    this.Assert(poContext.lAdmin)
+    this.Assert(!empty(this.oPce.Pce_Pnl_FK), "Piece is not assigned to any panel.")
+    * return to the Panel where the piece used to be:
+    this.cCancelUrl = stuffUrl(this.cUrlA, 2, "PnlHome", "pnl", this.oPce.Pce_Pnl_FK)
+
+    local vp_cPce_PK, lcXml
+    vp_cPce_PK = this.cPce
+    use V_Piece in select("V_Piece")
+    cursorsetprop("Buffering", 5, "V_Piece")
+    select V_Piece
+    replace Pce_Pnl_FK with ""  && clear the FK panel link
+    StampRec( CurrentUser, THIS.tNow )
+    
+    lcXml = ''
+    this.AssertTransaction("V_Piece", @lcXml)
+    this.confirm(textmerge('Piece <<this.oPce.Pce_ID>> removed from Panel, and is available for re-assignment'), this.cCancelUrl)
+    return
+  endfunc 
+enddefine && ais_PceUnlink 
 
 *** ========================================================= ***
 define class ais_PceForm as aisPcePage 
