@@ -256,7 +256,7 @@ define class ais_ArtList as aisMultiArtPage
         .addFields("Art_Register_Time, Art_KTB_Response, Art_Participation, Art_Comments, Art_Notes")
       endif 
       if this.oPage_Fields.getkey("contact") > 0
-        .addFields("Art_Email, Art_Phone, Art_Contact_Orig, Art_Comments, Art_Notes")
+        .addFields("Art_Email, Art_Phone, Art_Neighborhood, Art_Contact_Orig, Art_Comments, Art_Notes")
       endif 
       
       do case
@@ -294,8 +294,11 @@ define class ais_ArtList as aisMultiArtPage
         loCol = .addCursorColumn("Art_Email", "Email/Phone", [aisFormatContactInfo(THISRECORD)])
       endif 
 
-      if this.oPage_Fields.getkey("location") > 0
+      if this.oPage_Fields.getkey("location") > 0 or this.oPage_Fields.getkey("contact") > 0
         loCol = .addCursorColumn("Art_Neighborhood", "Neighborhood")
+      endif 
+
+      if this.oPage_Fields.getkey("location") > 0
         loCol = .addCursorColumn("Art_Address", "Address")
       endif 
 
