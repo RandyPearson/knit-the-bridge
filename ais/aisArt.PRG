@@ -153,6 +153,7 @@ define class ais_ArtList as aisMultiArtPage
   cPage_Flags = null
   lPage_Approved = null
   lPage_Response = null
+  lPage_Dupes = null
   cSubTitle = "Artists N'At"
   cPage_Srch1 = null
   * --------------------------------------------------------- *
@@ -168,6 +169,9 @@ define class ais_ArtList as aisMultiArtPage
 
     lcStr = this.ReadQueryString("response", .t., .t.)
     this.lPage_Response = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+
+    lcStr = this.ReadQueryString("dupes", .t., .t.)
+    this.lPage_Dupes = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
     
     dodefault()  && required bubble-up
 
@@ -199,6 +203,7 @@ define class ais_ArtList as aisMultiArtPage
         .addMenuItem("main\This", "New Sign-Up...", StuffUrl(.cUrlA, 2, "ArtNew"))
       endif 
       if poContext.lDeveloper
+        .addMenuItem("main\This", "Duplicate Screening", StuffUrl(.cUrlB, "dupes", "1", "fields", "contact,part"),, !isnull(.lPage_Dupes))
         .addMenuItem("main\This", "Broadcast Email...", StuffUrl(.cUrlA, 2, "Broadcast"))
       endif 
       .addMenuItem("main\Reports", "Contact Listing", StuffUrl(.cUrlB, "order", "name", "fields", "names,contact"))
@@ -260,6 +265,10 @@ define class ais_ArtList as aisMultiArtPage
       endif 
       
       do case
+      case !isnull(this.lPage_Dupes)
+        .lDuplicates = .t. 
+        .AddOrderBy("Art_Last_Name")
+        .AddOrderBy("Art_First_Name", , .t.)
       case this.cPage_Order = "location"
         .AddOrderBy("Art_Neighborhood")
       case this.cPage_Order = "reg_time"
@@ -287,9 +296,16 @@ define class ais_ArtList as aisMultiArtPage
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Art_ID", "Artist ID", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), Art_ID)], "id-field artist")
-      loCol = .addCursorColumn("Art_Last_Name", "Name", ;
-        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), aisArtistName(THISRECORD))])
 
+      if !isnull(this.lPage_Dupes) && when dupe checking, be explicit
+        loCol = .addCursorColumn("Art_First_Name", "First Name")
+        loCol = .addCursorColumn("Art_Last_Name", "Last Name")
+        loCol = .addCursorColumn("Art_Full_Name", "Alt Name")
+      else && otherwise use standard name transform:
+        loCol = .addCursorColumn("Art_Last_Name", "Name", ;
+          [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), aisArtistName(THISRECORD))])
+      endif
+      
       if this.oPage_Fields.getkey("contact") > 0
         loCol = .addCursorColumn("Art_Email", "Email/Phone", [aisFormatContactInfo(THISRECORD)])
       endif 
@@ -2027,6 +2043,7 @@ define class AisArtQuery AS L7Query
   lBitsSubmitted = null 
   lPanelsSubmitted = null 
   lBitsOrPanelsSubmitted = null
+  lDuplicates = null
   
   lKtbResponse = null
   lNoCount = null 
@@ -2133,6 +2150,11 @@ define class AisArtQuery AS L7Query
         .cWhereClause = .cWhereClause + [ AND ] + IIF(.lKtbResponse, [!], []) + [empty(Art_KTB_Response)]
       endif 
 
+      if !isnull(.lDuplicates)
+        .cWhereClause = .cWhereClause + [ and art_first_name + art_last_name] + iif(.lDuplicates, [ in ], [ not in ]) + ;
+          [(select art_first_name + art_last_name from artist where !art_inactive group by 1 having count(*) >= 2)]
+      endif 
+      
       if !isnull(.lBitsOrPanelsSubmitted)
         .cWhereClause = .cWhereClause + [ and Art_PK] + iif(.lBitsOrPanelsSubmitted, [ in ], [ not in ]) + ;
           [(select Pce_Art_FK from Piece where !Pce_Inactive and Pce_Type = 'Panels')]
