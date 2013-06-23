@@ -1784,7 +1784,6 @@ define class AisArtBrowseForm AS AisForm
   endfunc  && AddControls
 enddefine && AisArtBrowseForm 
 
-
 *** ========================================================= ***
 define class Ais_Broadcast AS AisPage
   * ----------------------------------------------------- *  
@@ -1812,6 +1811,10 @@ define class Ais_Broadcast AS AisPage
           endif
           if loForm.chkArtist.vNewValue
             .lArtist = .t.
+          endif
+          if loForm.chkNoShow.vNewValue
+            .lPanelSignup = .t.
+            .lBitsOrPanelsSubmitted = .f.
           endif
           if loForm.chkInstall.vNewValue
             .lInstall = .t.
@@ -1931,6 +1934,12 @@ define class AisBroadcastForm AS AisForm
         .cLabel = "Installers"
       endwith
 
+      .colWhom.AddObjectToParent("chkNoShow", "L7Checkbox")
+      with .chkNoShow
+        .cCaption = "Promised Panel, Delivered Nothing"
+        .cLabel = "Panel No-Shows"
+      endwith
+
       .colWhom.AddObjectToParent("chkCore", "L7Checkbox")
       with .chkCore
         .cCaption = "Send to Core Team"
@@ -2039,12 +2048,13 @@ define class AisArtQuery AS L7Query
   lInactive = .f.  && whole record deleted
   lUser = NULL
   lAccountInactive = null && surrogate is "approved"
+  lDuplicates = null
   
+  lPanelSignup = null  
   lBitsSubmitted = null 
   lPanelsSubmitted = null 
   lBitsOrPanelsSubmitted = null
-  lDuplicates = null
-  
+ 
   lKtbResponse = null
   lNoCount = null 
   cGroupArt = null 
@@ -2155,6 +2165,10 @@ define class AisArtQuery AS L7Query
           [(select art_first_name + art_last_name from artist where !art_inactive group by 1 having count(*) >= 2)]
       endif 
       
+      if !isnull(.lPanelSignup)
+        .cWhereClause = .cWhereClause + [ and Art_Panel_Count] + iif(.lPanelSignup, [ > 0], [ = 0])
+      endif
+
       if !isnull(.lBitsOrPanelsSubmitted)
         .cWhereClause = .cWhereClause + [ and Art_PK] + iif(.lBitsOrPanelsSubmitted, [ in ], [ not in ]) + ;
           [(select Pce_Art_FK from Piece where !Pce_Inactive and Pce_Type = 'Panels')]
