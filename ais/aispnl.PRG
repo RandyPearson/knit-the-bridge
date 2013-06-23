@@ -3,7 +3,6 @@
 #INCLUDE WCONNECT.H
 #INCLUDE AIS.H
 
-
 * --------------------------------------------------------- *
 function AisPanelImage(lcId, lcSuff, lcUrl, lcPK, llCanUpload)
   if isnull(m.lcId) or empty(m.lcId)
@@ -112,14 +111,14 @@ define class aisPnlPage as aisPage
       if !.lPnlRequired  && general lists/pages
         .AddSubMenu("This", "PANELS")
 
-        .addMenuItem(m.lcMenu, 'Panel w/Bridge Locations', StuffUrl(this.cUrlA, 2, "PnlList", "location", "1"))
-        .addMenuItem(m.lcMenu, 'Panels Still Available', StuffUrl(this.cUrlA, 2, "PnlList", "location", "0"))
-        .addMenuItem(m.lcMenu, 'ALL Active Panels', StuffUrl(this.cUrlA, 2, "PnlList", "location", .f.))
+        .addMenuItem(m.lcMenu, 'Panel w/Bridge Locations', StuffUrl(this.cUrlB, 2, "PnlList", "location", "1"))
+        .addMenuItem(m.lcMenu, 'Panels Still Available', StuffUrl(this.cUrlB, 2, "PnlList", "location", "0"))
+        .addMenuItem(m.lcMenu, 'ALL Active Panels', StuffUrl(this.cUrlB, 2, "PnlList", "location", .f.))
 
-        .addMenuItem(m.lcMenu, 'Special-Size Panels', StuffUrl(this.cUrlA, 2, "PnlList", "flags", "special"))
-        .addMenuItem(m.lcMenu, 'Incomplete Panels', StuffUrl(this.cUrlA, 2, "PnlList", "complete", "0"))
-        .addMenuItem(m.lcMenu, 'Excluded Panels', StuffUrl(this.cUrlA, 2, "PnlList", "flags", "excluded"))
-        .addMenuItem(m.lcMenu, 'Deleted Panels', StuffUrl(this.cUrlA, 2, "PnlList", "flags", "inactive"))
+        .addMenuItem(m.lcMenu, 'Special-Size Panels', StuffUrl(this.cUrlB, 2, "PnlList", "flags", "special"))
+        .addMenuItem(m.lcMenu, 'Incomplete Panels', StuffUrl(this.cUrlB, 2, "PnlList", "complete", "0"))
+        .addMenuItem(m.lcMenu, 'Excluded Panels', StuffUrl(this.cUrlB, 2, "PnlList", "flags", "excluded"))
+        .addMenuItem(m.lcMenu, 'Deleted Panels', StuffUrl(this.cUrlB, 2, "PnlList", "flags", "inactive"))
 
       endif
       .addMenuItem(m.lcMenu, 'Edit ALL Panel Metadata', StuffUrl(this.cUrlA, 2, "PnlBrowse"))
@@ -190,6 +189,7 @@ define class ais_PnlList as aisPnlPage
   lPage_Complete = null
   cPage_Style = null 
   cPage_Flags = null
+  cPage_Order = null
   * --------------------------------------------------------- *
   function BeforeProcessRequest
     local lcStr
@@ -200,8 +200,10 @@ define class ais_PnlList as aisPnlPage
     lcStr = this.ReadQueryString("complete", .t., .t.)
     this.lPage_Complete = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
 
-    this.cPage_Style = evl(this.ReadQueryString("style", .t., .t.), "table")
+    this.cPage_Style = evl(this.ReadQueryString("style", .t., .F.), "table") && note: left in urlB to style transcends menu selections
     this.cPage_Flags = this.ReadQueryString("flags", .t., .t.)
+
+    this.cPage_Order = evl(this.ReadQueryString("order", .t., .t.), "id")
 
     dodefault()  && required bubble-up
     return    
@@ -241,7 +243,13 @@ define class ais_PnlList as aisPnlPage
       if "," + "inactive" + "," $ "," + this.cPage_Flags + ","
         .lInactive = .t. 
       endif 
-
+      do case
+      case empty(this.cPage_Order) or lower(this.cPage_Order) == "id"
+        .AddOrderBy("Pnl_Id")
+      case lower(this.cPage_Order) == "categ"
+        .AddOrderBy("Pnl_Design_Category")
+        .AddOrderBy("Pnl_Id", .f., .t.)
+      endcase
       .execute()
 
       this.cSubTitle = this.cSubTitle + ": " + .GetCaption()
@@ -263,24 +271,37 @@ define class ais_PnlList as aisPnlPage
 
   * ----------------------------------------------------- *  
   function page_getGalleryDisplay(loQry)
-    local lcTmp, lcItem, lcRet
+    local lcTmp, lcItem, lcRet, lcTOC, lcCat, llIsCat
     lcRet = ""
+    lcTOC = ""
+    lcCat = null
+    llIsCat = lower(this.cPage_Order) == "categ"
     text to lcTmp noshow 
       <div class="gallery-item">
        <<AisPanelImage(Pnl_Id, "_h50", urls.item("PnlFilNew"), Pnl_PK, poContext.lAdmin)>>
        <div class="gallery-item-info">
         <<HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), Pnl_ID)>>
-        <br/><<Pnl_Dim_1>> x <<Pnl_Dim_2>>
+        <br/><<transform(Pnl_Dim_1)>>x<<transform(Pnl_Dim_2)>>
+        <<iif(Pnl_Special_Size, " (special)","")>> 
+        (<<trim(evl(Pnl_Design_Category,"n/a"))>>)
        </div>
       </div>
       
     endtext 
     select (loQry.cAlias)
     scan
+      if m.llIsCat and (isnull(m.lcCat) or !m.lcCat == Pnl_Design_Category)
+        lcCat = Pnl_Design_Category
+        lcRet = m.lcRet + textmerge('<div id="grp-<<trim(m.lcCat)>>" class="gallery-group">Design Category: <<evl(m.lcCat, "n/a")>></div>') + crlf
+        lcToc = m.lcToc + textmerge('<span><a href="#grp-<<trim(m.lcCat)>>"><<evl(m.lcCat, "n/a")>></a></span>') + crlf
+      endif
       lcItem = textmerge(m.lcTmp)
-     lcRet = m.lcRet + m.lcItem
+      lcRet = m.lcRet + m.lcItem
     endscan
-    return m.lcRet
+    if m.llIsCat 
+      lcToc = HTWrap("Design Categories:&nbsp;" + m.lcToc, "div", , "gallery-toc")
+    endif
+    return m.lcToc + m.lcRet
   endfunc && page_getGalleryDisplay
     
   * ----------------------------------------------------- *  

@@ -94,7 +94,9 @@ p.break { margin-bottom: 5em }
 
 .gallery-item {width: 150px; height: 75px; float: left; border: 1px solid #999; padding: 2px; }
 .gallery-item a {text-align: center;}
-.gallery-item-info {font-weight: bold; text-align: center;}
+.gallery-item-info {font-weight: normal; text-align: center;}
+.gallery-toc{padding-bottom: 5px; font-weight: bold; text-align: center;}
+.gallery-group{float: none; clear: both; padding: 5px 0; font-weight: bold;}
 
 div.loc-display{width: 400px; float: left; overflow-y:visible; padding: 0 20px;}
 div.loc-display table{background-color: #ffe; }

@@ -496,8 +496,10 @@ define class aisPage as L7Page
     this.AddMenuItem("main\Search", m.lcForm, .t.)
 
     this.addMenuItem(m.lcMenu, 'Pieces and Railings', StuffUrl(this.cUrlA, 2, "PceList", "type", "Panels", "orphans", "1"))
-    this.addMenuItem(m.lcMenu, 'Panel List', StuffUrl(this.cUrlA, 2, "PnlList"))
     this.addMenuItem(m.lcMenu, 'Panel Summary', StuffUrl(this.cUrlA, 2, "PnlSummary"))
+    this.addMenuItem(m.lcMenu, 'Panel Gallery (Unassigned)', StuffUrl(this.cUrlA, 2, "PnlList", "style", "gallery", "location", "0", "order", "categ"))
+    this.addMenuItem(m.lcMenu, 'Panel List', StuffUrl(this.cUrlA, 2, "PnlList"))
+
     this.addMenuItem(m.lcMenu, 'Facilities', StuffUrl(this.cUrlA, 2, "FacList"))
     ** this.addMenuItem(m.lcMenu, 'Bridge Locations', StuffUrl(this.cUrlA, 2, "LocList"))
     this.addMenuItem(m.lcMenu, 'Picture Panels on Bridge!', StuffUrl(this.cUrlA, 2, "LocDisplay"  ))
