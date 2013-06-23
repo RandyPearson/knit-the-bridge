@@ -181,7 +181,6 @@ define class ais_ArtList as aisMultiArtPage
   function AddDefaultMenu
     local loFlags, lnFlag, loFlag, lcPrompt
     with this
-
       .AddSubMenu("This", "PEOPLE")
 
       loFlags = .oArtQueryFlags
@@ -267,6 +266,7 @@ define class ais_ArtList as aisMultiArtPage
       do case
       case !isnull(this.lPage_Dupes)
         .lDuplicates = .t. 
+        .lNLN = .f. 
         .AddOrderBy("Art_Last_Name")
         .AddOrderBy("Art_First_Name", , .t.)
       case this.cPage_Order = "location"
@@ -301,6 +301,7 @@ define class ais_ArtList as aisMultiArtPage
         loCol = .addCursorColumn("Art_First_Name", "First Name")
         loCol = .addCursorColumn("Art_Last_Name", "Last Name")
         loCol = .addCursorColumn("Art_Full_Name", "Alt Name")
+        loCol = .addCursorColumn("Art_Group_Art_FK", "In Group?", [iif(empty(Art_Group_Art_FK),"","in group")])
       else && otherwise use standard name transform:
         loCol = .addCursorColumn("Art_Last_Name", "Name", ;
           [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), aisArtistName(THISRECORD))])
@@ -2058,6 +2059,7 @@ define class AisArtQuery AS L7Query
   lKtbResponse = null
   lNoCount = null 
   cGroupArt = null 
+  lNLN = null
   
   * Types of people:
   lAdmin = .F.
@@ -2114,6 +2116,9 @@ define class AisArtQuery AS L7Query
       if !empty(.cName)
         .cWhereClause = .cWhereClause + [ AND Art_Last_Name LIKE '] + .cName + [']
       endif 
+      if !isnull(.lNLN)
+        .cWhereClause = .cWhereClause + [ AND ] + iif(.lNLN, [], [!]) + [Art_Last_Name = 'NLN ']
+      endif
 
       if !empty(.cSrch1)
         lcSearchFields = "Art_Last_Name + Art_First_Name + Art_Full_Name + Art_Email + Art_ID + Art_Comments + Art_Notes + Art_Participation"
@@ -2162,7 +2167,7 @@ define class AisArtQuery AS L7Query
 
       if !isnull(.lDuplicates)
         .cWhereClause = .cWhereClause + [ and art_first_name + art_last_name] + iif(.lDuplicates, [ in ], [ not in ]) + ;
-          [(select art_first_name + art_last_name from artist where !art_inactive group by 1 having count(*) >= 2)]
+          [(select art_first_name + art_last_name from artist where !art_inactive and !art_no_count group by 1 having count(*) >= 2)]
       endif 
       
       if !isnull(.lPanelSignup)
