@@ -880,7 +880,9 @@ define class ais_ArtForm as aisArtPage
                 this.cCancelUrl = StuffURL(THIS.cUrlA, 2, "ArtHome", "art", V_Artist.Art_PK)
               endif 
             endif 
-            this.page_onNewArtist(m.loNewRec)
+            if .chkAlert.vNewValue
+              this.page_onNewArtist(m.loNewRec)
+            endif
           endif
           Response.Redirect(THIS.cCancelUrl)
           return 
@@ -1166,13 +1168,11 @@ define class aisRegisterForm AS aisArtistForms
         .cInstructions = "Required. Enter NLN if not providing your last name."
         .cCssStyle = "width: 30%;"
       endwith
-      .AddObject("chkRelease_Name", "L7Checkbox")
+      .AddObject("chkRelease_Name", "AisRadioCheckbox")
       with .chkRelease_Name
         .cGroupID = "name"
         .cControlSource = "V_artist.Art_Release_Name"
         .cLabel = "Release Name?"
-        .nMode = L7_MULTI_RADIOBUTTON
-        .nStyle = L7_MULTISTYLE_VERTICAL  && only applies to radio-button transforms
         .cCaption = "OK to Release Name"
         .cFalseCaption = "DO NOT Release Name"
       endwith
@@ -1248,6 +1248,17 @@ define class aisRegisterForm AS aisArtistForms
         .addParticipationControls()
       endif 
       
+      if this.lNewRecord
+        .AddObject("chkAlert", "AisRadioCheckbox")
+        with .chkAlert
+          .cGroupID = "comments"
+          .cLabel = "Email Alert?"
+          .cCaption = "Yes - notify KtB leadership"
+          .cFalseCaption = "No - do not send alert"
+          .SetValue(poContext.lDeveloper) && others likely adding following actual contact 
+          .cCssClass = "FormControlPrivate"
+        endwith
+      endif 
       if !this.lCustom_Contributing 
         .AddObject("edtComments", "L7Textarea")
         with .edtComments
