@@ -317,7 +317,7 @@ define class ais_PnlList as aisPnlPage
       
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Pnl_ID", "Panel ID", ;
-        [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), Pnl_ID)], 'id-field panel')
+        [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), AisFormatID(Pnl_ID))], 'id-field panel')
       loCol = .addCursorColumn("Pnl_Single_Piece", "Single-Piece?")
 
       loCol = .addCursorColumn("Pnl_Dim_1", "Height")
@@ -768,7 +768,7 @@ define class ais_PnlHome as aisPnlPage
   endfunc 
   * ----------------------------------------------------- *  
   function ProcessRequest
-    this.cSubTitle = "Panel " + htWrap(this.oPnl.Pnl_ID, 'span',, 'id-field panel')
+    this.cSubTitle = "Panel " + HtWrap(AisFormatID(this.oPnl.Pnl_ID), 'span',, 'id-field panel')
     response.write(this.page_getMainRecord())
 
     if poContext.lAdmin
@@ -799,7 +799,7 @@ define class ais_PnlHome as aisPnlPage
       
       loRow.clear()
       loRow.cLabel = "Panel ID"
-      loRow.vValue = HTWrap(loData.Pnl_ID, 'span',, "id-field panel" )
+      loRow.vValue = HTWrap(AisFormatID(loData.Pnl_ID), 'span',, "id-field panel" )
       if poContext.lAdmin
         loRow.Links.add(HTLink(StuffUrl(This.cUrlB, 2, "PnlForm", "pnl", this.cPnl), "Edit Panel..."))
       endif

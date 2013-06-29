@@ -24,6 +24,23 @@ set procedure to AisDon     additive  && Donation pages
 return 
 
 * --------------------------------------------------------- *
+function AisFormatID(lcId)
+  if !vartype(m.lcId) == "C" or isnull(m.lcId) or empty(m.lcId)
+    return m.lcId
+  endif 
+  local loRE, lcRepl, lcRet, loExc
+  loRE = goL7App.helpers.item("RegEx-Zero-Padding")
+
+  ** lcPat = '([A-Z]*?[A-Z])(0+)([1-9][0-9]*)'
+  lcRepl = '$1<span class="padl">$2</span>$3'
+  try
+    lcRet = loRE.Replace(m.lcId, m.lcRepl)
+  catch to loExc
+    lcRet = m.lcId
+  endtry 
+  return m.lcRet
+endfunc 
+* --------------------------------------------------------- *
 function AisAssignID(lcPref)
   local lnNo, lcRet
   lcPref = upper(alltrim(m.lcPref))

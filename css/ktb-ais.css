@@ -72,7 +72,9 @@ a:active  { color: green; text-decoration: underline; }
 .facility, .facility a:link, .facility a:visited  {color: #EE7722 !important; }
 #header .artist, #header .panel, #header .facility, #header .piece, #header .location {background-color: white;}
 
-.id-field {font-weight: bold; font-size: 110%; }
+.id-field {font-weight: bold; font-size: 110%; font-family: Monaco, Consolas, "Courier New", monospace;}
+.padl{color:  #999;}
+
 .private td {background-color: #eef;}
 .admin td {color: brown; background-color: #fee;}
 div.admin{border: 1px dashed #333; background-color: #ddd; margin-top: 20px;}

@@ -44,6 +44,15 @@ define class AisApp AS KtbApp
     this.OpenLookupTable("Facility")
     return "Facility_LOOKUP_"
   endfunc 
+  * --------------------------------------------------------- *
+  function AfterSetup  && oConfig is loaded now
+    local loRE
+    loRE = createobject(L7_REGEXP_CLASS)
+    loRE.pattern = '([A-Z]*?[A-Z])(0+)([1-9][0-9]*)'  && finds 0-padding chars
+    this.helpers.add(m.loRE, "RegEx-Zero-Padding")
+    dodefault()
+    return .T.
+  endfunc  && AfterSetup
   * -------------------------------------------------- *
   function OpenLookupTable(lcCode)
     local lcAlias, lcSql, lcIndexCommands, lnSelect
@@ -94,7 +103,7 @@ define class AisApp AS KtbApp
   endfunc  && determineBrowser
   * --------------------------------------------------------- *
   function SetAppProcedures
-    do (THISAPP_APPLICATION + "Classes") && [[ promote to L7! 
+    do (THISAPP_APPLICATION + "Classes") && [[ promote to L7? 
   endfunc   
   * --------------------------------------------------------- *
   function OnFirstPostMaintenanceHit
