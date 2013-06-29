@@ -674,7 +674,7 @@ define class ais_ArtHome as aisArtPage
           [HTLink(StuffUrl(urls.item("PceHome"), "pce", Pce_PK), Pce_ID)], "id-field piece")
         loCol = .addCursorColumn("Pce_Type", "Type")
         loCol = .addCursorColumn("Pnl_Id", "Panel", ;
-          [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pce_Pnl_FK), Pnl_ID)], "id-field panel")
+          [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pce_Pnl_FK), AisFormatID(Pnl_ID))], "id-field panel")
 
         loCol = .AddCursorColumn('Pce_Whole_Panel', 'Whole Panel?')
         loCol = .AddCursorColumn('Pce_Dim_1', 'Dim 1')

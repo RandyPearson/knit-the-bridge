@@ -177,7 +177,7 @@ define class ais_LocDisplay as aisLocPage
             endif 
           else
             lcCell = '<td class="loc-link">' + ;
-              '<span class="id-field panel">' + HtLink(stuffUrl(urls.item("PnlHome"), "pnl", loPlc.Pnl_Id), loPlc.Pnl_Id) + '</span>' + ;
+              '<span class="id-field panel">' + HtLink(stuffUrl(urls.item("PnlHome"), "pnl", loPlc.Pnl_Id), AisFormatID(loPlc.Pnl_Id)) + '</span>' + ;
               '<br>(' + trim(loPlc.Pnl_Dim_1) + 'x' + trim(loPlc.Pnl_Dim_2) + ', ' + trim(loPlc.Pnl_Design_Category) + ')' + ;
               L7BR + HTLink(StuffUrl(urls.item("LocUnassign"), "plc", loPlc.Plc_PK), "Remove...", "Detach panel from location") + ;
               '</td>' + crlf 

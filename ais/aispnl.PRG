@@ -280,7 +280,7 @@ define class ais_PnlList as aisPnlPage
       <div class="gallery-item">
        <<AisPanelImage(Pnl_Id, "_h50", urls.item("PnlFilNew"), Pnl_PK, poContext.lAdmin)>>
        <div class="gallery-item-info">
-        <<HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), Pnl_ID)>>
+        <<HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), AisFormatID(Pnl_ID))>>
         <br/><<transform(Pnl_Dim_1)>>x<<transform(Pnl_Dim_2)>>
         <<iif(Pnl_Special_Size, " (special)","")>> 
         (<<trim(evl(Pnl_Design_Category,"n/a"))>>)
@@ -446,7 +446,7 @@ define class ais_PnlRemLoc as aisPnlPage
     this.cCancelUrl = StuffURL(THIS.cUrlB, 2, "PnlHome")
     
     this.Assert(poContext.lAdmin)
-    this.cSubTitle = "Remove Panel Location for " + this.oPnl.Pnl_ID
+    this.cSubTitle = "Remove Panel Location for " + AisFormatID(this.oPnl.Pnl_ID)
 
     local loForm, vp_cPlc_PK, lcAlias, lcXml
     lcAlias = "V_PanelLocation"
@@ -486,7 +486,7 @@ define class ais_PnlSetLoc as aisPnlPage
     this.assert(inlist(this.cPage_Orient, "Outer", "Inner"), "invalid orientation")
     this.assert(inlist(this.cPage_Side, "Up", "Down"), "invalid side")
 
-    this.cSubTitle = "Set Panel Location for " + this.oPnl.Pnl_ID
+    this.cSubTitle = "Set Panel Location for " + AisFormatID(this.oPnl.Pnl_ID)
     local loForm, vp_cPlc_PK, loQ
     loQ = createobject("AisLocQuery")
     with loQ

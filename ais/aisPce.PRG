@@ -236,7 +236,7 @@ define class ais_PceList as aisPcePage
       case this.cPage_Order = "fac"
         .addGroup('Pce_Fac_FK', 'Facility: ', .t., ["Facility: " + Fac_Name])
       case this.cPage_Order = "pnl"
-        .addGroup('Pnl_ID', 'Panel: ', .t., ["Panel: " + HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pce_Pnl_FK), Pnl_ID, "go to panel", "id-field panel")])
+        .addGroup('Pnl_ID', 'Panel: ', .t., ["Panel: " + HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pce_Pnl_FK), AisFormatID(Pnl_ID), "go to panel", "id-field panel")])
       otherwise 
         = .f. && no grouping
       endcase
@@ -251,7 +251,7 @@ define class ais_PceList as aisPcePage
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), aisArtistName(THISRECORD))], "artist")
       ** loCol = .addCursorColumn("Art_First_Name", "First Name")
       loCol = .addCursorColumn("Pnl_Id", "Panel", ;
-        [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pce_Pnl_FK), Pnl_ID)], "id-field panel")
+        [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pce_Pnl_FK), AisFormatID(Pnl_ID))], "id-field panel")
       loCol = .addCursorColumn("Pce_Whole_Panel", "Whole Panel?")
       loCol = .addCursorColumn("Pce_Dim_1", "Dim 1")
       loCol = .addCursorColumn("Pce_Dim_2", "Dim 2")
@@ -385,7 +385,7 @@ define class ais_PceHome as aisPcePage
           loRow.vValue = "No (see menu options)"
         else
           loRow.vValue = HtWrap( ;
-            HTLink(StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", loData.Pce_Pnl_FK), this.oPnl.Pnl_Id), ;
+            HTLink(StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", loData.Pce_Pnl_FK), AisFormatID(this.oPnl.Pnl_Id)), ;
             'span', ,'id-field panel')
           if poContext.lAdmin and !this.oPce.Pce_Whole_Panel
             loRow.links.add(HTLink(StuffUrl(this.cUrlB, 2, "PceUnlink"), "Remove piece from panel"))

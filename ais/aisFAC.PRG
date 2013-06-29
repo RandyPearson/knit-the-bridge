@@ -350,7 +350,7 @@ define class ais_FacHome as aisFacPage
     with loTbl
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Pnl_ID", "Panel ID", ;
-        [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), Pnl_ID)], "id-field panel")
+        [HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), AisFormatID(Pnl_ID))], "id-field panel")
       loCol = .addCursorColumn("Pnl_Single_Piece", "Single-Piece?")
       loCol = .addCursorColumn("Pnl_Dim_1", "Height")
       loCol = .addCursorColumn("Pnl_Dim_2", "Width")
