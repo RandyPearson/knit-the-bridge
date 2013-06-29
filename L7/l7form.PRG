@@ -45,7 +45,7 @@ DEFINE CLASS L7Form AS L7ContainerControl
   cMethod       = "post"
   cOnSubmit     = ""     && optional client-side JS
   cOnReset      = ""     && optional client-side JS
-  lPreventMultipleSubmissions = .T.
+  lPreventMultipleSubmissions = .f.
   lMultiPart        = .F.
   lMultiPartChecked = .F.  && flag to prevent duplicate checks. See CheckMultiPart().
   lObjectIDsSet     = .F.

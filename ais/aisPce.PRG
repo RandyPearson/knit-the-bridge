@@ -701,6 +701,7 @@ define class aisPieceForm as AisForm
         .cFieldType = "C"
         .cControlSource = "V_piece.Pce_Dim_1"
         if this.lNewRecord
+          .lAutoMaxLength = .f. && without this, next line constrains the input
           .SetValue(Page.cPage_Dim_1)
         endif 
         if this.lNewRecord and Page.lPage_Whole
@@ -717,6 +718,7 @@ define class aisPieceForm as AisForm
         .cFieldType = "C"
         .cControlSource = "V_piece.Pce_Dim_2"
         if this.lNewRecord
+          .lAutoMaxLength = .f. && without this, next line constrains the input
           .SetValue(Page.cPage_Dim_2)
         endif 
         if this.lNewRecord and Page.lPage_Whole
