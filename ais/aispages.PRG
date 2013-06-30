@@ -454,7 +454,8 @@ define class aisPage as L7Page
       .AddJavaScript("", [../ktb-content/js/l7CoreP.js]) && L7 Core (Prototype version)
       .AddJavaScript("", [../ktb-content/js/l7CoreJQ.js]) && L7 Core (jQuery version)
       
-      .AddJavaScript('$j(document).ready(focusFirst);')
+      * .AddJavaScript('$j(document).ready(focusFirst);')
+      .AddJavaScript('$j(document).ready(function() {$j("input:text, textarea").first().focus();});')
     endwith 
     return 
   endfunc     
