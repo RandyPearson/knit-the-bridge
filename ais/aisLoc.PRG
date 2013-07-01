@@ -440,7 +440,7 @@ define class ais_LocAssign as aisLocPage
     this.assert(inlist(this.cPage_Orient, "Outer", "Inner"), "invalid orientation")
 
     this.cSubTitle = textmerge([Set Panel Location for <<this.oLoc.Loc_Side>>-<<this.oLoc.Loc_No>> (<<this.cPage_Orient>>)])
-    local loForm, vp_cPlc_PK, loQ, lcXml
+    local vp_cPlc_PK, loQ, lcXml
 
     * Query available panels:
     loQ = createobject("AisPnlQuery") 
@@ -483,46 +483,6 @@ define class ais_LocAssign as aisLocPage
     this.AssertTransaction("V_PanelLocation", @lcXml)
     Response.Redirect(this.cCancelUrl)
     return 
-
-    
-*!*      loForm = this.createForm('aisLocAssignForm', this.cUrlC)
-*!*      with loForm
-*!*        .cTitle = this.cSubTitle 
-*!*        .AddControls()
-*!*        .DoEvents() 
-
-*!*        if .Valid()
-*!*          select V_PanelLocation
-*!*          append blank
-*!*          replace Plc_Loc_FK with this.cLoc ;
-*!*            Plc_Orientation with this.cPage_Orient 
-
-*!*          .UpdateControlSources()
-*!*          select V_PanelLocation  && UpdateControlSources can alter work area
-*!*          StampRec( CurrentUser, THIS.tNow )
-*!*          scatter memo name loNewRec 
-*!*          
-*!*          * Now save the record using a transaction:
-*!*          local loTrans, loExc, lcMailMessage, lcExcMessage, llSendEmail
-*!*          llSendEmail = .f.  
-*!*          loTrans = THIS.CreateTransaction()
-*!*          loTrans.AddCursor("V_PanelLocation")
-
-*!*          if loTrans.Save()  
-*!*            select V_PanelLocation 
-*!*            Response.Redirect(this.cCancelUrl + "#" + V_PanelLocation.Plc_Pnl_FK)
-*!*            return 
-*!*          else 
-*!*            this.ErrorMsg( "Database Failure Saving Record!", ;
-*!*              "Error " + TRANSFORM( loTrans.aFailures[1, 1]) + [ :] + ;
-*!*              loTrans.aFailures[1, 2] )
-*!*            return  
-*!*          endif  && Save()
-*!*          
-*!*        endif 
-*!*      endwith 
-*!*      response.write(loForm.render())
-
   endfunc && processRequest
   * --------------------------------------------------------- *
   function page_SelectPanel(loQ)
@@ -542,56 +502,55 @@ define class ais_LocAssign as aisLocPage
   endfunc 
 enddefine 
 
-*** ========================================================= ***
-define class aisLocAssignForm as AisForm
-  cTitle = "Assign Panel to Location Form"
-  * --------------------------------------------------------- *
-  function AddControls
-    with this
-      .AddObject("lblLoc_Side", "L7Label")
-      with .lblLoc_Side
-        .cFieldType = "C"
-        .cShowExpression = [left(Page.oLoc.Loc_Side,1) + padl(transform(Page.oLoc.Loc_No), 3, "0")]
-        .cLabel = "Location"
-      endwith 
+*!*  *** ========================================================= ***
+*!*  define class aisLocAssignForm as AisForm
+*!*    cTitle = "Assign Panel to Location Form"
+*!*    * --------------------------------------------------------- *
+*!*    function AddControls
+*!*      with this
+*!*        .AddObject("lblLoc_Side", "L7Label")
+*!*        with .lblLoc_Side
+*!*          .cFieldType = "C"
+*!*          .cShowExpression = [left(Page.oLoc.Loc_Side,1) + padl(transform(Page.oLoc.Loc_No), 3, "0")]
+*!*          .cLabel = "Location"
+*!*        endwith 
 
-      .AddObject("lblLoc_Orient", "L7Label")
-      with .lblLoc_Orient
-        .cFieldType = "C"
-        .cShowExpression = [Page.cPage_Orient]
-        .cLabel = "Orientation"
-      endwith 
-      
-      .AddObject("lblDimensions", "L7Label")
-      with .lblDimensions
-        .cFieldType = "C"
-        .cShowExpression = [transform(Page.oLoc.Loc_H1) + "x" + transform(Page.oLoc.Loc_W1)]
-        if Page.oLoc.Loc_H2 > 0
-          .cShowExpression = .cShowExpression + [ + "x" + transform(Page.oLoc.Loc_H2)]
-        endif
-        .cLabel = "Location Dimensions"
-      endwith 
+*!*        .AddObject("lblLoc_Orient", "L7Label")
+*!*        with .lblLoc_Orient
+*!*          .cFieldType = "C"
+*!*          .cShowExpression = [Page.cPage_Orient]
+*!*          .cLabel = "Orientation"
+*!*        endwith 
+*!*        
+*!*        .AddObject("lblDimensions", "L7Label")
+*!*        with .lblDimensions
+*!*          .cFieldType = "C"
+*!*          .cShowExpression = [transform(Page.oLoc.Loc_H1) + "x" + transform(Page.oLoc.Loc_W1)]
+*!*          if Page.oLoc.Loc_H2 > 0
+*!*            .cShowExpression = .cShowExpression + [ + "x" + transform(Page.oLoc.Loc_H2)]
+*!*          endif
+*!*          .cLabel = "Location Dimensions"
+*!*        endwith 
 
-      .AddObject("cboPnl_FK", "L7Popup")
-      with .cboPnl_FK
-        .cControlSource = "V_PanelLocation.Plc_Pnl_FK"
-        .lRequired = .t.
-        .cLabel = "Select Panel"
-        .lAutoRender = .T.
-        .nRowSourceType = L7_ROWSOURCETYPE_ALIAS
-        .cRowSource = "Available_Panels_"
-        *!* ex: .cFilterExpression = [Fac_Storage = .t.]
-        .cValueExpression = [Pnl_PK]
-        .cLabelExpression = [Pnl_ID + " (" + trim(Pnl_Dim_1) + "x" + trim(Pnl_Dim_2) + ", " + trim(Pnl_Design_Category) + ")"]
-        * .cLabelExpression = [Pnl_ID + AisPanelImage(Pnl_Id, "_h25")]
-        .vFirstItemValue = space(32) && 0 for integer keys
-        .cFirstItemLabel = "[ select from choices below ]"
-        .SetValue(page.cPage_PnlSel)
-      endwith 
-    endwith
-    return 
-  endfunc 
-enddefine 
+*!*        .AddObject("cboPnl_FK", "L7Popup")
+*!*        with .cboPnl_FK
+*!*          .cControlSource = "V_PanelLocation.Plc_Pnl_FK"
+*!*          .lRequired = .t.
+*!*          .cLabel = "Select Panel"
+*!*          .lAutoRender = .T.
+*!*          .nRowSourceType = L7_ROWSOURCETYPE_ALIAS
+*!*          .cRowSource = "Available_Panels_"
+*!*          *!* ex: .cFilterExpression = [Fac_Storage = .t.]
+*!*          .cValueExpression = [Pnl_PK]
+*!*          .cLabelExpression = [Pnl_ID + " (" + trim(Pnl_Dim_1) + "x" + trim(Pnl_Dim_2) + ", " + trim(Pnl_Design_Category) + ")"]
+*!*          .vFirstItemValue = space(32) && 0 for integer keys
+*!*          .cFirstItemLabel = "[ select from choices below ]"
+*!*          .SetValue(page.cPage_PnlSel)
+*!*        endwith 
+*!*      endwith
+*!*      return 
+*!*    endfunc 
+*!*  enddefine 
 
 *** ===================================================== ***
 define class Ais_LocBrowse as AisLocPage
