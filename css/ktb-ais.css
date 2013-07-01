@@ -100,6 +100,10 @@ p.break { margin-bottom: 5em }
 .gallery-toc{padding-bottom: 5px; font-weight: bold; text-align: center;}
 .gallery-group{float: none; clear: both; padding: 5px 0; font-weight: bold;}
 
+.panel-select{border: 1px solid purple; background-color: #eee;}
+.panel-select div img {vertical-align: middle;}
+.panel-select div{padding: 1px 3px;}
+
 div.loc-display{width: 400px; float: left; overflow-y:visible; padding: 0 20px;}
 div.loc-display table{background-color: #ffe; }
 div.loc-display th{color: white; background-color: black; padding: 10px 0px; text-align: center;}

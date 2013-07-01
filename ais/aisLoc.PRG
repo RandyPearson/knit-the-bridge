@@ -486,18 +486,20 @@ define class ais_LocAssign as aisLocPage
   endfunc && processRequest
   * --------------------------------------------------------- *
   function page_SelectPanel(loQ)
-    local lcTmp, lcItem, lcRet
+    local lcTmp, lcItem, lcSel, lcRet
     lcRet = ""
+    lcSel = ""
     text to lcTmp noshow pretext 3
-      <<Pnl_ID>>  (<<trim(Pnl_Dim_1)>> x <<trim(Pnl_Dim_2)>>, <<trim(Pnl_Design_Category)>>) <<AisPanelImage(Pnl_Id, "_h25")>>
+      <<Pnl_ID>>  (<<trim(Pnl_Dim_1)>> x <<trim(Pnl_Dim_2)>>, <<trim(Pnl_Design_Category)>>) <<AisPanelImage(Pnl_Id, "_h50")>>
       
     endtext 
     select (loQ.cAlias)
     scan
       lcItem = textmerge(m.lcTmp)
-      lcRet = m.lcRet + HTWrap(HTLink(StuffUrl(this.cUrlC, "pnlsel", Pnl_PK), m.lcItem), 'div')
+      lcSel = m.lcSel + HTWrap(HTLink(StuffUrl(this.cUrlC, "pnlsel", Pnl_PK), m.lcItem), 'div')
 
     endscan
+    lcRet = HTWrap(m.lcSel, 'div', , 'panel-select')
     return m.lcRet
   endfunc 
 enddefine 

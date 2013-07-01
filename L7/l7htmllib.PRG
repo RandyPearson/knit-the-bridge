@@ -297,26 +297,28 @@ FUNCTION HTLink( tcURL, tcText, tcOptions, tcClass, tlNoLink, tlNoContent )
   RETURN m.lcStr
 ENDFUNC  && HTLink
 * --------------------------------------------------------- *
-FUNCTION HTImage(tcFile, tcAltText, tcAlign, tnBorder, tnWidth, tnHeight, tcOptions)
-  LOCAL lcStr
-  lcStr = '<img src="' + TRIM( m.tcFile) + '"'
-  lcStr = m.lcStr + ' alt="' + IIF( EMPTY( m.tcAltText), m.tcFile, m.tcAltText) + '"'
-  IF NOT EMPTY( m.tcAlign)
-  	lcStr = m.lcStr + ' align="' + TRIM( UPPER( m.tcAlign)) + '"'
-  ENDIF
-  lcStr = m.lcStr + ' border="' + IIF( TYPE( "m.tnBorder") <> 'N', '0', LTRIM(STR( m.tnBorder))) + '"'
-  IF TYPE( "m.tnWidth") = 'N'
-  	lcStr = m.lcStr + ' width="' + LTRIM(STR(m.tnWidth)) + '"'
-  ENDIF
-  IF TYPE( "m.tnHeight") = 'N'
+function HTImage(tcFile, tcAltText, tcAlign, tnBorder, tnWidth, tnHeight, tcOptions)
+  local lcStr
+  lcStr = '<img src="' + trim(m.tcFile) + '"'
+  lcStr = m.lcStr + ' alt="' + iif(empty(m.tcAltText), m.tcFile, m.tcAltText) + '"'
+  if !empty(m.tcAlign)
+  	lcStr = m.lcStr + ' align="' + trim(upper(m.tcAlign)) + '"'
+  endif
+  if !isnull(m.tnBorder) && send NULL to avoid border entirely 
+    lcStr = m.lcStr + ' border="' + iif(vartype(m.tnBorder) <> 'N', '0', ltrim(str(m.tnBorder))) + '"'
+  endif 
+  if vartype(m.tnWidth) = 'N'
+  	lcStr = m.lcStr + ' width="' + ltrim(str(m.tnWidth)) + '"'
+  endif
+  if vartype(m.tnHeight) = 'N'
   	lcStr = m.lcStr + ' height="' + LTRIM(STR(m.tnHeight)) + '"'
-  ENDIF
-  IF TYPE( "m.tcOptions") = "C"
+  endif 
+  if vartype(m.tcOptions) = "C" && style or class could be sent here
   	lcStr = m.lcStr + " " + m.tcOptions
-  ENDIF
+  endif 
   lcStr = m.lcStr + '>'
-  RETURN m.lcStr
-ENDFUNC  && HTImage
+  return  m.lcStr
+endfunc   && HTImage
 * --------------------------------------------------------- *
 FUNCTION HTMemo(lcText, llEmailCompatible, llNoContentCheck)
   * Translates CR's to <p>'s and <br />'s as needed for HTML output. 
