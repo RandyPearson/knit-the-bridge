@@ -440,7 +440,7 @@ define class ais_LocAssign as aisLocPage
     this.assert(inlist(this.cPage_Orient, "Outer", "Inner"), "invalid orientation")
 
     this.cSubTitle = textmerge([Set Panel Location for <<this.oLoc.Loc_Side>>-<<this.oLoc.Loc_No>> (<<this.cPage_Orient>>)])
-    local loForm, vp_cPlc_PK, loQ
+    local loForm, vp_cPlc_PK, loQ, lcXml
 
     * Query available panels:
     loQ = createobject("AisPnlQuery") 
@@ -458,50 +458,71 @@ define class ais_LocAssign as aisLocPage
     this.assert(loQ.nTally > 0, "No available panels remain.")
     
     if empty(this.cPage_PnlSel) && panel not selected
+      Response.Write(HTWrap(;
+        "Select Panel for Location " + left(Page.oLoc.Loc_Side,1) + padl(transform(Page.oLoc.Loc_No), 3, "0") + "-" + Page.cPage_Orient, ;
+        "p"))
       Response.Write(this.page_SelectPanel(m.loQ))
+      Response.Write(HTWrap(HTLink(this.cCancelUrl, "Cancel Panel Selection"), "p"))
       return
     endif 
+    
+    select (loQ.cAlias)
+    locate for Pnl_PK == this.cPage_PnlSel
+    this.assert(found(), "Invalid panel selection, or panel no longer unassigned.")
 
     vp_cPlc_PK = space(32)
     use V_PanelLocation in select("V_PanelLocation")
     cursorsetprop("Buffering", 5, "V_PanelLocation")
-    loForm = this.createForm('aisLocAssignForm', this.cUrlC)
-    with loForm
-      .cTitle = this.cSubTitle 
-      .AddControls()
-      .DoEvents() 
+    select V_PanelLocation
+    append blank
+    replace Plc_Loc_FK with this.cLoc ;
+      Plc_Orientation with this.cPage_Orient ;
+      Plc_Pnl_FK with this.cPage_PnlSel
+    StampRec( CurrentUser, THIS.tNow )
+    lcXml = ''
+    this.AssertTransaction("V_PanelLocation", @lcXml)
+    Response.Redirect(this.cCancelUrl)
+    return 
 
-      if .Valid()
-        select V_PanelLocation
-        append blank
-        replace Plc_Loc_FK with this.cLoc ;
-          Plc_Orientation with this.cPage_Orient 
+    
+*!*      loForm = this.createForm('aisLocAssignForm', this.cUrlC)
+*!*      with loForm
+*!*        .cTitle = this.cSubTitle 
+*!*        .AddControls()
+*!*        .DoEvents() 
 
-        .UpdateControlSources()
-        select V_PanelLocation  && UpdateControlSources can alter work area
-        StampRec( CurrentUser, THIS.tNow )
-        scatter memo name loNewRec 
-        
-        * Now save the record using a transaction:
-        local loTrans, loExc, lcMailMessage, lcExcMessage, llSendEmail
-        llSendEmail = .f.  
-        loTrans = THIS.CreateTransaction()
-        loTrans.AddCursor("V_PanelLocation")
+*!*        if .Valid()
+*!*          select V_PanelLocation
+*!*          append blank
+*!*          replace Plc_Loc_FK with this.cLoc ;
+*!*            Plc_Orientation with this.cPage_Orient 
 
-        if loTrans.Save()  
-          select V_PanelLocation 
-          Response.Redirect(this.cCancelUrl + "#" + V_PanelLocation.Plc_Pnl_FK)
-          return 
-        else 
-          this.ErrorMsg( "Database Failure Saving Record!", ;
-            "Error " + TRANSFORM( loTrans.aFailures[1, 1]) + [ :] + ;
-            loTrans.aFailures[1, 2] )
-          return  
-        endif  && Save()
-        
-      endif 
-    endwith 
-    response.write(loForm.render())
+*!*          .UpdateControlSources()
+*!*          select V_PanelLocation  && UpdateControlSources can alter work area
+*!*          StampRec( CurrentUser, THIS.tNow )
+*!*          scatter memo name loNewRec 
+*!*          
+*!*          * Now save the record using a transaction:
+*!*          local loTrans, loExc, lcMailMessage, lcExcMessage, llSendEmail
+*!*          llSendEmail = .f.  
+*!*          loTrans = THIS.CreateTransaction()
+*!*          loTrans.AddCursor("V_PanelLocation")
+
+*!*          if loTrans.Save()  
+*!*            select V_PanelLocation 
+*!*            Response.Redirect(this.cCancelUrl + "#" + V_PanelLocation.Plc_Pnl_FK)
+*!*            return 
+*!*          else 
+*!*            this.ErrorMsg( "Database Failure Saving Record!", ;
+*!*              "Error " + TRANSFORM( loTrans.aFailures[1, 1]) + [ :] + ;
+*!*              loTrans.aFailures[1, 2] )
+*!*            return  
+*!*          endif  && Save()
+*!*          
+*!*        endif 
+*!*      endwith 
+*!*      response.write(loForm.render())
+
   endfunc && processRequest
   * --------------------------------------------------------- *
   function page_SelectPanel(loQ)
@@ -514,7 +535,7 @@ define class ais_LocAssign as aisLocPage
     select (loQ.cAlias)
     scan
       lcItem = textmerge(m.lcTmp)
-      lcRet = m.lcRet + HTLink(StuffUrl(this.cUrlC, "pnlsel", Pnl_PK), m.lcItem) + L7BR 
+      lcRet = m.lcRet + HTWrap(HTLink(StuffUrl(this.cUrlC, "pnlsel", Pnl_PK), m.lcItem), 'div')
 
     endscan
     return m.lcRet
