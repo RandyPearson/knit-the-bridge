@@ -421,12 +421,14 @@ define class ais_LocAssign as aisLocPage
   cPage_Side = null
   cPage_Special = null
   cPage_Categ = null
+  cPage_PnlSel = null 
   * --------------------------------------------------------- *
   function BeforeProcessRequest
     this.cPage_Orient = this.readQueryString("orient", .t., .t.)
     this.cPage_Side = this.readQueryString("side", .t., .t.)
     this.cPage_Categ = this.readQueryString("categ", .t., .t.)
     this.cPage_Special = this.readQueryString("special", .t., .t.)
+    this.cPage_PnlSel = this.readQueryString("pnlsel", .t., .t.) && selected panel
     dodefault()
     return 
   endfunc   
@@ -454,6 +456,11 @@ define class ais_LocAssign as aisLocPage
       .Execute()
     endwith 
     this.assert(loQ.nTally > 0, "No available panels remain.")
+    
+    if empty(this.cPage_PnlSel) && panel not selected
+      Response.Write(this.page_SelectPanel(m.loQ))
+      return
+    endif 
 
     vp_cPlc_PK = space(32)
     use V_PanelLocation in select("V_PanelLocation")
@@ -495,6 +502,22 @@ define class ais_LocAssign as aisLocPage
       endif 
     endwith 
     response.write(loForm.render())
+  endfunc && processRequest
+  * --------------------------------------------------------- *
+  function page_SelectPanel(loQ)
+    local lcTmp, lcItem, lcRet
+    lcRet = ""
+    text to lcTmp noshow pretext 3
+      <<Pnl_ID>>  (<<trim(Pnl_Dim_1)>> x <<trim(Pnl_Dim_2)>>, <<trim(Pnl_Design_Category)>>) <<AisPanelImage(Pnl_Id, "_h25")>>
+      
+    endtext 
+    select (loQ.cAlias)
+    scan
+      lcItem = textmerge(m.lcTmp)
+      lcRet = m.lcRet + HTLink(StuffUrl(this.cUrlC, "pnlsel", Pnl_PK), m.lcItem) + L7BR 
+
+    endscan
+    return m.lcRet
   endfunc 
 enddefine 
 
@@ -539,8 +562,10 @@ define class aisLocAssignForm as AisForm
         *!* ex: .cFilterExpression = [Fac_Storage = .t.]
         .cValueExpression = [Pnl_PK]
         .cLabelExpression = [Pnl_ID + " (" + trim(Pnl_Dim_1) + "x" + trim(Pnl_Dim_2) + ", " + trim(Pnl_Design_Category) + ")"]
+        * .cLabelExpression = [Pnl_ID + AisPanelImage(Pnl_Id, "_h25")]
         .vFirstItemValue = space(32) && 0 for integer keys
         .cFirstItemLabel = "[ select from choices below ]"
+        .SetValue(page.cPage_PnlSel)
       endwith 
     endwith
     return 
