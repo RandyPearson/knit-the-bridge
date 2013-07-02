@@ -75,7 +75,7 @@ function aisGetPanelLocation(tcPnl)
   loSelect = createobject("L7PreserveSelect")
   select Plc_PK, Plc_Orientation, Loc_Side, Loc_No, Loc_PK ;
     from PanelLocation join Location on Plc_Loc_FK = Loc_PK ;
-    where Plc_Pnl_FK = m.tcPnl ;
+    where Plc_Pnl_FK = m.tcPnl and !Plc_Inactive ;
     into cursor GetPanelLocation_ 
   if _tally > 0
     scatter memo name loRet 
