@@ -50,10 +50,10 @@ define class aisLocPage as aisPage
       .addMenuItem(m.lcMenu, 'Up-River Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Up"))
       .addMenuItem(m.lcMenu, 'All Bridge Locations', StuffUrl(.cUrlA, 2, "LocList"))
       if poContext.lDeveloper
-        .addMenuItem(m.lcMenu, "Edit All Locations...", StuffUrl(.cUrlB, 2, "LocBrowse"))
+        .addMenuItem(m.lcMenu, "Edit Location Metadata...", StuffUrl(.cUrlB, 2, "LocBrowse"))
       endif
       .addMenuItem(m.lcMenu, 'Panel Requirements', StuffUrl(.cUrlA, 2, "LocSumList"))
-      .addMenuItem(m.lcMenu, 'Picture Panels on Bridge!', StuffUrl(.cUrlA, 2, "LocDisplay"  ))
+      .addMenuItem(m.lcMenu, 'Picture Panels on Bridge!', StuffUrl(.cUrlA, 2, "LocDisplay"))
     endwith 
     dodefault()
     return 
