@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     29
+#DEFINE THISAPP_DATABASE_REVISION     30
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -511,6 +511,20 @@ define class AisApp AS KtbApp
       index on Pnl_Design_Category tag Design_Cat
       use in select("Panel")
 
+    case m.lnRev = 30
+      * Create Training table:
+      do CreateTable ;
+        with "Training", this.cDataPath, this.cDataBase
+      use in select("Training")
+      * Add training fields to Artist:
+      alter table Artist add column Art_Waiver_Signed L
+      alter table Artist add column Art_Training_Signed L
+      alter table Artist add column Art_Installation_Trn_FK C(32)
+      select Artist
+      index on Art_Installation_Trn_FK tag Inst_Trn
+      use in select("Artist")
+      
+
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
@@ -565,8 +579,8 @@ function CreateEmptyDatabase( lcPath)
     PLC = PanelLocation
     PNL = Panel
     RCP = Recipient
-    
     RLG = [Reserved for Railing sub-type of Piece table]
+    TRN = Training
      
     SYS = System
   #ENDIF
@@ -591,6 +605,7 @@ function CreateEmptyDatabase( lcPath)
   do CreatePanelTable
   do CreatePanelLocationTable
   do CreateDonationTable
+  do CreateTrainingTable
 
   *!* do CreateRecipientTable
 
@@ -715,6 +730,9 @@ function CreateArtistTable
       Art_Organizer L, ; && Rev 4 renamed from Art_Help_Meet_Up
       Art_Help_Outreach L, ;
       Art_Help_Other M, ;
+      Art_Waiver_Signed L, ; && Rev 30
+      Art_Training_Signed L, ; && Rev 30
+      Art_Installation_Trn_FK C(32), ; && Rev 30
       Art_Comments M, ;
       Art_Register_Time T, ;
       Art_KTB_Response M, ;
@@ -758,6 +776,7 @@ function CreateArtistTable
   index on Art_Artist tag artist 
   index on Art_Neighborhood tag Neighbor  && Rev 6
   index on Art_Register_Time tag reg_time && Rev 8
+  index on Art_Installation_Trn_FK tag Inst_Trn && Rev 30
    
   * Comment:
   dbsetprop("Artist", "Table", "Comment", ;
@@ -1032,6 +1051,41 @@ function CreateDonationTable  && Rev 25
     [One record per Donation.] )
 endfunc  && CreateDonationTable
 
+* --------------------------------------------------------- *
+function CreateTrainingTable  && Rev 30
+  * Don't declare this PRIVATE. This command allows this procedure
+  * to be run by itself, as in DO <thisproc> IN <thisfile>.PRG:
+  poEnv = GetEnvObject()
+
+  create table ("Training") name Training ;
+    ( ;
+      Trn_PK C(32) primary key default GetGuid32(), ;
+      Trn_Inactive L default .F., ;
+      Trn_Date D, ;
+      Trn_Start_Time C(4), ;
+      Trn_End_Time C(4), ;
+      Trn_Installation L, ;
+      Trn_Comments M, ;
+      Trn_Notes M, ;
+      Trn_Orig_Art_FK C(32), ;
+      Trn_Orig_Time T, ;
+      Trn_Rev_Art_FK C(32), ;
+      Trn_Rev_Time T, ;
+      Trn_Revision I NOT NULL DEFAULT 0 ;
+    )
+
+  * Standard 2 Indexes:
+  index on deleted() tag Deleted
+  index on Trn_Inactive tag Inactive
+  * Foreign Keys:
+  * Other Keys:
+  index on Trn_Date tag trn_date
+  index on Trn_Start_Time tag Start_Time
+     
+  * Comment:
+  dbsetprop("Training", "Table", "Comment", ;
+    [One record per Training.] )
+endfunc  && CreateTrainingTable
 * ---------------------------------------------------------- *
 function CreateFilesTable
   * Don't declare this PRIVATE. This command allows this procedure
@@ -1340,6 +1394,7 @@ FUNCTION CreateViews(lcOneTable, lcDataPath, lcDataBase)
     do CreateChildView WITH "V_Piece_File_Set",  "Files", "Fil_Pce_FK", "Piece",  [Fil_Inactive=.F.]
     do CreateChildView WITH "V_Artist_File_Set", "Files", "Fil_Art_FK", "Artist", [Fil_Inactive=.F.]
     do CreateChildView WITH "V_Contributing_Artist_Set", "Artist", "Art_Group_Art_FK", "Artist", [Art_Inactive=.F.] 
+    do CreateChildView WITH "V_Training_Artist_Set", "Artist", "Art_Trn_FK", "Training",  [Art_Inactive=.F.] && Rev 30
 
     do CreateChildView WITH "V_Facility_Panel_Set", "Panel", "Pnl_Fac_FK", "Facility",  [Pnl_Inactive=.F.]
     do CreateChildView WITH "V_Facility_Piece_Set", "Piece", "Pce_Fac_FK", "Facility",  [Pce_Inactive=.F.]
@@ -1353,6 +1408,7 @@ FUNCTION CreateViews(lcOneTable, lcDataPath, lcDataBase)
     do CreateAllRecordsView WITH "V_All_Donations",  "Donation", "Don_PK", [!Don_Inactive], [Don_Date_Donated]
     do CreateAllRecordsView WITH "V_All_Locations",  "Location", "Loc_PK", [!Loc_Inactive], [Loc_Side, Loc_No]
     do CreateAllRecordsView WITH "V_All_Facilities", "Facility", "Fac_PK", [!Fac_Inactive], [Fac_Name]
+    do CreateAllRecordsView WITH "V_All_Training", "Training", "Trn_PK", [!Trn_Inactive], [Trn_Date, Trn_Start_Time]
     do CreateAllRecordsView WITH "V_Active_Panel_Set",  "Panel", "Pnl_PK", [!Pnl_Inactive and !Pnl_Excluded], [Pnl_ID]
 
   endif 
