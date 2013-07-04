@@ -56,6 +56,11 @@ define class AisDonData AS AisViewData
   cPrefix = "DON"
 enddefine    
 
+*** ============================================== ***
+define class AisTrnData AS AisViewData 
+  cTable = "Training"
+  cPrefix = "TRN"
+enddefine    
 
 *** ===================================================== ***
 define class AisQuery AS L7Query

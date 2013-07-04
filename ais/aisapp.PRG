@@ -1394,7 +1394,7 @@ FUNCTION CreateViews(lcOneTable, lcDataPath, lcDataBase)
     do CreateChildView WITH "V_Piece_File_Set",  "Files", "Fil_Pce_FK", "Piece",  [Fil_Inactive=.F.]
     do CreateChildView WITH "V_Artist_File_Set", "Files", "Fil_Art_FK", "Artist", [Fil_Inactive=.F.]
     do CreateChildView WITH "V_Contributing_Artist_Set", "Artist", "Art_Group_Art_FK", "Artist", [Art_Inactive=.F.] 
-    do CreateChildView WITH "V_Training_Artist_Set", "Artist", "Art_Trn_FK", "Training",  [Art_Inactive=.F.] && Rev 30
+    do CreateChildView WITH "V_Training_Artist_Set", "Artist", "Art_Installation_Trn_FK", "Training",  [Art_Inactive=.F.] && Rev 30
 
     do CreateChildView WITH "V_Facility_Panel_Set", "Panel", "Pnl_Fac_FK", "Facility",  [Pnl_Inactive=.F.]
     do CreateChildView WITH "V_Facility_Piece_Set", "Piece", "Pce_Fac_FK", "Facility",  [Pce_Inactive=.F.]
