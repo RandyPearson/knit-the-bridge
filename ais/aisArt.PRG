@@ -2121,7 +2121,8 @@ define class AisArtQuery AS L7Query
     ", Art_Register_Time, Art_KTB_Response" 
 
   cID = null 
-
+  cTrn = null 
+  
   * Account-based params:
   lInactive = .f.  && whole record deleted
   lUser = NULL
@@ -2195,6 +2196,10 @@ define class AisArtQuery AS L7Query
       
       if !isnull(.cID)
         .cWhereClause = .cWhereClause + [ and Art_Id = '] + .cId + [']
+      endif
+
+      if !isnull(.cTrn)
+        .cWhereClause = .cWhereClause + [ and Art_Installation_Trn_FK = '] + .cTrn + [']
       endif
       
       * NOTE: next few use double quotes on purpose to allow searching stuff like "O'Brien"

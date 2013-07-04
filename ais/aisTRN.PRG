@@ -94,15 +94,98 @@ define class ais_TrnList as aisTrnPage
 
     loTbl = createobject("AisTable")
     with loTbl
+      loCol = .addCursorColumn("Trn_PK", "Training", ;
+        [HTLink(StuffUrl(urls.item("TrnHome"), "trn", Trn_PK), AisTrainingName(Trn_PK))])
       loCol = .addCursorColumn("Trn_Date", "Training Date")
       loCol = .addCursorColumn("Trn_Start_Time", "Start Time")
       loCol = .addCursorColumn("Trn_End_Time", "End Time")
+      loCol = .addCursorColumn("Trn_Comments", "Comments")
     endwith 
     
     response.write(loTbl.render())    
     return 
   endfunc 
 enddefine && TrnList
+
+*** ========================================================= ***
+define class ais_TrnHome as aisTrnPage 
+  * ----------------------------------------------------- *  
+  function AddDefaultMenu
+    this.AddSubMenu("This", "This Training")
+    dodefault()
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    this.cSubTitle = "Training: " + AisTrainingName(this.oTrn)
+    response.write(this.page_getMainRecord())
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_getMainRecord()
+    local loElem, loRow, lcRet, loData
+    lcRet = ""
+    loData = this.oTrn
+    loElem = createobject("aisRecordElement")
+    with loElem
+      loRow = .getRowObject()
+      .cCaption = this.cSubTitle
+      .AddHeading('Key Information')
+      
+      .AddRow("Date", loData.Trn_Date)
+      .AddRow("Installation Training?", loData.Trn_Installation)
+
+      .AddHeading('People Signed Up for This Training')
+      .AddRow(null, this.page_getTraineeInfo())
+
+      .AddRow("Description and Comments", L7ParseOnView(loData.Trn_Comments), .t.)
+      if poContext.lCore
+        .AddRow("Notes", L7ParseOnView(loData.Trn_Notes), .F., "private")
+      endif
+
+      if poContext.lAdmin
+        .AddHeading('Administrative Information')
+        .AddRow("Pk", TRIM(loData.Trn_PK), .F., "private")
+        .AddRow("Deleted", loData.Trn_INACTIVE, .F., "private")
+        .AddRow("Created", TRANSFORM(loData.Trn_ORIG_TIME) + [ by ] + AisArtistName(loData.Trn_Orig_Art_FK), .F., "private")
+        .AddRow("Last Modified", TRANSFORM(loData.Trn_REV_TIME) + [ by ] + AisArtistName(loData.Trn_Rev_Art_FK), .F., "private")
+      endif
+
+      lcRet = m.lcRet + .Render()
+    endwith 
+    return m.lcRet
+  endfunc && page_getMainRecord
+  * ----------------------------------------------------- *  
+  function page_getTraineeInfo
+    local loQry, loTbl, loCol, loGrp
+       
+    loQry = createobject("AisArtQuery")
+    with loQry
+      .cTrn = this.cTrn
+      .addTrainingFields()
+      .execute()
+      if .nTally = 0
+        return "(none)"
+      endif 
+    endwith 
+    
+    urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
+
+    loTbl = createobject("AisTable")
+    with loTbl
+      loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
+      loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), aisArtistName(THISRECORD))], 'artist')
+      loCol = .addCursorColumn("Art_Phone", "Phone")
+      loCol = .addCursorColumn("Art_Email", "Email")
+      loCol = .addCursorColumn("Art_Waiver_Signed", "Signed Waiver")
+      loCol = .addCursorColumn("Art_Training_Signed", "Acknowldged Training")
+      return .render()
+    endwith 
+    
+    return 
+  endfunc && page_getPanelInfo
+enddefine && FacHome
 
 *** ===================================================== ***
 define class Ais_TrnBrowse as AisTrnPage
