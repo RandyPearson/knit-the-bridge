@@ -614,7 +614,9 @@ define class ais_ArtHome as aisArtPage
       * Training Info:
       if loData.Art_Help_Install or loData.Art_Help_DeInstall or !empty(loData.Art_Installation_Trn_FK)
         .AddHeading('Training')
-        .AddRow("Training Session", AisTrainingName(loData.Art_Installation_Trn_FK))
+        .AddRow("Training Session", ;
+           HTLink(StuffUrl(this.cUrlA, 2, "TrnHome", "trn", loData.Art_Installation_Trn_FK), AisTrainingName(loData.Art_Installation_Trn_FK)))
+
         .AddRow("Signed Waiver?", loData.Art_Waiver_Signed)
         .AddRow("Signed for Training?", loData.Art_Training_Signed)
       endif
