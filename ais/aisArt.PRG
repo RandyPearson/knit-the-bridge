@@ -160,7 +160,7 @@ define class ais_ArtList as aisMultiArtPage
   function BeforeProcessRequest
     local lcStr
 
-    this.cPage_Srch1 = this.ReadQueryString("srch1", .t., .t., .t.)
+    this.cPage_Srch1 = this.ReadQueryString("srch1", .t., .t., .t., L7_QS_CHARACTERS + ['])
     this.ReadQueryString("btn", .t., .t., .t.) && clear search button from URL
     this.cPage_Flags = this.ReadQueryString("flags", .t., .t.)
 
@@ -2141,14 +2141,8 @@ define class AisArtQuery AS L7Query
       if !isnull(.cID)
         .cWhereClause = .cWhereClause + [ and Art_Id = '] + .cId + [']
       endif
-
-      if !empty(.cName)
-        .cWhereClause = .cWhereClause + [ AND Art_Last_Name LIKE '] + .cName + [']
-      endif 
-      if !isnull(.lNLN)
-        .cWhereClause = .cWhereClause + [ AND ] + iif(.lNLN, [], [!]) + [Art_Last_Name = 'NLN ']
-      endif
-
+      
+      * NOTE: next few use double quotes on purpose to allow searching stuff like "O'Brien"
       if !empty(.cSrch1)
         lcSearchFields = "Art_Last_Name + Art_First_Name + Art_Full_Name + Art_Email + Art_ID + Art_Comments + Art_Notes + Art_Participation"
 
@@ -2157,13 +2151,21 @@ define class AisArtQuery AS L7Query
         if m.lnWords = 2
           lcWord1 = alltrim(getwordnum(m.lcStr, 1))
           lcWord2 = alltrim(getwordnum(m.lcStr, 2))
-          .cWhereClause = .cWhereClause + [ AND ('] + m.lcWord1 + [' $ lower(] + m.lcSearchFields + [)] + ;
-            [ OR '] + m.lcWord2 + [' $ lower(] + m.lcSearchFields + [)] + [)]
+          .cWhereClause = .cWhereClause + [ AND ("] + m.lcWord1 + [" $ lower(] + m.lcSearchFields + [)] + ;
+            [ OR "] + m.lcWord2 + [" $ lower(] + m.lcSearchFields + [)] + [)]
         else
           lcWord1 = m.lcStr
-          .cWhereClause = .cWhereClause + [ AND '] + m.lcWord1 + [' $ lower(] + m.lcSearchFields + [)]
+          .cWhereClause = .cWhereClause + [ AND "] + m.lcWord1 + [" $ lower(] + m.lcSearchFields + [)]
         endif
       endif 
+
+      if !empty(.cName)
+        .cWhereClause = .cWhereClause + [ AND Art_Last_Name LIKE "] + .cName + ["]
+      endif 
+      if !isnull(.lNLN)
+        .cWhereClause = .cWhereClause + [ AND ] + iif(.lNLN, [], [!]) + [Art_Last_Name = "NLN "]
+      endif
+
       if !empty(.cUser_Id)
         .cWhereClause = .cWhereClause + ;
           [ AND lower(Art_User_Id) = '] + lower(padr(.cUser_ID, THISAPP_LENGTH_USER_ID)) + [']

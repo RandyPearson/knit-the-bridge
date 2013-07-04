@@ -1937,7 +1937,12 @@ DEFINE CLASS L7Page AS CUSTOM
     * Reads and returns value from a query string ("" if not present).
     * Optionally can strip same setting from any of 3 managed URLs.
     * Often called early in process, such as at BeforeProcessRequest() hook.
-    *
+    * Validator (5th param) can be any of:
+    *  - object with Test() method
+    *  - RegExp pattern (judged by ^ as 1st char)
+    *  - string of allowed chars
+    *  - nothing (defaults to L7_QS_CHARACTERS)
+    
     local lcValue, llOK, lcOKChrs, lcMsg
     * get the real value:
     lcValue = Request.QueryString( m.lcVar )
@@ -1953,8 +1958,6 @@ DEFINE CLASS L7Page AS CUSTOM
       else
         error "Query string validator lacks a Test() method"
       endif
-    
-    ** case vartype(m.lvValidator) = "C" and left(m.lvValidator, 1) = "=" && expr
     
     case vartype(m.lvValidator) = "C" and left(m.lvValidator, 1) = "^" && pattern
       llOK = L7RegexpTest(m.lcValue, m.lvValidator)
