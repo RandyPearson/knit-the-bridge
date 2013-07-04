@@ -508,6 +508,7 @@ define class aisPage as L7Page
     *!*      this.addMenuItem(m.lcMenu, 'Down-River Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Down"))
     *!*      this.addMenuItem(m.lcMenu, 'Up-River Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Up"))
     this.addMenuItem(m.lcMenu, 'Donation Report', StuffUrl(this.cUrlA, 2, "DonList"))
+    this.addMenuItem(m.lcMenu, 'DIS Report', StuffUrl(this.cUrlA, 2, "DisReport"))
     this.addMenuItem(m.lcMenu, 'Management Report', StuffUrl(this.cUrlA, 2, "Home"))
     
     ** this.addMenuItem(m.lcMenu, 'About', StuffUrl(this.cUrlA, 2, "About"), "About")
@@ -548,66 +549,123 @@ define class aisPage as L7Page
 enddefine && AisPage
 
 *** ========================================================= ***
-define class ais_DissReport as aisPage 
-  cSubTitle = "Diss Report"
+define class ais_DisReport as aisPage 
+  cSubTitle = "Dis Report"
   * ----------------------------------------------------- *  
   function ProcessRequest
-    local loPceQ, loTbl, loCol, loGrp
-    loPceQ = createobject("AisPceQuery")
-    with loPceQ
-      .ClearFields()
-      .AddFields('Pce_Art_FK, Pce_Whole_Panel, Pce_Pnl_FK')
-      
-      .lOldEngineBehavior = .t. 
-      .lJoinArtist = .t.
-      .AddFields("Art_ID, Art_Last_Name, Art_First_Name")
-      .lJoinPanel = .t.
-      .lJoinPanelLocation = .t.
-      
-      .cType = "Panels"
-      
-      .AddField("count(*) as Count_")
-      .AddField("sum(iif(!pce_whole_panel, 1, 0)) as Piece_")
-      .AddField("sum(iif(!pce_whole_panel and !isnull(pnl_pk), 1, 0)) as In_Panel_")
-      .AddField("sum(iif(!pce_whole_panel and !isnull(pnl_pk) and !isnull(plc_pk), 1, 0)) as Pce_on_Bridge_")
-      .AddField("sum(iif(pce_whole_panel and !isnull(pnl_pk) and !isnull(plc_pk), 1, 0)) as Pnl_On_Bridge_")
+    local loTbl, loCol, loGrp
+    this.page_runQueries()
 
-      .AddOrderBy("Art_ID")
-      .nGrouping = 1
-      
-      .Execute()
-    endwith
+*!*      loPceQ = createobject("AisPceQuery")
+*!*      with loPceQ
+*!*        .ClearFields()
+*!*        .AddFields('Pce_Art_FK, Pce_Whole_Panel, Pce_Pnl_FK')
+*!*        
+*!*        .lOldEngineBehavior = .t. 
+*!*        .lJoinArtist = .t.
+*!*        .AddFields("Art_ID, Art_Last_Name, Art_First_Name")
+*!*        .lJoinPanel = .t.
+*!*        .lJoinPanelLocation = .t.
+*!*        
+*!*        .cType = "Panels"
+*!*        
+*!*        .AddField("count(*) as Count_")
+*!*        .AddField("sum(iif(!pce_whole_panel, 1, 0)) as Piece_")
+*!*        .AddField("sum(iif(!pce_whole_panel and !isnull(pnl_pk), 1, 0)) as In_Panel_")
+*!*        .AddField("sum(iif(!pce_whole_panel and !isnull(pnl_pk) and !isnull(plc_pk), 1, 0)) as Pce_on_Bridge_")
+*!*        .AddField("sum(iif(pce_whole_panel and !isnull(pnl_pk) and !isnull(plc_pk), 1, 0)) as Pnl_On_Bridge_")
+
+*!*        .AddOrderBy("Art_ID")
+*!*        .nGrouping = 1
+*!*        
+*!*        .Execute()
+*!*      endwith
 
     urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
     
-    select (loPceQ.cAlias)
+    select DisReport_
     loTbl = createobject("AisTable")
     with loTbl
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
 
       loCol = .addCursorColumn("Art_ID", "Artist ID", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), Art_ID)], "id-field artist")
+
       loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), aisArtistName(THISRECORD))], "artist")
+      loCol.cCellClass = [iif(Pce_On_Bridge_ + Pnl_On_Bridge_ = 0, 'dis', '')]
 
-      loCol = .addCursorColumn("Count_")
+      loCol = .addCursorColumn("Count_", "Work")
+      loCol = .addCursorColumn("Pce_On_Bridge_ + Pnl_On_Bridge_", "Work <br>on Bridge")
+      loCol.cCellClass = [iif(Pce_On_Bridge_ + Pnl_On_Bridge_ = 0, 'dis', '')]
+
       loCol = .addCursorColumn("Piece_", "Bits")
-      loCol = .addCursorColumn("In_Panel_", "Bits<br>in Panels")
-      loCol = .addCursorColumn("Pce_On_Bridge_", "Bits<br>on Bridge")
-      loCol = .addCursorColumn("Count_ - Piece_", "Whole-Panel<br>Pieces")
-      loCol = .addCursorColumn("Pnl_On_Bridge_", "Panels<br>on Bridge")
+
+      loCol = .addCursorColumn("In_Panel_", "Bits <br>in Panels")
+      loCol.cCellClass = [iif(Piece_ = 0, 'n-a', iif(In_Panel_ = 0, 'warning', ''))]
+
+      loCol = .addCursorColumn("Pce_On_Bridge_", "Bits <br>on Bridge")
+      loCol.cCellClass = [iif(Piece_ = 0, 'n-a', iif(Pce_On_Bridge_ = 0, 'warning', ''))]
+
+      loCol = .addCursorColumn("Count_ - Piece_", "Whole-Panel <br>Pieces")
+      
+      loCol = .addCursorColumn("Pnl_On_Bridge_", "Panels <br>on Bridge")
+      loCol.cCellClass = [iif(Count_ - Piece_ = 0, 'n-a', iif(Pnl_On_Bridge_ = 0, 'warning', ''))]
     endwith 
     
     with Response
       .Write(loTbl.Render())
-      if poContext.lDeveloper
-        .Write(HTWrap(loPceQ.cSqlStatement, 'div,p',, 'admin,debug'))
-      endif
     endwith 
 
     return 
-  endfunc 
-enddefine  && ais_DissReport
+  endfunc && processRequest
+  * ----------------------------------------------------- *  
+  function page_runQueries()
+    set database to (goL7App.cDatabase)
+    select pce_pk, pce_whole_panel, pce_art_fk, pce_pnl_fk, .f. as Pnl_, .f. as Loc_ ;
+      from Piece ;
+      where pce_type = "Panels" and !pce_inactive ;
+        and empty(pce_pnl_fk) ;
+      into cursor DisReport_NoPanel_
+
+    select pce_pk, pce_whole_panel, pce_art_fk, pce_pnl_fk, .t. as Pnl_, .t. as Loc_ ;
+      from Piece ;
+      where pce_type = "Panels" and !pce_inactive ;
+        and !empty(Pce_Pnl_Fk) ; 
+        and exists (select * from PanelLocation where !Plc_Inactive and Plc_Pnl_FK = Piece.Pce_Pnl_FK) ;
+      into cursor DisReport_Loc_
+
+    select pce_pk, pce_whole_panel, pce_art_fk, pce_pnl_fk, .t. as Pnl_, .f. as Loc_ ;
+      from Piece ;
+      where pce_type = "Panels" and !pce_inactive ;
+        and !empty(Pce_Pnl_Fk) ; 
+        and !exists (select * from PanelLocation where !Plc_Inactive and Plc_Pnl_FK = Piece.Pce_Pnl_FK) ;
+      into cursor DisReport_NoLoc_
+        
+    select * from DisReport_NoPanel_ ;
+      union select * from DisReport_Loc_ ;
+      union select * from DisReport_NoLoc_ ;
+      into cursor DisReport_Union_
+
+    select pce_art_fk, ;
+        count(*) as Count_, ;
+        sum(iif(!pce_whole_panel, 1, 0)) as Piece_, ;
+        sum(iif(!pce_whole_panel and Pnl_, 1, 0)) as In_Panel_, ;
+        sum(iif(!pce_whole_panel and Loc_, 1, 0)) as Pce_on_Bridge_, ;
+        sum(iif(pce_whole_panel and Loc_, 1, 0)) as Pnl_On_Bridge_ ;
+      from DisReport_Union_ ;
+      group by pce_art_fk ;
+      into cursor DisReport_Totals_
+      
+    select Tot_.*, Art.Art_ID, Art.Art_Last_Name, Art.Art_First_Name, Art.Art_Full_Name ;
+      from DisReport_Totals_ Tot_ ;
+        join Artist Art on Tot_.Pce_Art_fk = Art.Art_PK ;
+      order by Art_ID ;
+      into cursor DisReport_
+
+    return 
+  endfunc && page_runQueries
+enddefine  && ais_DisReport
 
 *** ========================================================= ***
 define class ais_Home as aisPage 

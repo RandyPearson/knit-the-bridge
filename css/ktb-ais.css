@@ -112,6 +112,10 @@ td.loc-pnl {width: 50px; border-width: 6px !important; border-color: black !impo
 td.loc-link{width: 25px;}
 td.loc-id  {width: 60px; text-align: center; }
 
+td.n-a {background-color: gray;}
+td.warning{background-color: #ffe;}
+td.dis {background-color: #fee; color: red;}
+
 table.mgmt-report{border: 0;}
 .mgmt-report th{font-weight: normal; color: brown; text-align: right;}
 .mgmt-report td{text-align: right;}
