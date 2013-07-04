@@ -279,7 +279,7 @@ define class ais_PceList as aisPcePage
       endif 
       response.write(.render())
       
-      if poContext.lCore
+      if poContext.lDeveloper
         Response.Write(HTWrap(loQry.cSqlStatement, 'div,p',, 'admin,debug'))
       endif
     endwith 
@@ -806,6 +806,7 @@ define class AisPceQuery as L7Query
   lJoinArtist = .f. 
   lJoinFacility = .f.
   lJoinPanel = .f. 
+  lJoinPanelLocation = .f. 
   * --------------------------------------------------------- *
   function GetCaption 
     local lcRet
@@ -872,6 +873,15 @@ define class AisPceQuery as L7Query
         .aJoins[.nJoins, 2] = "Pce_Pnl_FK = Pnl_PK"
         .aJoins[.nJoins, 3] = "LEFT OUTER"
         .AddFields("Pnl_ID, Pnl_Fac_FK")
+      endif 
+
+      if .lJoinPanelLocation
+        .nJoins = .nJoins + 1
+        dimension .aJoins[.nJoins, 3]
+        .aJoins[.nJoins, 1] = "PanelLocation"
+        .aJoins[.nJoins, 2] = "Pnl_PK = Plc_Pnl_FK"
+        .aJoins[.nJoins, 3] = "LEFT OUTER"
+        .cWhereClause = .cWhereClause + [ and nvl(Plc_Inactive, .f.) = .f.] 
       endif 
 
       if !isnull(.cArt)

@@ -548,6 +548,68 @@ define class aisPage as L7Page
 enddefine && AisPage
 
 *** ========================================================= ***
+define class ais_DissReport as aisPage 
+  cSubTitle = "Diss Report"
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    local loPceQ, loTbl, loCol, loGrp
+    loPceQ = createobject("AisPceQuery")
+    with loPceQ
+      .ClearFields()
+      .AddFields('Pce_Art_FK, Pce_Whole_Panel, Pce_Pnl_FK')
+      
+      .lOldEngineBehavior = .t. 
+      .lJoinArtist = .t.
+      .AddFields("Art_ID, Art_Last_Name, Art_First_Name")
+      .lJoinPanel = .t.
+      .lJoinPanelLocation = .t.
+      
+      .cType = "Panels"
+      
+      .AddField("count(*) as Count_")
+      .AddField("sum(iif(!pce_whole_panel, 1, 0)) as Piece_")
+      .AddField("sum(iif(!pce_whole_panel and !isnull(pnl_pk), 1, 0)) as In_Panel_")
+      .AddField("sum(iif(!pce_whole_panel and !isnull(pnl_pk) and !isnull(plc_pk), 1, 0)) as Pce_on_Bridge_")
+      .AddField("sum(iif(pce_whole_panel and !isnull(pnl_pk) and !isnull(plc_pk), 1, 0)) as Pnl_On_Bridge_")
+
+      .AddOrderBy("Art_ID")
+      .nGrouping = 1
+      
+      .Execute()
+    endwith
+
+    urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
+    
+    select (loPceQ.cAlias)
+    loTbl = createobject("AisTable")
+    with loTbl
+      loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
+
+      loCol = .addCursorColumn("Art_ID", "Artist ID", ;
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), Art_ID)], "id-field artist")
+      loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Pce_Art_FK), aisArtistName(THISRECORD))], "artist")
+
+      loCol = .addCursorColumn("Count_")
+      loCol = .addCursorColumn("Piece_", "Bits")
+      loCol = .addCursorColumn("In_Panel_", "Bits<br>in Panels")
+      loCol = .addCursorColumn("Pce_On_Bridge_", "Bits<br>on Bridge")
+      loCol = .addCursorColumn("Count_ - Piece_", "Whole-Panel<br>Pieces")
+      loCol = .addCursorColumn("Pnl_On_Bridge_", "Panels<br>on Bridge")
+    endwith 
+    
+    with Response
+      .Write(loTbl.Render())
+      if poContext.lDeveloper
+        .Write(HTWrap(loPceQ.cSqlStatement, 'div,p',, 'admin,debug'))
+      endif
+    endwith 
+
+    return 
+  endfunc 
+enddefine  && ais_DissReport
+
+*** ========================================================= ***
 define class ais_Home as aisPage 
   ** nMinLoginLevel = L7_NONE  && users always need access to login form
   cSubTitle = "Home"
