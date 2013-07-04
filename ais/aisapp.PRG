@@ -11,6 +11,7 @@ define class AisApp AS KtbApp
 
   * Lookup table aliases:
   cFacAlias                 = NULL  && see cFacAlias_ACCESS method
+  cTrnAlias                 = NULL  && see cTrnAlias_ACCESS method
 
   cConfigClass              = "AisConfig"  
   
@@ -45,6 +46,11 @@ define class AisApp AS KtbApp
     return "Facility_LOOKUP_"
   endfunc 
   * --------------------------------------------------------- *
+  function cTrnAlias_ACCESS
+    this.OpenLookupTable("Training")
+    return "Training_LOOKUP_"
+  endfunc 
+  * --------------------------------------------------------- *
   function AfterSetup  && oConfig is loaded now
     local loRE
     loRE = createobject(L7_REGEXP_CLASS)
@@ -72,6 +78,16 @@ define class AisApp AS KtbApp
         [INDEX ON Fac_PK TAG Fac_PK] + CRLF + ;
         [INDEX ON Fac_Name TAG Fac_Name] + CRLF + ;
         [INDEX ON Fac_Order TAG Fac_Order] 
+
+    case lcCode == "Training"  && Rev. 30
+      lcSql = ;
+        [SELECT Trn_PK, Trn_Date, Trn_Start_Time, Trn_End_Time] + ;
+        [ FROM ] + THISAPP_DATABASE + [!Training] + ;
+        [ WHERE Trn_Inactive = .F.] + ;
+        [ ORDER BY Trn_Date, Trn_Start_Time]
+      lcIndexCommands = ;
+        [INDEX ON Trn_PK TAG Trn_PK] + CRLF + ;
+        [INDEX ON Trn_Date TAG Trn_Date] 
 
     otherwise 
       error "Unknown lookup request: " + m.lcCode

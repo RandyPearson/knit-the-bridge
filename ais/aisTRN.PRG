@@ -3,6 +3,29 @@
 #INCLUDE WCONNECT.H
 #INCLUDE AIS.H
 
+* --------------------------------------------------------- *
+function aisTrainingName(tvTrn)
+  local loData, loPreserve
+  if vartype(m.tvTrn) = "O"
+    loData = m.tvTrn
+  else  && PK
+    if isnull(m.tvTrn) or empty(m.tvTrn)
+      return "--"
+    endif
+    loPreserve = createobject("L7PreserveSelect")
+    select * from KtbAis!Training ;
+      where Trn_PK = m.tvTrn ;
+      into cursor aisTrainingName_
+    if _tally < 1
+      error "Training " + m.tvTrn + " was not found!"
+    endif
+    scatter memo name loData
+    loPreserve = null 
+  endif 
+    
+  return cdow(loData.Trn_Date) + ", " + dtoc(loData.Trn_Date) + " " + stuff(loData.Trn_Start_Time, 3, 0, ":") + " to " + stuff(loData.Trn_End_Time, 3, 0, ":")
+endfunc  && aisTrainingName
+
 *** ========================================================= ***
 define class aisTrnPage as aisPage
   cTrn = ""

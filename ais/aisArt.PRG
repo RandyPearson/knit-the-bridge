@@ -576,6 +576,7 @@ define class ais_ArtHome as aisArtPage
         .AddRow("Neighborhood", TRIM(loData.ART_NEIGHBORHOOD), .F.)
         .AddRow("Age Range", TRIM(loData.ART_AGE_RANGE))
       endif 
+
       lcStr = this.page_getContributors()
       if !empty(m.lcStr)
         .AddHeading('Contributing Artists')
@@ -610,12 +611,23 @@ define class ais_ArtHome as aisArtPage
         .AddRow("Internal KtB Notes", L7ParseOnView(loData.ART_NOTES), .t., "private")
       endif
       
-      .AddHeading('Other Historical Info (from Google doc)')
-      .AddRow("Panel Info", L7ParseOnView(loData.ART_PANEL_INFO), .t., "private")
-      .AddRow("Bit Info", L7ParseOnView(loData.ART_BIT_INFO), .t., "private")
-      .AddRow("Received", loData.ART_RECEIVED, .t., "private")
-      .AddRow("Storage Location", L7ParseOnView(loData.ART_STORAGE_LOCATION), .t., "private")
+      * Training Info:
+      if loData.Art_Help_Install or loData.Art_Help_DeInstall or !empty(loData.Art_Installation_Trn_FK)
+        .AddHeading('Training')
+        .AddRow("Training Session", AisTrainingName(loData.Art_Installation_Trn_FK))
+        .AddRow("Signed Waiver?", loData.Art_Waiver_Signed)
+        .AddRow("Signed for Training?", loData.Art_Training_Signed)
+      endif
 
+      * Historical google doc tracking: 
+      if !empty(loData.ART_PANEL_INFO) or !empty(loData.ART_BIT_INFO) or !empty(loData.ART_RECEIVED) or !empty(loData.ART_STORAGE_LOCATION)
+        .AddHeading('Other Historical Info (from Google doc)')
+        .AddRow("Panel Info", L7ParseOnView(loData.ART_PANEL_INFO), .t., "private")
+        .AddRow("Bit Info", L7ParseOnView(loData.ART_BIT_INFO), .t., "private")
+        .AddRow("Received", loData.ART_RECEIVED, .t., "private")
+        .AddRow("Storage Location", L7ParseOnView(loData.ART_STORAGE_LOCATION), .t., "private")
+      endif 
+      
       if poContext.lAdmin
         .AddHeading('Administrative Information')
         .AddRow("Pk", TRIM(loData.ART_PK), .F., "private")
@@ -954,9 +966,47 @@ define class aisArtistForms AS AisForm
   cEntityAlias = "v_Artist"
   cEntityAbbr  = "Art"
   * --------------------------------------------------------- *
+  function addTrainingControls()
+    with this
+      .AddObject("divTrn", "L7Divider")
+      with .divTrn
+        .cLabel = "Training Information"
+      endwith
+
+      .AddObject("cboTrn_FK", "L7Popup")
+      with .cboTrn_FK
+        .cControlSource = "V_artist.Art_Installation_Trn_FK"
+        .lRequired = .f.
+        .cLabel = "Training Session"
+        .lAutoRender = .t.
+        .nRowSourceType = L7_ROWSOURCETYPE_ALIAS
+        .cRowSource = goL7App.cTrnAlias  
+        *!* ex: .cFilterExpression = [Trn_Installation = .t.]
+        .cValueExpression = [Trn_PK]
+        .cLabelExpression = [cdow(Trn_Date) + ", " + dtoc(Trn_Date) + " " + stuff(Trn_Start_Time, 3, 0, ":")  + " to " + stuff(Trn_End_Time, 3, 0, ":")]
+        .vFirstItemValue = space(32) && 0 for integer keys
+        .cFirstItemLabel = "[ select from choices below ]"
+      endwith 
+
+      .AddObject("chkTraining_Signed", "L7Checkbox")
+      with .chkTraining_Signed
+        .cControlSource = "V_artist.Art_Training_Signed"
+        .cCaption = "Signed as Reading Training"
+        .cLabel = "Training"
+      endwith
+
+      .AddObject("chkWaiver_Signed", "L7Checkbox")
+      with .chkWaiver_Signed
+        .cControlSource = "V_artist.Art_Waiver_Signed"
+        .cCaption = "Signed Waiver"
+        .cLabel = "Waiver"
+      endwith
+    endwith 
+    return
+  endfunc 
+  * --------------------------------------------------------- *
   function addParticipationControls()
     with this
-
       .AddObject("divPart", "L7Divider")
       with .divPart
         .cLabel = "Participation Information"
@@ -1456,7 +1506,6 @@ define class aisArtistForm AS aisArtistForms
         .cCssClass = "FormControlPrivate"
       endwith
 
-
       .AddParticipationControls()
       
       .AddObject("edtComments", "L7Textarea")
@@ -1488,6 +1537,7 @@ define class aisArtistForm AS aisArtistForms
         .cCssClass = "FormControlPrivate"
       endwith
 
+      .addTrainingControls()
       .addAdditionalControls()
       
       .addSecurityControls()
@@ -2123,6 +2173,11 @@ define class AisArtQuery AS L7Query
     this.addFields("Art_Towers, Art_Help_Install, Art_Help_Materials, Art_Help_Money, Art_Organizer, Art_Help_Outreach, Art_Help_Other" + ;
       ", Art_Help_Deinstall, Art_Help_Monitoring, Art_Help_Stitching" + ;
       ", Art_Partial_Panel, Art_Panel_Info, Art_Panel_Count, Art_Railing_1_Count, Art_Railing_2_Count, Art_Railing_3_Count")
+    return 
+  endfunc
+  * --------------------------------------------------------- *
+  function addTrainingFields
+    this.addFields("Art_Waiver_Signed, Art_Training_Signed, Art_Installation_Trn_FK")
     return 
   endfunc
   * --------------------------------------------------------- *
