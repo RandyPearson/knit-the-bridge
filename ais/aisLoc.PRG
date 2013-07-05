@@ -3,6 +3,114 @@
 #INCLUDE WCONNECT.H
 #INCLUDE AIS.H
 
+* --------------------------------------------------------- *
+function AisDescribeLocation(tvItem)
+  local loData, loPreserve, lcRet, loLocater
+  do case 
+  case vartype(m.tvItem) = "O" && object passed
+    loData = m.tvItem
+
+  case !isnull(m.tvItem) and vartype(m.tvItem) = "L" && nothing passed--"assume" current record applies
+    if type("Loc_FK") = "C"
+      scatter memo name loData
+    else
+      return "--"
+    endif
+
+  case isnull(m.tvItem) or empty(m.tvItem)
+    return "--"
+
+  otherwise  && PK alone passed
+    loData = AisGetPanelLocation(m.tvItem)
+  endcase
+
+  loLocater = createobject("AisLocater")
+  
+  lcRet = loLocater.DescribeLocation(m.loData)
+  return m.lcRet
+endfunc 
+
+*** ========================================================= ***
+define class aisLocater as custom
+  cAlias = "AisLocater_Locations_"
+  * --------------------------------------------------------- *
+  function queryLocations(loLoc)
+    local loQ
+    loQ = createobject("AisLocQuery")
+    with loQ
+      .cSide = loLoc.Loc_Side
+      .cAlias = this.cAlias
+      .AddOrderBy("Loc_No")
+      .Execute()
+    endwith
+  endfunc 
+  * --------------------------------------------------------- *
+  function DescribeLocation(loLoc)
+    local lcItems
+    this.queryLocations(m.loLoc)
+    lcItems = ""
+    lcItems = m.lcItems + "* " + this.DescribeOrientation(m.loLoc) + crlf 
+    lcItems = m.lcItems + "* " + this.DescribeSide(m.loLoc) + crlf
+    lcItems = m.lcItems + "* " + this.DescribeHowFar(m.loLoc) + crlf
+    lcItems = m.lcItems + "* " + this.ListMarkers(m.loLoc) + crlf
+    lcItems = m.lcItems + "* " + this.ListComments(m.loLoc) + crlf
+    lcItems = L7ParseOnView(m.lcItems)
+    return m.lcItems
+  endfunc && DescribeLocation
+  * --------------------------------------------------------- *
+  function DescribeSide(loLoc)
+    local lcRet
+    lcRet = iif(loLoc.Loc_Side = "Up", ;
+      "on the *up-river* side of the bridge (the side facing 9th street)", ;
+      "on the *down-river* side of the bridge (the side facing 6th street and PNC Park)")
+    return m.lcRet
+  endfunc && DescribeLocation
+  * --------------------------------------------------------- *
+  function DescribeOrientation(loLoc)
+    local lcRet
+    lcRet = iif(loLoc.Plc_Orientation = "Inner", ;
+      "oriented to the *inside*, meaning best viewed from the Warhol bridge pedestrian walkway ", ;
+      "oriented to the *outside*, meaning best viewed from " + ;
+        iif(loLoc.Loc_Side = "Up", ;
+          "the Rachel Carson (9th Street) Bridge", ;
+          "the Clemente (6th Street) Bridge"))
+    return m.lcRet
+  endfunc && DescribeOrientation
+  * --------------------------------------------------------- *
+  function DescribeHowFar(loLoc)
+    select (this.cAlias)
+    go bottom
+    lcRet = textmerge([<<loLoc.Loc_No>>/<<Loc_No>> (<<round(100 * loLoc.Loc_No/Loc_No, 0)>>%) of the way across the bridge (starting from the Downtown end)])
+    return m.lcRet 
+  endfunc 
+  * --------------------------------------------------------- *
+  function ListMarkers(loLoc)
+    local lcRet, lnLocNo, lcRel
+    lnLocNo = loLoc.Loc_No
+    select abs(Loc_No - m.lnLocNo) as _Dist_ , * from (this.cAlias) where !empty(Loc_Marker) order by 1 into cursor this.cAlias + "Markers_"
+    lcRel = icase(;
+      loLoc.Loc_No = Loc_No, "at panel location", ;
+      loLoc.Loc_No > Loc_No, "<<loLoc.Loc_No - Loc_No>> spaces closer to Downtown", ;
+      "<<Loc_No - loLoc.Loc_No>> spaces closer to North Shore")
+
+    lcRet = "closest marker: " + trim(Loc_Marker) + ", which is " + textmerge(m.lcRel)
+    return m.lcRet
+  endfunc 
+  * --------------------------------------------------------- *
+  function ListComments(loLoc)
+    local lcRet, lnLocNo, lcRel
+    lnLocNo = loLoc.Loc_No
+    select abs(Loc_No - m.lnLocNo) as _Dist_ , * from (this.cAlias) where !empty(Loc_Comments) order by 1 into cursor this.cAlias + "Comments_"
+    lcRel = icase(;
+      loLoc.Loc_No = Loc_No, "at panel location", ;
+      loLoc.Loc_No > Loc_No, "<<loLoc.Loc_No - Loc_No>> spaces closer to Downtown", ;
+      "<<Loc_No - loLoc.Loc_No>> spaces closer to North Shore")
+
+    lcRet = "closest landmark: " + Loc_Comments + ", which is " + textmerge(m.lcRel) 
+    return m.lcRet
+  endfunc 
+enddefine && AisLocater 
+
 *** ========================================================= ***
 define class aisLocPage as aisPage 
   cLoc = ""

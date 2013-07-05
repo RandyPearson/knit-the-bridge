@@ -831,14 +831,19 @@ define class ais_PnlHome as aisPnlPage
       .AddRow("Current Storage Facility", ;
         HTLink(StuffUrl(this.cUrlA, 2, "FacHome", "fac", loData.Pnl_Fac_FK), aisFacilityName(loData.Pnl_Fac_FK)),,'facility')
             
+      .AddHeading("Bridge Location")
       loRow.clear()
-      loRow.cLabel = "Bridge Location"
+      loRow.cLabel = "Location ID and Orientation"
       if isnull(this.oPage_Location)
       else
         loRow.vValue = HTWrap(aisFormatPanelLocation(this.oPage_Location), 'span',, 'id-field location')
         loRow.links.add(HTLink(StuffUrl(this.cUrlA, 2, "LocDisplay") + "#" + loData.Pnl_PK, "View on Bridge"))
       endif 
       .AddRowEx(m.loRow)
+      
+      if !isnull(this.oPage_Location)
+        .AddRow("How to Find", AisDescribeLocation(this.oPage_Location))
+      endif
       
       .AddHeading('Pieces Comprising Panel')
       .AddRow(null, this.page_getPieceInfo())
