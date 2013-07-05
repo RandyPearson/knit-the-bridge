@@ -723,30 +723,8 @@ define class ais_PnlHome as aisPnlPage
 
       if poContext.lAdmin
         .addMenuItem("main\This,page", "Edit Panel...", StuffUrl(.cUrlA, 2, "PnlForm", "pnl", .cPnl))
+      endif
 
-        .addMenuItem("main\This,page", "Upload Panel File...", StuffUrl(.cUrlA, 2, "PnlFilNew", "pnl", .cPnl))
-
-        if .oPnl.Pnl_Single_Piece = .f. and !.oPnl.Pnl_Completed 
-          .addMenuItem("main\This,page", "Add Piece to Panel...", ;
-            StuffUrl(.cUrlA, 2, "PnlAddPiece", "pnl", .cPnl))
-        endif
-        lcUrl = StuffUrl(.cUrlB, 2, "PnlSetLoc")
-        if isnull(.oPage_Location)
-          if !.oPnl.Pnl_Inactive and !.oPnl.Pnl_Excluded
-            .AddMenuItem("main\This,page", "Assign Up-River Inner Location...", ;
-              StuffUrl(m.lcUrl, "side", "Up", "orient", "Inner"))
-            .AddMenuItem("main\This,page", "Assign Up-River Outer Location...", ;
-              StuffUrl(m.lcUrl, "side", "Up", "orient", "Outer"))
-            .AddMenuItem("main\This,page", "Assign Down-River Inner Location...", ;
-              StuffUrl(m.lcUrl, "side", "Down", "orient", "Inner"))
-            .AddMenuItem("main\This,page", "Assign Down-River Outer Location...", ;
-              StuffUrl(m.lcUrl, "side", "Down", "orient", "Outer"))
-          endif
-        else 
-          .addMenuItem("main\This,page", "Remove Panel Location...", ;
-            StuffUrl(.cUrlB, 2, "PnlRemLoc", "plc", .oPage_Location.plc_pk))
-        endif 
-      endif 
       use v_Active_Panel_Set again in select("v_Active_Panel_Set")
       select v_Active_Panel_Set
       locate for Pnl_Id = this.oPnl.Pnl_Id
@@ -762,6 +740,15 @@ define class ais_PnlHome as aisPnlPage
         endif
       endif
       use in select("v_Active_Panel_Set")
+      
+      if poContext.lAdmin
+        .addMenuItem("main\This,page", "Upload Panel File...", StuffUrl(.cUrlA, 2, "PnlFilNew", "pnl", .cPnl))
+
+        if .oPnl.Pnl_Single_Piece = .f. and !.oPnl.Pnl_Completed 
+          .addMenuItem("main\This,page", "Add Piece to Panel...", ;
+            StuffUrl(.cUrlA, 2, "PnlAddPiece", "pnl", .cPnl))
+        endif
+      endif 
     endwith 
     dodefault()
     return 
@@ -835,9 +822,25 @@ define class ais_PnlHome as aisPnlPage
       loRow.clear()
       loRow.cLabel = "Location ID and Orientation"
       if isnull(this.oPage_Location)
+        do case
+        case loData.Pnl_Inactive
+          loRow.vValue = "N/A: Panel has been DELETED."
+        case loData.Pnl_Excluded
+          loRow.vValue = "N/A: Panel has been EXCLUDED."
+        otherwise 
+          loRow.vValue = "Panel location not yet assigned."
+          lcUrl = StuffUrl(this.cUrlB, 2, "PnlSetLoc")
+          loRow.links.add(HTLink(StuffUrl(m.lcUrl, "side", "Up", "orient", "Inner"), "Assign Up-River Inner Location..."))
+          loRow.links.add(HTLink(StuffUrl(m.lcUrl, "side", "Up", "orient", "Outer"), "Assign Up-River Outer Location..."))
+          loRow.links.add(HTLink(StuffUrl(m.lcUrl, "side", "Down", "orient", "Inner"), "Assign Down-River Inner Location..."))
+          loRow.links.add(HTLink(StuffUrl(m.lcUrl, "side", "Down", "orient", "Outer"), "Assign Down-River Outer Location..."))
+        endcase
+
       else
         loRow.vValue = HTWrap(aisFormatPanelLocation(this.oPage_Location), 'span',, 'id-field location')
         loRow.links.add(HTLink(StuffUrl(this.cUrlA, 2, "LocDisplay") + "#" + loData.Pnl_PK, "View on Bridge"))
+        loRow.links.add(HTLink(StuffUrl(this.cUrlB, 2, "PnlRemLoc", "plc", this.oPage_Location.plc_pk), "Remove Panel Location"))
+
       endif 
       .AddRowEx(m.loRow)
       
