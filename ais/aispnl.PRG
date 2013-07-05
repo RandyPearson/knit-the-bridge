@@ -1248,6 +1248,7 @@ define class AisPnlQuery as L7Query
         .aJoins[.nJoins, 3] = "LEFT OUTER"
 
         .AddFields("Plc_Orientation, Loc_Side, Loc_No")
+        .cWhereClause = .cWhereClause + [ and nvl(Plc_Inactive, .f.) = .f.]
       endif 
 
       if .lJoinArtist
