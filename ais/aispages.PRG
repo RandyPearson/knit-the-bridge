@@ -554,41 +554,61 @@ enddefine && AisPage
 *** ========================================================= ***
 define class ais_DisReport as aisPage 
   cSubTitle = "Dis Report"
+  lPage_Whole = null
+  lPage_Multi = null 
+  * --------------------------------------------------------- *
+  function BeforeProcessRequest
+    local lcStr
+    
+    lcStr = this.ReadQueryString("Whole", .t., .t.)
+    this.lPage_Whole = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+    
+    lcStr = this.ReadQueryString("Multi", .t., .t.)
+    this.lPage_Multi = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+
+    dodefault()  && required bubble-up
+    return    
+  endfunc  
+  * --------------------------------------------------------- *
+  function AddDefaultMenu
+    local lcMenu
+    with this
+      .AddSubMenu("This", "DIS Report Options")
+      lcMenu = "main\This"
+
+      .addMenuItem(m.lcMenu, "Whole-Panel Submitters", StuffUrl(.cUrlB, "whole", "1"))
+      .addMenuItem(m.lcMenu, "Multi-Panel Submitters", StuffUrl(.cUrlB, "multi", "1"))
+      .addMenuItem(m.lcMenu, "Full Report",            .cUrlB)
+
+    endwith 
+    dodefault()
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_getFilter
+    local lcFilter
+    lcFilter = ""
+    with this
+      if !isnull(.lPage_Whole)
+        lcFilter = m.lcFilter + [ and ] + iif(.lPage_Whole, [Count_ - Piece_ > 0], [Piece_ > 0])
+      endif 
+      if !isnull(.lPage_Multi)
+        lcFilter = m.lcFilter + [ and ] + iif(.lPage_Multi, [Count_ - Piece_ > 1], [Count_ - Piece_ <= 1])
+      endif 
+    endwith 
+    return substr(m.lcFilter, 1 + len([ and ]))
+  endfunc 
   * ----------------------------------------------------- *  
   function ProcessRequest
     local loTbl, loCol, loGrp
     this.page_runQueries()
-
-*!*      loPceQ = createobject("AisPceQuery")
-*!*      with loPceQ
-*!*        .ClearFields()
-*!*        .AddFields('Pce_Art_FK, Pce_Whole_Panel, Pce_Pnl_FK')
-*!*        
-*!*        .lOldEngineBehavior = .t. 
-*!*        .lJoinArtist = .t.
-*!*        .AddFields("Art_ID, Art_Last_Name, Art_First_Name")
-*!*        .lJoinPanel = .t.
-*!*        .lJoinPanelLocation = .t.
-*!*        
-*!*        .cType = "Panels"
-*!*        
-*!*        .AddField("count(*) as Count_")
-*!*        .AddField("sum(iif(!pce_whole_panel, 1, 0)) as Piece_")
-*!*        .AddField("sum(iif(!pce_whole_panel and !isnull(pnl_pk), 1, 0)) as In_Panel_")
-*!*        .AddField("sum(iif(!pce_whole_panel and !isnull(pnl_pk) and !isnull(plc_pk), 1, 0)) as Pce_on_Bridge_")
-*!*        .AddField("sum(iif(pce_whole_panel and !isnull(pnl_pk) and !isnull(plc_pk), 1, 0)) as Pnl_On_Bridge_")
-
-*!*        .AddOrderBy("Art_ID")
-*!*        .nGrouping = 1
-*!*        
-*!*        .Execute()
-*!*      endwith
 
     urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
     
     select DisReport_
     loTbl = createobject("AisTable")
     with loTbl
+      .cFilter = this.page_getFilter()
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
 
       loCol = .addCursorColumn("Art_ID", "Artist ID", ;
@@ -602,6 +622,12 @@ define class ais_DisReport as aisPage
       loCol = .addCursorColumn("Pce_On_Bridge_ + Pnl_On_Bridge_", "Work <br>on Bridge")
       loCol.cCellClass = [iif(Pce_On_Bridge_ + Pnl_On_Bridge_ = 0, 'dis', '')]
 
+      loCol = .addCursorColumn("Count_ - Piece_", "Whole-Panel <br>Pieces")
+      
+      loCol = .addCursorColumn("Pnl_On_Bridge_", "Panels <br>on Bridge")
+      loCol.cCellClass = [iif(Count_ - Piece_ = 0, 'n-a', iif(Pnl_On_Bridge_ = 0, 'warning', ''))]
+      loCol.cCellStyle = [iif(Pnl_On_Bridge_ <= 1, '', 'font-size: ' + transform(100 + 10 * Pnl_On_Bridge_) + '%;')]
+
       loCol = .addCursorColumn("Piece_", "Bits")
 
       loCol = .addCursorColumn("In_Panel_", "Bits <br>in Panels")
@@ -609,11 +635,6 @@ define class ais_DisReport as aisPage
 
       loCol = .addCursorColumn("Pce_On_Bridge_", "Bits <br>on Bridge")
       loCol.cCellClass = [iif(Piece_ = 0, 'n-a', iif(Pce_On_Bridge_ = 0, 'warning', ''))]
-
-      loCol = .addCursorColumn("Count_ - Piece_", "Whole-Panel <br>Pieces")
-      
-      loCol = .addCursorColumn("Pnl_On_Bridge_", "Panels <br>on Bridge")
-      loCol.cCellClass = [iif(Count_ - Piece_ = 0, 'n-a', iif(Pnl_On_Bridge_ = 0, 'warning', ''))]
     endwith 
     
     with Response
