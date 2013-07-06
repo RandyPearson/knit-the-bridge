@@ -143,30 +143,12 @@ define class ais_PceList as aisPcePage
       .AddSubMenu("This", "PIECES and RAILINGS")
       lcMenu = "main\This"
 
-*!*        .addMenuItem("main\This", "Available", StuffUrl(.cUrlC, "orphans", "1"),, !isnull(.lPage_Orphans) and .lPage_Orphans)
-*!*        .addMenuItem("main\This", "Assigned", StuffUrl(.cUrlC, "orphans", "0"),, !isnull(.lPage_Orphans) and !.lPage_Orphans)
-*!*        .addMenuItem("main\This", "Available and Assigned", StuffUrl(.cUrlC, "orphans", .f.),, isnull(.lPage_Orphans))
-
-*!*        .addMenuItem("main\This", "Whole-Panel", StuffUrl(.cUrlC, "whole", "1"),, !isnull(.lPage_Whole) and .lPage_Whole)
-*!*        .addMenuItem("main\This", "Non-Whole-Panel", StuffUrl(.cUrlC, "whole", "0"),, !isnull(.lPage_Whole) and !.lPage_Whole)
-*!*        .addMenuItem("main\This", "Whole- and Non-Whole-Panel", StuffUrl(.cUrlC, "whole", .f.),, isnull(.lPage_Whole))
-
-*!*        .addMenuItem("main\This", "Shipped", StuffUrl(.cUrlC, "Shipped", "1"),, !isnull(.lPage_Shipped) and .lPage_Shipped)
-*!*        .addMenuItem("main\This", "Not Shipped", StuffUrl(.cUrlC, "Shipped", "0"),, !isnull(.lPage_Shipped) and !.lPage_Shipped)
-*!*        .addMenuItem("main\This", "Shipped and Not Shipped", StuffUrl(.cUrlC, "Shipped", .f.),, isnull(.lPage_Shipped))
-
-*!*        .addMenuItem("main\This", "Received", StuffUrl(.cUrlC, "Received", "1"),, !isnull(.lPage_Received) and .lPage_Received)
-*!*        .addMenuItem("main\This", "Not Received", StuffUrl(.cUrlC, "Received", "0"),, !isnull(.lPage_Received) and !.lPage_Received)
-*!*        .addMenuItem("main\This", "Received and Not Received", StuffUrl(.cUrlC, "Received", .f.),, isnull(.lPage_Received))
-
-*!*        .addMenuItem("main\This", "Available", StuffUrl(.cUrlC, "orphans", "1"),, !isnull(.lPage_Orphans) and .lPage_Orphans)
-
       .addMenuItem(m.lcMenu, "Whole-Panel Pieces",   StuffUrl(.cUrlB, "order", "fac", "type", "Panels", "whole", "1"))
       .addMenuItem(m.lcMenu, "Available Bits",       StuffUrl(.cUrlB, "order", "fac", "type", "Panels", "whole", "0", "orphans", "1"))
       .addMenuItem(m.lcMenu, "Consumed Bits",        StuffUrl(.cUrlB, "order", "pnl", "type", "Panels", "whole", "0", "orphans", "0"))
       
       .addMenuItem(m.lcMenu, "Railings by Size",     StuffUrl(.cUrlB, "order", "size", "type", "Railings"))
-      .addMenuItem(m.lcMenu, "Railings by Facility", StuffUrl(.cUrlB, "order", "fac", "type", "Railings"))
+      .addMenuItem(m.lcMenu, "Railings by ID",       StuffUrl(.cUrlB, "type", "Railings"))
 
       .addMenuItem(m.lcMenu, 'Deleted Pieces',       StuffUrl(.cUrlA, 2, "PceList", "flags", "inactive"))
       .addMenuItem(m.lcMenu, 'Excluded Pieces',       StuffUrl(.cUrlA, 2, "PceList", "flags", "excluded"))
@@ -177,8 +159,24 @@ define class ais_PceList as aisPcePage
   endfunc 
   * ----------------------------------------------------- *  
   function ProcessRequest
-    local loQry, loTbl, loCol, loGrp
-       
+    this.page_setupUrls()
+    this.page_runQueries()
+    response.write(this.page_getSummaryTable())
+    response.write(this.page_getDetailTable())
+    return 
+  endfunc && processRequest
+  * ----------------------------------------------------- *  
+  function page_setupUrls()
+    urls.add(StuffUrl(this.cUrlA, 2, "PceHome"), "PceHome")
+    urls.add(StuffUrl(this.cUrlA, 2, "PceForm"), "PceForm")
+    urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
+    urls.add(StuffUrl(this.cUrlA, 2, "FacHome"), "FacHome")
+    urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
+    return
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_runQueries
+    local loQry
     loQry = createobject("AisPceQuery")
     with loQry
       .lJoinArtist = .t. 
@@ -201,29 +199,68 @@ define class ais_PceList as aisPcePage
       case this.cPage_Order = "size" 
         .AddOrderBy('Pce_Dim_1',  .f., .f.)
         .AddOrderBy('Pce_Dim_2',  .f., .t.)
-        .AddOrderBy('Pce_Fac_FK', .f., .t.)
+        .AddOrderBy('Pce_ID', .f., .t.)
       case this.cPage_Order = "fac"
-        .AddOrderBy('Pce_Fac_FK', .f., .f.)
-        .AddOrderBy('Pce_Dim_1',  .f., .t.)
-        .AddOrderBy('Pce_Dim_2',  .f., .t.)
+        .AddOrderBy('Fac_Order', .f., .f.)
+        .AddOrderBy('Pce_Fac_FK', .f., .t.)
+        .AddOrderBy('Pce_ID',  .f., .t.)
       case this.cPage_Order = "pnl"
         .AddOrderBy('Pnl_ID', .f., .f.)
-        .AddOrderBy('Pce_Dim_1',  .f., .t.)
-        .AddOrderBy('Pce_Dim_2',  .f., .t.)
+        .AddOrderBy('Pce_ID',  .f., .t.)
       otherwise 
-        = .f. && default
+        .AddOrderBy('Pce_ID',  .f., .f.)
       endcase
       .execute()
       
       this.cSubTitle = this.cSubTitle + .GetCaption()
     endwith 
-    
-    urls.add(StuffUrl(this.cUrlA, 2, "PceHome"), "PceHome")
-    urls.add(StuffUrl(this.cUrlA, 2, "PceForm"), "PceForm")
-    urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
-    urls.add(StuffUrl(this.cUrlA, 2, "FacHome"), "FacHome")
-    urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
+    Artifacts.Add(m.loQry, "PieceQuery")
+    return
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_getSummaryTable()
+    if !inlist(this.cPage_Order, "fac", "size")
+      return ""
+    endif
 
+    local loTbl, loCol, loGrp, loQry
+    loQry = Artifacts.item("PieceQuery")
+    do case
+    case this.cPage_Order = "size" 
+      select Pce_Dim_1, Pce_Dim_2, count(*) as Count_, sum(iif(Pce_Received, 1, 0)) as Received_ ;
+        from (loQry.cAlias) ;
+        group by 1, 2 ;
+        into cursor PceList_Summary_
+    case this.cPage_Order = "fac" 
+      select Fac_Order, Pce_Fac_FK, Fac_Name, count(*) as Count_, sum(iif(Pce_Received, 1, 0)) as Received_ ;
+        from (loQry.cAlias) ;
+        group by 1, 2, 3 ;
+        into cursor PceList_Summary_
+    endcase
+    loTbl = createobject("AisTable")
+    with loTbl
+      loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
+      do case
+      case this.cPage_Order = "size" 
+        .cTableCaption = "Summary Counts by Size"
+        loCol = .addCursorColumn("Pce_Dim_1", "Dim 1", [trim(Pce_Dim_1) + " x " + trim(Pce_Dim_2)])
+        ** loCol = .addCursorColumn("Pce_Dim_2", "Dim 2")
+      case this.cPage_Order = "fac" 
+        .cTableCaption = "Summary Counts by Facility"
+        loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;  
+          [HTLink(StuffUrl(urls.item('FacHome'), 'fac', Pce_Fac_FK), AisFacilityName(Pce_Fac_FK))])
+      endcase
+      loCol = .addCursorColumn("Count_", "Total")
+      loCol = .addCursorColumn("Received_", "Received")
+      loCol = .addCursorColumn("Count_ - Received_", "Not Received")
+    endwith
+    return loTbl.render()
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_getDetailTable()
+    local loTbl, loCol, loGrp, loQry
+    loQry = Artifacts.item("PieceQuery")
+    select (loQry.cAlias)
     loTbl = createobject("AisTable")
     with loTbl
       .cTableCaption = this.cSubTitle 
@@ -277,13 +314,8 @@ define class ais_PceList as aisPcePage
           'HTLink(StuffUrl(urls.item("PceForm"), "pce", Pce_PK), "[Edit&nbsp;Piece...]")', 'no-print')
         loCol.cHeadingClass = "nosort no-print" 
       endif 
-      response.write(.render())
-      
-      if poContext.lDeveloper
-        Response.Write(HTWrap(loQry.cSqlStatement, 'div,p',, 'admin,debug'))
-      endif
     endwith 
-    return 
+    return loTbl.render()
   endfunc 
 enddefine && ais_PceList 
 
@@ -863,7 +895,7 @@ define class AisPceQuery as L7Query
         .aJoins[.nJoins, 1] = "Facility"
         .aJoins[.nJoins, 2] = "Pce_Fac_FK = Fac_PK"
         .aJoins[.nJoins, 3] = "LEFT OUTER"
-        .AddFields("Fac_ID, Fac_Name")
+        .AddFields("Fac_ID, Fac_Name, Fac_Order")
       endif 
 
       if .lJoinPanel
