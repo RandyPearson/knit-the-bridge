@@ -2214,9 +2214,10 @@ define class AisArtQuery AS L7Query
   * --------------------------------------------------------- *
   function BuildWhereClause
     local lcStr, lcInnerWhere, loFlags, lnFlag, loFlag, lcField, lnWords, lcWord1, lcWord2, lcSearchFields, lcTypeCombine
-    store "" to lcInnerWhere
-
     with this 
+      store "" to lcInnerWhere
+      lcTypeCombine = iif(.lOrTypes, [ or ], [ and ])
+  
       .lWhereBuilt = .T.
       if isnull(.lInactive)
         .cWhereClause = [WHERE .t.]
@@ -2268,10 +2269,6 @@ define class AisArtQuery AS L7Query
 
       if !isnull( .lAccountInactive)
         .cWhereClause = .cWhereClause + [ AND Art_Approved = ] + IIF(.lAccountInactive, [.T.], [.F.])
-      endif 
-
-      if !isnull( .lStarred)
-        .cWhereClause = .cWhereClause + [ AND Art_Starred = ] + IIF(.lStarred, [.T.], [.F.])
       endif 
 
       if !isnull( .lHidden)
@@ -2332,7 +2329,10 @@ define class AisArtQuery AS L7Query
         .cWhereClause = .cWhereClause + [ and Art_Group_Art_FK = '] + .cGroupArt + [']
       endif 
 
-      lcTypeCombine = iif(this.lOrTypes, [ or ], [ and ])
+      *!*        if !isnull( .lStarred) && this is in flags 
+      *!*          lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + [Art_Starred = ] + IIF(.lStarred, [.T.], [.F.])
+      *!*        endif 
+
       loFlags = AisArtQueryFlags()
       for lnFlag = 1 to loFlags.count
         loFlag = loFlags.item[m.lnFlag]
