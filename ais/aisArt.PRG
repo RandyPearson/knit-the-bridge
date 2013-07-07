@@ -153,7 +153,8 @@ define class ais_ArtList as aisMultiArtPage
   cPage_Flags = null
   lPage_Approved = null
   lPage_Response = null
-  lPage_Dupes = null
+  lPage_DupName = null
+  lPage_DupEmail = null
   cSubTitle = "Artists N'At"
   cPage_Srch1 = null
   * --------------------------------------------------------- *
@@ -170,8 +171,11 @@ define class ais_ArtList as aisMultiArtPage
     lcStr = this.ReadQueryString("response", .t., .t.)
     this.lPage_Response = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
 
-    lcStr = this.ReadQueryString("dupes", .t., .t.)
-    this.lPage_Dupes = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+    lcStr = this.ReadQueryString("dupname", .t., .t.)
+    this.lPage_DupName = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+
+    lcStr = this.ReadQueryString("dupemail", .t., .t.)
+    this.lPage_DupEmail = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
     
     dodefault()  && required bubble-up
 
@@ -193,16 +197,17 @@ define class ais_ArtList as aisMultiArtPage
         .addMenuItem("main\This", m.lcPrompt, StuffUrl(.cUrlB, "flags", loFlag.root, "fields", "names,contact"))
       next 
       if poContext.lAdmin
-        ** .addMenuItem("main\Approvals", "Approved", StuffUrl(.cUrlB, "Approved", "1"),, !isnull(.lPage_Approved) and .lPage_Approved)
-        .addMenuItem("main\This", "Not Approved", StuffUrl(.cUrlB, "Approved", "0", "fields", "registry,contact"),, !isnull(.lPage_Approved) and !.lPage_Approved)
-        .addMenuItem("main\This", "Approved and Not Approved", StuffUrl(.cUrlB, "Approved", .f.),, isnull(.lPage_Approved))
+        *!*          ** .addMenuItem("main\Approvals", "Approved", StuffUrl(.cUrlB, "Approved", "1"),, !isnull(.lPage_Approved) and .lPage_Approved)
+        *!*          .addMenuItem("main\This", "Not Approved", StuffUrl(.cUrlB, "Approved", "0", "fields", "registry,contact"),, !isnull(.lPage_Approved) and !.lPage_Approved)
+        *!*          .addMenuItem("main\This", "Approved and Not Approved", StuffUrl(.cUrlB, "Approved", .f.),, isnull(.lPage_Approved))
 
-        .addMenuItem("main\This", "Process Approvals", StuffUrl(.cUrlB, 2, "BrowseUnapproved"))
-        .addMenuItem("main\This", "Response Needed", StuffUrl(.cUrlB, "Response", "0", "fields", "registry,contact,part"),, !isnull(.lPage_Response))
+        *!*          .addMenuItem("main\This", "Process Approvals", StuffUrl(.cUrlB, 2, "BrowseUnapproved"))
+        *!*          .addMenuItem("main\This", "Response Needed", StuffUrl(.cUrlB, "Response", "0", "fields", "registry,contact,part"),, !isnull(.lPage_Response))
         .addMenuItem("main\This", "New Sign-Up...", StuffUrl(.cUrlA, 2, "ArtNew"))
       endif 
       if poContext.lDeveloper
-        .addMenuItem("main\This", "Duplicate Screening", StuffUrl(.cUrlB, "dupes", "1", "fields", "contact,part"),, !isnull(.lPage_Dupes))
+        .addMenuItem("main\This", "Duplicate Name Check", StuffUrl(.cUrlB, "dupname", "1", "fields", "contact,part"))
+        .addMenuItem("main\This", "Duplicate Email Check", StuffUrl(.cUrlB, "dupemail", "1", "fields", "contact,part"))
         .addMenuItem("main\This", "Broadcast Email...", StuffUrl(.cUrlA, 2, "Broadcast"))
       endif 
       .addMenuItem("main\Reports", "Contact Listing", StuffUrl(.cUrlB, "order", "name", "fields", "names,contact"))
@@ -264,11 +269,14 @@ define class ais_ArtList as aisMultiArtPage
       endif 
       
       do case
-      case !isnull(this.lPage_Dupes)
-        .lDuplicates = .t. 
+      case !isnull(this.lPage_DupName)
+        .lDupName = this.lPage_DupName
         .lNLN = .f. 
         .AddOrderBy("Art_Last_Name")
         .AddOrderBy("Art_First_Name", , .t.)
+      case !isnull(this.lPage_DupEmail)
+        .lDupEmail = this.lPage_DupEmail
+        .AddOrderBy("Art_Email")
       case this.cPage_Order = "location"
         .AddOrderBy("Art_Neighborhood")
       case this.cPage_Order = "reg_time"
@@ -311,7 +319,7 @@ define class ais_ArtList as aisMultiArtPage
       loCol = .AddCursorColumn("Art_PK", 'Work', ;
         [iif(seek(Art_PK, '] + loPceQ.cAlias + [', 'Art'), ] + loPceQ.cAlias + [.PieceCount, 0)], , ,"N")
       
-      if !isnull(this.lPage_Dupes) && when dupe checking, be explicit
+      if !isnull(this.lPage_DupName) or !isnull(this.lPage_DupEmail) && when dupe checking, be explicit
         loCol = .addCursorColumn("Art_First_Name", "First Name")
         loCol = .addCursorColumn("Art_Last_Name", "Last Name")
         loCol = .addCursorColumn("Art_Full_Name", "Alt Name")
@@ -2129,7 +2137,8 @@ define class AisArtQuery AS L7Query
   lInactive = .f.  && whole record deleted
   lUser = NULL
   lAccountInactive = null && surrogate is "approved"
-  lDuplicates = null
+  lDupName = null
+  lDupEmail = null
   
   lPanelSignup = null
   lRailingSignup = null   
@@ -2258,11 +2267,16 @@ define class AisArtQuery AS L7Query
         .cWhereClause = .cWhereClause + [ AND ] + IIF(.lKtbResponse, [!], []) + [empty(Art_KTB_Response)]
       endif 
 
-      if !isnull(.lDuplicates)
-        .cWhereClause = .cWhereClause + [ and art_first_name + art_last_name] + iif(.lDuplicates, [ in ], [ not in ]) + ;
+      if !isnull(.lDupName)
+        .cWhereClause = .cWhereClause + [ and art_first_name + art_last_name] + iif(.lDupName, [ in ], [ not in ]) + ;
           [(select art_first_name + art_last_name from artist where !art_inactive and !art_no_count group by 1 having count(*) >= 2)]
       endif 
       
+      if !isnull(.lDupEmail)
+        .cWhereClause = .cWhereClause + [ and art_email] + iif(.lDupEmail, [ in ], [ not in ]) + ;
+          [(select art_email from artist where !art_inactive and !empty(art_Email) and !art_no_count group by 1 having count(*) >= 2)]
+      endif 
+
       if !isnull(.lPanelSignup)
         .cWhereClause = .cWhereClause + [ and Art_Panel_Count] + iif(.lPanelSignup, [ > 0], [ = 0])
       endif
@@ -2291,7 +2305,6 @@ define class AisArtQuery AS L7Query
           [(select Pce_Art_FK from Piece where !Pce_Inactive and Pce_Type = 'Railings')]
       endif 
 
-      
       if !isnull( .lNoCount)
         .cWhereClause = .cWhereClause + [ AND Art_No_Count = ] + IIF(.lNoCount, [.T.], [.F.])
       endif 
