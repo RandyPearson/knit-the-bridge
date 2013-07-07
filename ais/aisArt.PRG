@@ -17,11 +17,13 @@ function AisArtQueryFlags()
     ',{"root": "towers", "prompt": "Machine Knit for Towers"}' + ;
     ',{"root": "money", "field": "Art_Help_Money", "prompt": "Donate Money"}' + ;
     ',{"root": "materials", "field": "Art_Help_Materials", "prompt": "Donate Materials"}' + ;
-    ',{"root": "inactive", "prompt": "Deleted Artists"}' + ;
     ',{"root": "undeliverable"}' + ;
+    ',{"root": "inactive", "combine": false, "prompt": "Deleted Artists"}' + ;
     ',{"root": "artist"}' + ;
     ',{"root": "admin", "menu": false}' + ;
     ']' )
+
+
 endfunc 
 
 * --------------------------------------------------------- *
@@ -2153,6 +2155,7 @@ define class AisArtQuery AS L7Query
   * Account-based params:
   lInactive = .f.  && whole record deleted
   lUser = NULL
+  lHidden = .F. 
   lAccountInactive = null && surrogate is "approved"
   lDupName = null
   lDupEmail = null
@@ -2172,22 +2175,21 @@ define class AisArtQuery AS L7Query
   * Types of people:
   lORTypes = .t.  && if .f. use AND 
   
-  lAdmin = .F.
-  lCore = .F.
-  lHidden = .F. 
+  lAdmin = null
+  lCore = null
   lUndeliverable = null
-  lArtist = .F.
+  lArtist = null
   lStarred = null
-  lInstall = .F.
-  lDeinstall = .f.
-  lMonitoring = .f. 
-  lStitching = .f.
+  lInstall = null
+  lDeinstall = null
+  lMonitoring = null 
+  lStitching = null
 
-  lOrganizer = .F.
-  lOutreach = .f. 
-  lTowers = .F.
-  lMoney = .F.
-  lMaterials = .f. 
+  lOrganizer = null
+  lOutreach = null
+  lTowers = null
+  lMoney = null
+  lMaterials = null
 
   * Name Search
   cName = ""
@@ -2213,7 +2215,7 @@ define class AisArtQuery AS L7Query
   endfunc
   * --------------------------------------------------------- *
   function BuildWhereClause
-    local lcStr, lcInnerWhere, loFlags, lnFlag, loFlag, lcField, lnWords, lcWord1, lcWord2, lcSearchFields, lcTypeCombine
+    local lcStr, lcInnerWhere, loFlags, lnFlag, loFlag, lcField, lvVal, lnWords, lcWord1, lcWord2, lcSearchFields, lcTypeCombine
     with this 
       store "" to lcInnerWhere
       lcTypeCombine = iif(.lOrTypes, [ or ], [ and ])
@@ -2275,9 +2277,9 @@ define class AisArtQuery AS L7Query
         .cWhereClause = .cWhereClause + [ AND Art_Hidden = ] + IIF(.lHidden, [.T.], [.F.])
       endif 
 
-      if !isnull( .lUndeliverable)
-        .cWhereClause = .cWhereClause + [ AND Art_Undeliverable = ] + IIF(.lUndeliverable, [.T.], [.F.])
-      endif 
+*!*        if !isnull( .lUndeliverable)
+*!*          .cWhereClause = .cWhereClause + [ AND Art_Undeliverable = ] + IIF(.lUndeliverable, [.T.], [.F.])
+*!*        endif 
 
       if !isnull( .lKtbResponse)
         .cWhereClause = .cWhereClause + [ AND ] + IIF(.lKtbResponse, [!], []) + [empty(Art_KTB_Response)]
@@ -2336,9 +2338,13 @@ define class AisArtQuery AS L7Query
       loFlags = AisArtQueryFlags()
       for lnFlag = 1 to loFlags.count
         loFlag = loFlags.item[m.lnFlag]
-        if evaluate("this.l" + loFlag.root)
+        if pemstatus(loFlag, "combine", 5) and !loFlag.combine && handled separately, e.g., inactive flag
+          loop
+        endif
+        lvVal = evaluate("this.l" + loFlag.root)
+        if !isnull(m.lvVal)
           lcField = iif(pemstatus(loFlag, "field", 5), loFlag.field, "Art_" + proper(loFlag.root))
-          lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + m.lcField + [ = .T.]
+          lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + iif(m.lvVal, [], [!]) + m.lcField + [ = .T.]
         endif
       next 
       
