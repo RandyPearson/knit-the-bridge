@@ -150,33 +150,44 @@ enddefine
 define class ais_ArtList as aisMultiArtPage 
   lCoreRequired = .t.
 
-  cPage_Flags = null
   lPage_Approved = null
   lPage_Response = null
   lPage_DupName = null
   lPage_DupEmail = null
   cSubTitle = "Artists N'At"
   cPage_Srch1 = null
+  add object oPage_flags as collection 
   * --------------------------------------------------------- *
   function BeforeProcessRequest
-    local lcStr
+    local lcStr, loFlags
+    with this
+      .cPage_Srch1 = .ReadQueryString("srch1", .t., .t., .t., L7_QS_CHARACTERS + ['])
+      .ReadQueryString("btn", .t., .t., .t.) && clear search button from URL
 
-    this.cPage_Srch1 = this.ReadQueryString("srch1", .t., .t., .t., L7_QS_CHARACTERS + ['])
-    this.ReadQueryString("btn", .t., .t., .t.) && clear search button from URL
-    this.cPage_Flags = this.ReadQueryString("flags", .t., .t.)
+      * Read each flag:
+      loFlags = .oArtQueryFlags
+      for lnFlag = 1 to loFlags.count
+        loFlag = loFlags.item[m.lnFlag]
+        lcStr = .ReadQueryString(loFlag.root, .t., .t.)
+        if !empty(m.lcStr)
+          .oPage_flags.add(left(m.lcStr,1) $ '1yYtT', loFlag.root)
+        endif       
+      next 
+      *!* .cPage_Flags = .ReadQueryString("flags", .t., .t.)
 
-    lcStr = this.ReadQueryString("approved", .t., .t.)
-    this.lPage_Approved = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+      lcStr = .ReadQueryString("approved", .t., .t.)
+      .lPage_Approved = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
 
-    lcStr = this.ReadQueryString("response", .t., .t.)
-    this.lPage_Response = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+      lcStr = .ReadQueryString("response", .t., .t.)
+      .lPage_Response = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
 
-    lcStr = this.ReadQueryString("dupname", .t., .t.)
-    this.lPage_DupName = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+      lcStr = .ReadQueryString("dupname", .t., .t.)
+      .lPage_DupName = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
 
-    lcStr = this.ReadQueryString("dupemail", .t., .t.)
-    this.lPage_DupEmail = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+      lcStr = .ReadQueryString("dupemail", .t., .t.)
+      .lPage_DupEmail = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
     
+    endwith 
     dodefault()  && required bubble-up
 
     return    
@@ -194,7 +205,7 @@ define class ais_ArtList as aisMultiArtPage
           loop
         endif
         lcPrompt = iif(pemstatus(m.loFlag, "prompt", 5), m.loFlag.prompt, proper(m.loFlag.root))
-        .addMenuItem("main\This", m.lcPrompt, StuffUrl(.cUrlB, "flags", loFlag.root, "fields", "names,contact"))
+        .addMenuItem("main\This", m.lcPrompt, StuffUrl(.cUrlB, loFlag.root, "1", "fields", "names,contact"))
       next 
       if poContext.lAdmin
         *!*          ** .addMenuItem("main\Approvals", "Approved", StuffUrl(.cUrlB, "Approved", "1"),, !isnull(.lPage_Approved) and .lPage_Approved)
@@ -217,9 +228,10 @@ define class ais_ArtList as aisMultiArtPage
       endif 
       .addMenuItem("main\Reports", "Sign-Up Listing", StuffUrl(.cUrlB, "order", "reg_time", "fields", "names,contact,registry"))
             
-      if poContext.lAdmin and empty(this.cPage_Flags) and empty(this.cPage_Srch1) && not a special query
-        .addMenuItem("main\Reports", "Edit All...", StuffUrl(.cUrlB, 2, "ArtBrowse", "order", this.cPage_Order, "fields", this.cPage_Fields))
-      endif       
+      * Edit All.. needs to be linked to query conditions
+      *!*        if poContext.lAdmin and empty(this.cPage_Srch1) && not a special query
+      *!*          .addMenuItem("main\Reports", "Edit All...", StuffUrl(.cUrlB, 2, "ArtBrowse", "order", this.cPage_Order, "fields", this.cPage_Fields))
+      *!*        endif       
     endwith
     dodefault()
     return 
@@ -243,14 +255,19 @@ define class ais_ArtList as aisMultiArtPage
     
     loQry = createobject("AisArtQuery")
     with loQry
-      loFlags = this.oArtQueryFlags
-      for lnIdx = 1 to loFlags.count
-        loItem = loFlags.item[m.lnIdx]
-        if "," + loItem.root + "," $ "," + this.cPage_Flags + ","
-          lcProp = "l" + loItem.root
-          store .t. to loQry.&lcProp
-        endif 
-      next 
+      *!*        loFlags = this.oArtQueryFlags
+      *!*        for lnIdx = 1 to loFlags.count
+      *!*          loItem = loFlags.item[m.lnIdx]
+      *!*          if "," + loItem.root + "," $ "," + this.cPage_Flags + ","
+      *!*            lcProp = "l" + loItem.root
+      *!*            store .t. to loQry.&lcProp
+      *!*          endif 
+      *!*        next 
+      for lnIdx = 1 to this.oPage_flags.count 
+        lcProp = "l" + this.oPage_flags.getkey(m.lnIdx)
+        store this.oPage_flags.item(m.lnIdx) to loQry.&lcProp
+      next
+      
       .lKtbResponse = this.lPage_Response
       .lAccountInactive = this.lPage_Approved
       .cSrch1 = this.cPage_Srch1
@@ -1878,7 +1895,7 @@ enddefine && AisArtBrowseForm
 define class Ais_Broadcast AS AisPage
   * ----------------------------------------------------- *  
   function ProcessRequest
-    this.cCancelUrl = stuffUrl(this.cUrlA, 2, "ArtList", "flags", "core")
+    this.cCancelUrl = stuffUrl(this.cUrlA, 2, "ArtList", "core", "1")
     local loForm, loQry
     local lcMsg, lcIndividualMsg, llSend, lnCount, llTesting, ;
       lcSentToMsg, lcBadEmailMsg, lcName, loArt, lcSubject, lcExtraHeaders, llHtml
