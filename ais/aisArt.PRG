@@ -19,6 +19,7 @@ function AisArtQueryFlags()
     ',{"root": "materials", "field": "Art_Help_Materials", "prompt": "Donate Materials"}' + ;
     ',{"root": "undeliverable"}' + ;
     ',{"root": "inactive", "combine": false, "prompt": "Deleted Artists"}' + ;
+    ',{"root": "panelsignup", "combine": false}' + ;
     ',{"root": "artist"}' + ;
     ',{"root": "admin", "menu": false}' + ;
     ']' )
@@ -2277,10 +2278,6 @@ define class AisArtQuery AS L7Query
         .cWhereClause = .cWhereClause + [ AND Art_Hidden = ] + IIF(.lHidden, [.T.], [.F.])
       endif 
 
-*!*        if !isnull( .lUndeliverable)
-*!*          .cWhereClause = .cWhereClause + [ AND Art_Undeliverable = ] + IIF(.lUndeliverable, [.T.], [.F.])
-*!*        endif 
-
       if !isnull( .lKtbResponse)
         .cWhereClause = .cWhereClause + [ AND ] + IIF(.lKtbResponse, [!], []) + [empty(Art_KTB_Response)]
       endif 
@@ -2296,7 +2293,8 @@ define class AisArtQuery AS L7Query
       endif 
 
       if !isnull(.lPanelSignup)
-        .cWhereClause = .cWhereClause + [ and Art_Panel_Count] + iif(.lPanelSignup, [ > 0], [ = 0])
+        *.cWhereClause = .cWhereClause + [ and Art_Panel_Count] + iif(.lPanelSignup, [ > 0], [ = 0])
+        lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + [Art_Panel_Count] + iif(.lPanelSignup, [ > 0], [ = 0])
       endif
 
       if !isnull(.lRailingSignup)
