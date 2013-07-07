@@ -277,6 +277,8 @@ define class ais_ArtList as aisMultiArtPage
       case !isnull(this.lPage_DupEmail)
         .lDupEmail = this.lPage_DupEmail
         .AddOrderBy("Art_Email")
+        .AddOrderBy("Art_Last_Name", , .t.)
+        .AddOrderBy("Art_First_Name", , .t.)
       case this.cPage_Order = "location"
         .AddOrderBy("Art_Neighborhood")
       case this.cPage_Order = "reg_time"
