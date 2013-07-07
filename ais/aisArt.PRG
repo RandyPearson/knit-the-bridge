@@ -156,6 +156,8 @@ define class ais_ArtList as aisMultiArtPage
   lPage_DupEmail = null
   cSubTitle = "Artists N'At"
   cPage_Srch1 = null
+  
+  lPage_OrTypes = .t. 
   add object oPage_flags as collection 
   * --------------------------------------------------------- *
   function BeforeProcessRequest
@@ -186,6 +188,8 @@ define class ais_ArtList as aisMultiArtPage
 
       lcStr = .ReadQueryString("dupemail", .t., .t.)
       .lPage_DupEmail = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+      
+      .lPage_OrTypes = !.ReadQueryString("combine", .t., .t.) = "and"
     
     endwith 
     dodefault()  && required bubble-up
@@ -255,14 +259,8 @@ define class ais_ArtList as aisMultiArtPage
     
     loQry = createobject("AisArtQuery")
     with loQry
-      *!*        loFlags = this.oArtQueryFlags
-      *!*        for lnIdx = 1 to loFlags.count
-      *!*          loItem = loFlags.item[m.lnIdx]
-      *!*          if "," + loItem.root + "," $ "," + this.cPage_Flags + ","
-      *!*            lcProp = "l" + loItem.root
-      *!*            store .t. to loQry.&lcProp
-      *!*          endif 
-      *!*        next 
+      .lOrTypes = this.lPage_OrTypes  && use AND instead of OR
+      
       for lnIdx = 1 to this.oPage_flags.count 
         lcProp = "l" + this.oPage_flags.getkey(m.lnIdx)
         store this.oPage_flags.item(m.lnIdx) to loQry.&lcProp
@@ -2172,6 +2170,8 @@ define class AisArtQuery AS L7Query
   lNLN = null
   
   * Types of people:
+  lORTypes = .t.  && if .f. use AND 
+  
   lAdmin = .F.
   lCore = .F.
   lHidden = .F. 
@@ -2213,7 +2213,7 @@ define class AisArtQuery AS L7Query
   endfunc
   * --------------------------------------------------------- *
   function BuildWhereClause
-    local lcStr, lcInnerWhere, loFlags, lnFlag, loFlag, lcField, lnWords, lcWord1, lcWord2, lcSearchFields
+    local lcStr, lcInnerWhere, loFlags, lnFlag, loFlag, lcField, lnWords, lcWord1, lcWord2, lcSearchFields, lcTypeCombine
     store "" to lcInnerWhere
 
     with this 
@@ -2332,18 +2332,19 @@ define class AisArtQuery AS L7Query
         .cWhereClause = .cWhereClause + [ and Art_Group_Art_FK = '] + .cGroupArt + [']
       endif 
 
+      lcTypeCombine = iif(this.lOrTypes, [ or ], [ and ])
       loFlags = AisArtQueryFlags()
       for lnFlag = 1 to loFlags.count
         loFlag = loFlags.item[m.lnFlag]
         if evaluate("this.l" + loFlag.root)
           lcField = iif(pemstatus(loFlag, "field", 5), loFlag.field, "Art_" + proper(loFlag.root))
-          lcInnerWhere = m.lcInnerWhere + [ or ] + m.lcField + [ = .T.]
+          lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + m.lcField + [ = .T.]
         endif
       next 
       
       * Combine inner-WHERE with WHERE clauses:
       if !empty( m.lcInnerWhere) 
-        .cWhereClause = .cWhereClause + [ and (] + substr(m.lcInnerWhere, 1 + len([ or ])) + [)]
+        .cWhereClause = .cWhereClause + [ and (] + substr(m.lcInnerWhere, 1 + len(m.lcTypeCombine)) + [)]
       endif 
 
     endwith   
