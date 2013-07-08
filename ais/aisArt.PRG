@@ -17,6 +17,8 @@ function AisArtQueryFlags()
     ',{"root": "starred", "prompt": "Starred (follow-up)"}' + ;
     ',{"root": "install", "field": "Art_Help_Install", "prompt": "Help Install"}' + ;
     ',{"root": "deinstall", "field": "Art_Help_Deinstall", "prompt": "Help Deinstall"}' + ;
+    ',{"root": "waiver", "field": "Art_Waiver_Signed", "prompt": "Signed Waiver"}' + ;
+    ',{"root": "training", "field": "Art_Training_Signed", "prompt": "Signed as Trained"}' + ;
     ',{"root": "stitching", "field": "Art_Help_Stitching", "prompt": "Help Stitching"}' + ;
     ',{"root": "monitoring", "field": "Art_Help_Monitoring", "prompt": "Help Monitoring"}' + ;
     ',{"root": "outreach", "field": "Art_Help_Outreach"}' + ;
@@ -586,7 +588,7 @@ define class ais_ArtList as aisMultiArtPage
     
     do case
     case m.lcUsage = "Count"
-      response.write(textmerge([<div><strong><<loQry.nTally>> people</strong> meet those conditions.</div>]))
+      response.write(textmerge([<div><strong><<loQry.nTally>> people</strong> meet the conditions: <<loQry.cCaption>></div>]))
       
     case m.lcUsage = "Table"
       response.write(this.Page_getTabularDisplay(m.loQry))
@@ -2320,6 +2322,8 @@ define class AisArtQuery AS L7Query
   lStarred = null
   lInstall = null
   lDeinstall = null
+  lWaiver = null 
+  lTraining = null
   lMonitoring = null 
   lStitching = null
 
