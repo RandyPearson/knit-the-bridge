@@ -188,8 +188,9 @@ define class aisArtPage as aisPage
     return this.oArtQueryFlags 
   endfunc 
   * --------------------------------------------------------- *
-  function page_RunPostQuery()
-    local loQry, loFlags, lnFlag, loFlag, lcName, lcProp
+  function page_RunPostQuery(lcCapts)
+    local loQry, loFlags, lnFlag, loFlag, lcName, lcVal, llVal, lcCombOp, lcProp, loCapts, lnCapt
+    loCapts = createobject("Collection")
     loQry = createobject("AisArtQuery")
     with loQry
       loFlags = this.oArtQueryFlags
@@ -198,13 +199,18 @@ define class aisArtPage as aisPage
         lcName = "opg" + loFlag.root
         lcVal = request.form(m.lcName)
         if !m.lcVal = "null"
+          llVal = m.lcVal = "1"
           lcProp = "l" + loFlag.root
-          loQry.&lcProp = m.lcVal = "1"
+          loQry.&lcProp = m.llVal
+          if vartype(m.lcCapts) = "C"
+            loCapts.add(iif(m.llVal, "", "NOT ") + ;
+              iif(pemstatus(m.loFlag, "prompt", 5), loFlag.prompt, proper(loFlag.root)))
+          endif
         endif 
       next
 
-      lcVal = request.form("combine_operator")
-      if upper(m.lcVal) = "AND"
+      lcCombOp = request.form("combine_operator")
+      if upper(m.lcCombOp) = "AND"
         .lOrTypes = .f.
       endif 
 
@@ -212,6 +218,12 @@ define class aisArtPage as aisPage
       .addParticipationFields()
       .execute()
     endwith 
+    if vartype(m.lcCapts) = "C"
+      lcCapts = ""
+      for lnCapt = 1 to loCapts.count
+        lcCapts = m.lcCapts + iif(m.lnCapt = 1, "", m.lcCombOp + " ") + loCapts.item[m.lnCapt]
+      next 
+    endif
     return m.loQry
   endfunc 
 enddefine 
@@ -583,8 +595,8 @@ define class ais_ArtList as aisMultiArtPage
   * ----------------------------------------------------- *  
   function ProcessRequest
     local loQry, lcUsage, ;
-      loRE, loMtchs, loMtch, lcEnt
-    
+      loRE, loMtchs, loMtch, lcEnt, lcCapt
+    lcCapt = ""
     * do this late so url has been processed
     if !empty(this.cPage_Srch1)
       loRE = createobject("L7RegExp")
@@ -601,7 +613,7 @@ define class ais_ArtList as aisMultiArtPage
       loQry = this.page_RunGetQuery()
       lcUsage = "Table"
     else
-      loQry = this.page_RunPostQuery()
+      loQry = this.page_RunPostQuery(@lcCapt)
       lcUsage = request.form("opgUsage")
     endif
     
