@@ -287,6 +287,214 @@ define class aisMultiArtPage as aisArtPage
 enddefine 
 
 *** ========================================================= ***
+define class Ais_Broadcast AS AisArtPage
+  lArtRequired = .f.
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    this.cCancelUrl = stuffUrl(this.cUrlA, 2, "ArtList", "core", "1")
+    local loForm, loQry
+    local lcMsg, lcIndividualMsg, llSend, lnCount, llTesting, ;
+      lcSentToMsg, lcBadEmailMsg, lcName, loArt, lcSubject, lcExtraHeaders, llHtml
+    llHtml = .t. 
+    store "" to lcSentToMsg, lcBadEmailMsg
+    
+    loForm = this.createForm("AisBroadcastForm")
+    with loForm
+      .addControls() 
+      .doEvents()
+      if .Valid()
+
+        loQry = this.page_RunPostQuery()
+        *!*          loQry = createobject("AisArtQuery")
+        *!*          with loQry
+        *!*            if loForm.chkAdmin.vNewValue
+        *!*              .lAdmin = .t. 
+        *!*            endif
+        *!*            if loForm.chkCore.vNewValue
+        *!*              .lCore = .t.
+        *!*            endif
+        *!*            if loForm.chkArtist.vNewValue
+        *!*              .lArtist = .t.
+        *!*            endif
+        *!*            if loForm.chkNoShow.vNewValue
+        *!*              .lPanelSignup = .t.
+        *!*              .lBitsOrPanelsSubmitted = .f.
+        *!*            endif
+        *!*            if loForm.chkInstall.vNewValue
+        *!*              .lInstall = .t.
+        *!*            endif
+        *!*            .execute()
+        *!*          endwith
+        
+        lcIndividualMsg = ""
+        lcSubject = .txtSubject.vNewValue
+        lcExtraHeaders = alltrim(.txtReplyTo.vNewValue)
+        if !empty(m.lcExtraHeaders) AND IsValidEmail(m.lcExtraHeaders)
+          lcExtraHeaders = "Reply-To: " + m.lcExtraHeaders + CRLF
+        endif 
+        text to lcMsg PRETEXT 3
+          <<loForm.edtMessage.vNewValue>>
+        
+        endtext 
+        if .chkMainLink.vNewValue
+          text to m.lcMsg additive pretext 3
+            
+            Follow this link for KtB information:
+            <<THIS.FullURL("/")>>
+
+          endtext 
+        endif 
+        lcMsg = strtran(textmerge(m.lcMsg), "&amp;", "&")
+        if m.llHtml
+          lcMsg = L7ParseOnView(m.lcMsg)
+        endif 
+        lnCount = 0
+        llTesting = .chkTesting.vNewValue && OR .T.  && remove OR .T. later
+        select (loQry.cAlias)
+        scan 
+          scatter memo name loArt
+          llSend = .T.
+
+          if m.llSend
+            lcToEmail = trim(Art_Email)
+            lcName = AisArtistName(m.loArt)
+            llSend = !empty(m.lcToEmail) and IsValidEmail(m.lcToEmail)
+            if !m.llSend
+              lcBadEmailMsg = lcBadEmailMsg + m.lcName + ' [' + trim(Art_Phone) + ']'+ CRLF
+            else 
+              lcSentToMsg = lcSentToMsg + m.lcName + ' <' + m.lcToEmail + '>' + CRLF
+            endif 
+          endif 
+          if !m.llSend
+            loop 
+          endif 
+          lnCount = m.lnCount + 1
+          if m.llTesting 
+          else 
+            this.oApp.QueueMessage( ;
+              m.lcToEmail, ;
+              m.lcSubject, ;
+              m.lcMsg, ;
+              trim(.txtFromName.vNewValue), ;
+              trim(.txtFromEmail.vNewValue), ;
+              "", ;
+              "", ;
+              "", ;
+              iif(m.llHtml, "text/html", "text/plain"), ;
+              .F., ;
+              m.lcExtraHeaders)
+            
+          endif 
+        endscan 
+        this.Confirm(transform(m.lnCount) + " messages " + ;
+          IIF(m.llTesting, "would have been", "were") + " sent." + crlf + ;
+          [<div style="clear: both;"></div>] + crlf + ;
+          [<div style="width: 50%; float: left;">] + crlf + ;
+            [<em>Recipients:</em><br /><textarea style="width: 90%;" rows="20">] + ;
+            m.lcSentToMsg + [</textarea></div>] + crlf + ;
+          [<div style="width: 50%; float: left;">] + ;
+            [<em>Not sent to (missing/bad email addresses):</em><br /><textarea style="width: 90%;" rows="12">] + ;
+            m.lcBadEmailMsg + [</textarea></div>] + crlf + ;
+          [<div style="clear: both;"></div>] + crlf + ;
+          [<div class="admin">] + loQry.cSqlStatement + [</div>] + crlf )
+        return .F.  && allows meeting page to show
+
+      endif 
+    endwith
+    response.write(loForm.render())
+    return 
+  endfunc 
+
+enddefine && Ais_Broadcast 
+
+*** ========================================================= ***
+define class AisBroadcastForm AS AisForm
+  cTitle = "Broadcast Email"
+  cHtmlName = "NtfEmail"
+  cSubmitCaption = "Broadcast"
+  lPreventMultipleSubmissions = .F.  && allow re-submit (to handle blocks of names, testing, etc.)
+  * ----------------------------------------------------- *  
+  function AddControls
+    with this
+      .addObject("colFlags", "aisArtQueryCollection")
+      with .colFlags
+        .cLabel = "Limit Sending to Whom"
+        .cInstructions = "If nothing checked, message goes to EVERYBODY!"
+      endwith 
+      
+      * From info:
+      .AddObject("txtFromName", "L7Textbox")
+      WITH .txtFromName
+        *.cGroupID = "FROM"
+        .cLabel = "From"
+        .lRequired = .t. 
+        .nSize = 30
+        .SetValue(Config.cActionFrom)
+        *!* .SetValue(CurrentUser.GetUserName())
+      ENDWITH
+      .AddObject("txtReplyTo", "L7Textbox")
+      with .txtReplyTo
+        *.cGroupID = "FROM"
+        .cLabel = "Reply-To"
+        .nSize = 30
+        .cInstructions = "Optional reply email address. Use this in conjunction with From field to appear to come from someone else! "
+        *!* .SetValue(TRIM(CurrentUser.oData.Art_Email))
+        .SetValue(Config.cActionEmail)
+      endwith 
+
+      .AddObject("txtFromEmail", "L7Textbox")
+      WITH .txtFromEmail
+        *.cGroupID = "FROM"
+        .cLabel = "From Email *"
+        .lRequired = .t. 
+        .cInstructions = "* MUST be a Cycla.com address to survive anti-SPAM measures! Use reply-to to specify a different client address if necessary."
+        .nSize = 30
+        .SetValue(Config.cAdminEmail) && TRIM(CurrentUser.oData.Par_Email))
+      ENDWITH
+
+      .AddObject("txtSubject", "L7Textbox")
+      WITH .txtSubject
+        .cGroupID = "SUBJECT"
+        .lRequired = .t. 
+        .cLabel = "Email Subject (required)"
+        .nSize = 80
+      endwith 
+      
+      .AddObject("edtMessage", "L7Textarea")
+      WITH .edtMessage
+        .cLabel = "Body of Message"
+        .nRows = 10
+        .lRequired = .T.
+      ENDWITH
+      
+      * Link checkboxes.
+      .AddObject("chkMainLink", "L7Checkbox")
+      WITH .chkMainLink
+        .cGroupID = "LINKS"
+        .cCssStyle = "width: 50%;"
+        .cLabel = ""
+        .lNoLabel = .T.
+        .vOldValue = .T.
+        .cCaption= "Include Hyperlink to AIS"
+        .SetValue(.f.)
+      endwith 
+
+      * TESTING-ONLY: 
+      .AddObject("chkTesting", "L7Checkbox")
+      WITH .chkTesting
+        .cGroupID = "TESTING"
+        .cCssStyle = "width: 50%;"
+        .cLabel = ""
+        .lNoLabel = .T.
+        .vOldValue = .F.
+        .cCaption= "Don't Broadcast -- Just Testing"
+      endwith
+    endwith
+    return 
+  endfunc 
+enddefine && AisBroadcastForm 
+
+*** ========================================================= ***
 define class ais_ArtQuery as aisMultiArtPage
   lArtRequired = .f.  
   * ----------------------------------------------------- *  
@@ -2088,264 +2296,6 @@ define class AisArtBrowseForm AS AisForm
     endwith && form
   endfunc  && AddControls
 enddefine && AisArtBrowseForm 
-
-*** ========================================================= ***
-define class Ais_Broadcast AS AisArtPage
-  lArtRequired = .f.
-  * ----------------------------------------------------- *  
-  function ProcessRequest
-    this.cCancelUrl = stuffUrl(this.cUrlA, 2, "ArtList", "core", "1")
-    local loForm, loQry
-    local lcMsg, lcIndividualMsg, llSend, lnCount, llTesting, ;
-      lcSentToMsg, lcBadEmailMsg, lcName, loArt, lcSubject, lcExtraHeaders, llHtml
-    llHtml = .t. 
-    store "" to lcSentToMsg, lcBadEmailMsg
-    
-    loForm = this.createForm("AisBroadcastForm")
-    with loForm
-      .addControls() 
-      .doEvents()
-      if .Valid()
-
-        loQry = this.page_RunPostQuery()
-        *!*          loQry = createobject("AisArtQuery")
-        *!*          with loQry
-        *!*            if loForm.chkAdmin.vNewValue
-        *!*              .lAdmin = .t. 
-        *!*            endif
-        *!*            if loForm.chkCore.vNewValue
-        *!*              .lCore = .t.
-        *!*            endif
-        *!*            if loForm.chkArtist.vNewValue
-        *!*              .lArtist = .t.
-        *!*            endif
-        *!*            if loForm.chkNoShow.vNewValue
-        *!*              .lPanelSignup = .t.
-        *!*              .lBitsOrPanelsSubmitted = .f.
-        *!*            endif
-        *!*            if loForm.chkInstall.vNewValue
-        *!*              .lInstall = .t.
-        *!*            endif
-        *!*            .execute()
-        *!*          endwith
-        
-        lcIndividualMsg = ""
-        lcSubject = .txtSubject.vNewValue
-        lcExtraHeaders = alltrim(.txtReplyTo.vNewValue)
-        if !empty(m.lcExtraHeaders) AND IsValidEmail(m.lcExtraHeaders)
-          lcExtraHeaders = "Reply-To: " + m.lcExtraHeaders + CRLF
-        endif 
-        text to lcMsg PRETEXT 3
-          <<loForm.edtMessage.vNewValue>>
-        
-        endtext 
-        if .chkMainLink.vNewValue
-          text to m.lcMsg additive pretext 3
-            
-            Follow this link for KtB information:
-            <<THIS.FullURL("/")>>
-
-          endtext 
-        endif 
-        lcMsg = strtran(textmerge(m.lcMsg), "&amp;", "&")
-        if m.llHtml
-          lcMsg = L7ParseOnView(m.lcMsg)
-        endif 
-        lnCount = 0
-        llTesting = .chkTesting.vNewValue && OR .T.  && remove OR .T. later
-        select (loQry.cAlias)
-        scan 
-          scatter memo name loArt
-          llSend = .T.
-
-          if m.llSend
-            lcToEmail = trim(Art_Email)
-            lcName = AisArtistName(m.loArt)
-            llSend = !empty(m.lcToEmail) and IsValidEmail(m.lcToEmail)
-            if !m.llSend
-              lcBadEmailMsg = lcBadEmailMsg + m.lcName + ' [' + trim(Art_Phone) + ']'+ CRLF
-            else 
-              lcSentToMsg = lcSentToMsg + m.lcName + ' <' + m.lcToEmail + '>' + CRLF
-            endif 
-          endif 
-          if !m.llSend
-            loop 
-          endif 
-          lnCount = m.lnCount + 1
-          if m.llTesting 
-          else 
-            this.oApp.QueueMessage( ;
-              m.lcToEmail, ;
-              m.lcSubject, ;
-              m.lcMsg, ;
-              trim(.txtFromName.vNewValue), ;
-              trim(.txtFromEmail.vNewValue), ;
-              "", ;
-              "", ;
-              "", ;
-              iif(m.llHtml, "text/html", "text/plain"), ;
-              .F., ;
-              m.lcExtraHeaders)
-            
-          endif 
-        endscan 
-        this.Confirm(transform(m.lnCount) + " messages " + ;
-          IIF(m.llTesting, "would have been", "were") + " sent." + crlf + ;
-          [<div style="clear: both;"></div>] + crlf + ;
-          [<div style="width: 50%; float: left;">] + crlf + ;
-            [<em>Recipients:</em><br /><textarea style="width: 90%;" rows="20">] + ;
-            m.lcSentToMsg + [</textarea></div>] + crlf + ;
-          [<div style="width: 50%; float: left;">] + ;
-            [<em>Not sent to (missing/bad email addresses):</em><br /><textarea style="width: 90%;" rows="12">] + ;
-            m.lcBadEmailMsg + [</textarea></div>] + crlf + ;
-          [<div style="clear: both;"></div>] + crlf + ;
-          [<div class="admin">] + loQry.cSqlStatement + [</div>] + crlf )
-        return .F.  && allows meeting page to show
-
-      endif 
-    endwith
-    response.write(loForm.render())
-    return 
-  endfunc 
-
-enddefine && Ais_Broadcast 
-
-*** ========================================================= ***
-define class AisBroadcastForm AS AisForm
-  cTitle = "Broadcast Email"
-  cHtmlName = "NtfEmail"
-  cSubmitCaption = "Broadcast"
-  lPreventMultipleSubmissions = .F.  && allow re-submit (to handle blocks of names, testing, etc.)
-  * ----------------------------------------------------- *  
-  function AddControls
-    with this
-      .addObject("colFlags", "aisArtQueryCollection")
-      with .colFlags
-        .cLabel = "Limit Sending to Whom"
-        .cInstructions = "If nothing checked, message goes to EVERYBODY!"
-      endwith 
-      
-*!*        .AddObject("colWhom", "L7CheckboxCollection")  
-*!*        with .colWhom
-*!*          .cGroupId = "top"
-*!*          .cCssStyle = "width: 40%;"
-*!*          .lAutoRender = .T.
-*!*          .cDefaultControlPattern = [(%l%s)%c(%s%i)(%b%v)]
-*!*          .cLabel = "Limit Sending to Whom"
-*!*          .cInstructions = "If nothing checked, message goes to EVERYBODY!"
-*!*          .cInterControlText = L7BR  && CHR(38) + 'nbsp;'       && &nbsp
-*!*        endwith
-*!*        
-*!*        .colWhom.AddObjectToParent("chkArtist", "L7Checkbox")
-*!*        with .chkArtist
-*!*          .cCaption = "Send to all Artists"
-*!*          .cLabel = "Artists"
-*!*        endwith
-
-*!*        .colWhom.AddObjectToParent("chkInstall", "L7Checkbox")
-*!*        with .chkInstall
-*!*          .cCaption = "Send to all Installers"
-*!*          .cLabel = "Installers"
-*!*        endwith
-
-*!*        .colWhom.AddObjectToParent("chkNoShow", "L7Checkbox")
-*!*        with .chkNoShow
-*!*          .cCaption = "Promised Panel, Delivered Nothing"
-*!*          .cLabel = "Panel No-Shows"
-*!*        endwith
-
-*!*        .colWhom.AddObjectToParent("chkCore", "L7Checkbox")
-*!*        with .chkCore
-*!*          .cCaption = "Send to Core Team"
-*!*          .cLabel = "Core Team"
-*!*        endwith
-
-*!*        .colWhom.AddObjectToParent("chkAdmin", "L7Checkbox")
-*!*        with .chkAdmin
-*!*          .cCaption = "Send to Admins"
-*!*          .cLabel = "AIS Admins"
-*!*        endwith
-
-      * From info:
-      .AddObject("txtFromName", "L7Textbox")
-      WITH .txtFromName
-        *.cGroupID = "FROM"
-        .cLabel = "From"
-        .lRequired = .t. 
-        .nSize = 30
-        .SetValue(Config.cActionFrom)
-        *!* .SetValue(CurrentUser.GetUserName())
-      ENDWITH
-      .AddObject("txtReplyTo", "L7Textbox")
-      with .txtReplyTo
-        *.cGroupID = "FROM"
-        .cLabel = "Reply-To"
-        .nSize = 30
-        .cInstructions = "Optional reply email address. Use this in conjunction with From field to appear to come from someone else! "
-        *!* .SetValue(TRIM(CurrentUser.oData.Art_Email))
-        .SetValue(Config.cActionEmail)
-      endwith 
-
-      .AddObject("txtFromEmail", "L7Textbox")
-      WITH .txtFromEmail
-        *.cGroupID = "FROM"
-        .cLabel = "From Email *"
-        .lRequired = .t. 
-        .cInstructions = "* MUST be a Cycla.com address to survive anti-SPAM measures! Use reply-to to specify a different client address if necessary."
-        .nSize = 30
-        .SetValue(Config.cAdminEmail) && TRIM(CurrentUser.oData.Par_Email))
-      ENDWITH
-
-      *!*        .AddObject("chkBCC", "L7Checkbox")
-      *!*        WITH .chkBCC
-      *!*          .cGroupID = "FROM"
-      *!*          .cLabel = ""
-      *!*          .lNoLabel = .T.
-      *!*          .cCaption= "bcc: to myself"
-      *!*          .SetValue(.f.)
-      *!*        ENDWITH
-
-      .AddObject("txtSubject", "L7Textbox")
-      WITH .txtSubject
-        .cGroupID = "SUBJECT"
-        .lRequired = .t. 
-        .cLabel = "Email Subject (required)"
-        .nSize = 80
-      endwith 
-      
-      .AddObject("edtMessage", "L7Textarea")
-      WITH .edtMessage
-        .cLabel = "Body of Message"
-        .nRows = 10
-        .lRequired = .T.
-      ENDWITH
-      
-      * Link checkboxes.
-      .AddObject("chkMainLink", "L7Checkbox")
-      WITH .chkMainLink
-        .cGroupID = "LINKS"
-        .cCssStyle = "width: 50%;"
-        .cLabel = ""
-        .lNoLabel = .T.
-        .vOldValue = .T.
-        .cCaption= "Include Hyperlink to AIS"
-        .SetValue(.f.)
-      endwith 
-
-      * TESTING-ONLY: 
-      .AddObject("chkTesting", "L7Checkbox")
-      WITH .chkTesting
-        .cGroupID = "TESTING"
-        .cCssStyle = "width: 50%;"
-        .cLabel = ""
-        .lNoLabel = .T.
-        .vOldValue = .F.
-        .cCaption= "Don't Broadcast -- Just Testing"
-      endwith
-    endwith
-    return 
-  endfunc 
-enddefine && AisBroadcastForm 
 
 *** ========================================================= ***
 define class AisArtQuery AS L7Query
