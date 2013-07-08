@@ -454,8 +454,7 @@ define class aisPage as L7Page
       .AddJavaScript("", [../ktb-content/js/l7CoreP.js]) && L7 Core (Prototype version)
       .AddJavaScript("", [../ktb-content/js/l7CoreJQ.js]) && L7 Core (jQuery version)
       
-      * .AddJavaScript('$j(document).ready(focusFirst);')
-      .AddJavaScript('$j(document).ready(function() {$j("input:text, textarea").first().focus();});')
+      * .AddJavaScript('$j(document).ready(function() {$j("input:text, textarea").first().focus();});')
     endwith 
     return 
   endfunc     
@@ -484,7 +483,8 @@ define class aisPage as L7Page
   function AddDefaultMenu
     local lcMenu, lcLpInfo, lcForm
     lcMenu = "main\Navigate"
-    this.addMenuItem(m.lcMenu, 'People', StuffUrl(this.cUrlA, 2, "ArtList", "flags", "core", "fields", "contact"))
+    this.addMenuItem(m.lcMenu, 'People - Query Form', StuffUrl(this.cUrlA, 2, "ArtQuery"))
+    this.addMenuItem(m.lcMenu, 'People - Core List', StuffUrl(this.cUrlA, 2, "ArtList", "core", "1", "fields", "contact"))
     this.addMenuItem(m.lcMenu, 'Neighborhood Summary Report', StuffUrl(this.cUrlA, 2, "NeighborhoodSumList"))
 
     lcLpInfo = THIS.GetBaseHiddenFormvars() && sustains license plate, etc. for GET form
