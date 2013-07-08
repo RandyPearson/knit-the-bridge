@@ -7,20 +7,20 @@ function AisArtQueryFlags()
   return L7JsonParse( ;
     '[' + ;
     '{"root": "core", "prompt": "Core Team"}' + ;
-    ',{"root": "starred", "prompt": "Starred for KtB Follow-Up"}' + ;
+    ',{"root": "starred", "prompt": "Starred (follow-up)"}' + ;
     ',{"root": "install", "field": "Art_Help_Install", "prompt": "Help Install"}' + ;
     ',{"root": "deinstall", "field": "Art_Help_Deinstall", "prompt": "Help Deinstall"}' + ;
     ',{"root": "stitching", "field": "Art_Help_Stitching", "prompt": "Help Stitching"}' + ;
     ',{"root": "monitoring", "field": "Art_Help_Monitoring", "prompt": "Help Monitoring"}' + ;
     ',{"root": "outreach", "field": "Art_Help_Outreach"}' + ;
     ',{"root": "organizer", "prompt": "Community Organizer"}' + ;
-    ',{"root": "towers", "prompt": "Machine Knit for Towers"}' + ;
+    ',{"root": "towers", "prompt": "Machine Knitting"}' + ;
     ',{"root": "money", "field": "Art_Help_Money", "prompt": "Donate Money"}' + ;
     ',{"root": "materials", "field": "Art_Help_Materials", "prompt": "Donate Materials"}' + ;
     ',{"root": "undeliverable"}' + ;
     ',{"root": "inactive", "combine": false, "prompt": "Deleted Artists"}' + ;
-    ',{"root": "panelsignup", "combine": false}' + ;
-    ',{"root": "railingssubmitted", "combine": false}' + ;
+    ',{"root": "panelsignup", "combine": false, "prompt": "Panel Sign-Up"}' + ;
+    ',{"root": "railingssubmitted", "combine": false, "prompt": "Submitted Railings"}' + ;
     ',{"root": "artist"}' + ;
     ',{"root": "admin", "menu": false}' + ;
     ']' )
@@ -145,7 +145,7 @@ define class aisArtQueryCollection as L7CheckboxCollection
         .cIDPrefix = ""
 
         .nStyle = L7_MULTISTYLE_HORIZONTAL
-        .cLabel = loFlag.root
+        .cLabel = iif(pemstatus(m.loFlag, "prompt", 5), m.loFlag.prompt, proper(m.loFlag.root))
         .cLabelCssClass = 'align-label'
         .addItem("1", "Yes")
         .addItem("0", "No")
@@ -2136,15 +2136,16 @@ define class Ais_Broadcast AS AisArtPage
           endif 
         endscan 
         this.Confirm(transform(m.lnCount) + " messages " + ;
-          IIF(m.llTesting, "would have been", "were") + " sent." + ;
-          [<div style="clear: both;"></div>] + ;
-          [<div style="width: 50%; float: left;">] + ;
+          IIF(m.llTesting, "would have been", "were") + " sent." + crlf + ;
+          [<div style="clear: both;"></div>] + crlf + ;
+          [<div style="width: 50%; float: left;">] + crlf + ;
             [<em>Recipients:</em><br /><textarea style="width: 90%;" rows="20">] + ;
-            m.lcSentToMsg + [</textarea></div>] + ;
+            m.lcSentToMsg + [</textarea></div>] + crlf + ;
           [<div style="width: 50%; float: left;">] + ;
             [<em>Not sent to (missing/bad email addresses):</em><br /><textarea style="width: 90%;" rows="12">] + ;
-            m.lcBadEmailMsg + [</textarea></div>] + ;
-          [<div style="clear: both;"></div>] )
+            m.lcBadEmailMsg + [</textarea></div>] + crlf + ;
+          [<div style="clear: both;"></div>] + crlf + ;
+          [<div class="admin">] + loQry.cSqlStatement + [</div>] + crlf )
         return .F.  && allows meeting page to show
 
       endif 
