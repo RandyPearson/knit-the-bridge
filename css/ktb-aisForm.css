@@ -20,6 +20,9 @@ FORM {
 	border: none;
 	padding: 1px 2em 1px 1em;
 }
+
+.align-label{display: block; width: 10em; float: left; text-align: right;}
+
 DIV.FormTitle {
 	border: 1px solid #333;
 	padding: 3px;
