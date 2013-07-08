@@ -110,6 +110,24 @@ function aisFormatParticipation(toData)
 
   return m.lcRet
 endfunc && aisFormatParticipation
+* --------------------------------------------------------- *
+function aisFormatCommentsAndNotes(toData)
+  local loData, lcRet
+  if vartype(m.toData) = 'O'
+    loData = m.toData
+  else
+    scatter memo name loData
+  endif
+  lcRet = ""
+  if !empty(loData.Art_Comments)
+    lcRet = m.lcRet + loData.Art_Comments
+  endif
+  if !empty(loData.Art_Notes)
+    lcRet = m.lcRet + iif(empty(m.lcRet), '', L7BR) + 'KtB Notes: ' + loData.Art_Notes
+  endif
+  
+  return m.lcRet
+endfunc && aisFormatCommentsAndNotes
 
 *** ========================================================= ***
 define class aisArtQueryCollection as L7CheckboxCollection
@@ -135,6 +153,21 @@ define class aisArtQueryCollection as L7CheckboxCollection
         .setValue("null")
       endwith
     next 
+    lcName = "combine_operator"
+    this.addObjectToParent(m.lcName, "L7RadioButton")
+    with this.parent.&lcName
+      .cHtmlName = m.lcName
+      .cIDPrefix = ""
+      .cPattern = "%l%b%c(%b%i)"
+
+      .nStyle = L7_MULTISTYLE_VERTICAL
+      .cLabel = "Combine multiple choices with"
+      * .cLabelCssClass = 'align-label'
+      .addItem("OR", "OR (anyone matching any choice)")
+      .addItem("AND", "AND (only those matching all choices)")
+      .setValue("OR")
+    endwith
+    
     return
   endfunc
 enddefine 
@@ -167,6 +200,11 @@ define class aisArtPage as aisPage
           loQry.&lcProp = m.lcVal = "1"
         endif 
       next
+
+      lcVal = request.form("combine_operator")
+      if upper(m.lcVal) = "AND"
+        .lOrTypes = .f.
+      endif 
 
       .addFields("Art_Email, Art_Phone, Art_Neighborhood, Art_Contact_Orig, Art_Comments, Art_Notes")
       .addParticipationFields()
@@ -255,6 +293,8 @@ define class ais_ArtQuery as aisMultiArtPage
     
     loForm = this.createForm("AisForm", StuffUrl(this.cUrlA, 2, "ArtList", "fields", "part,contact"))
     with loForm
+      .lResetButton = .t.
+      .cSubmitCaption = "Run Query"
       .addObject("colFlags", "aisArtQueryCollection")
 *!*        .addObject("colFlags", "L7CheckboxCollection")
 *!*        with .colFlags
@@ -423,8 +463,8 @@ define class ais_ArtList as aisMultiArtPage
 
       if poContext.lAdmin
         if this.oPage_Fields.getkey("registry") > 0 or this.oPage_Fields.getkey("contact") > 0
-          loCol = .addCursorColumn("Art_Comments", "Comments")
-          loCol = .addCursorColumn("Art_Notes", "KtB Notes")
+          ** loCol = .addCursorColumn("Art_Comments", "Comments")
+          loCol = .addCursorColumn("Art_Notes", "Comments and KtB Notes", [aisFormatCommentsAndNotes()])
         endif
 
         loCol = .addCursorColumn("Art_PK", "Edit Artist", ;
