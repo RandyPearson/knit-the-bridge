@@ -7,6 +7,13 @@ function AisArtQueryFlags()
   return L7JsonParse( ;
     '[' + ;
     '{"root": "core", "prompt": "Core Team"}' + ;
+    ',{"root": "admin", "menu": false}' + ;
+    ',{"root": "artist", "prompt": "All Artists"}' + ;
+    ',{"root": "panelsignup", "combine": false, "prompt": "Panel Sign-Up"}' + ;
+    ',{"root": "panelssubmitted", "combine": false, "prompt": "Submitted Panels"}' + ;
+    ',{"root": "bitsorpanelssubmitted", "combine": false, "prompt": "Submitted Bits/Panels"}' + ;
+    ',{"root": "railingsignup", "combine": false, "prompt": "Railing Sign-Up"}' + ;
+    ',{"root": "railingssubmitted", "combine": false, "prompt": "Submitted Railings"}' + ;
     ',{"root": "starred", "prompt": "Starred (follow-up)"}' + ;
     ',{"root": "install", "field": "Art_Help_Install", "prompt": "Help Install"}' + ;
     ',{"root": "deinstall", "field": "Art_Help_Deinstall", "prompt": "Help Deinstall"}' + ;
@@ -19,12 +26,7 @@ function AisArtQueryFlags()
     ',{"root": "materials", "field": "Art_Help_Materials", "prompt": "Donate Materials"}' + ;
     ',{"root": "undeliverable"}' + ;
     ',{"root": "inactive", "combine": false, "prompt": "Deleted Artists"}' + ;
-    ',{"root": "panelsignup", "combine": false, "prompt": "Panel Sign-Up"}' + ;
-    ',{"root": "railingssubmitted", "combine": false, "prompt": "Submitted Railings"}' + ;
-    ',{"root": "artist"}' + ;
-    ',{"root": "admin", "menu": false}' + ;
     ']' )
-
 
 endfunc 
 
