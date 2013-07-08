@@ -296,28 +296,23 @@ define class ais_ArtQuery as aisMultiArtPage
       .lResetButton = .t.
       .cSubmitCaption = "Run Query"
       .addObject("colFlags", "aisArtQueryCollection")
-*!*        .addObject("colFlags", "L7CheckboxCollection")
-*!*        with .colFlags
-*!*          .cDefaultControlPattern = '%l%s%c(%s%i)'
-*!*          loFlags = this.oArtQueryFlags
-*!*          for lnFlag = 1 to loFlags.count
-*!*            loFlag = loFlags.item[m.lnFlag]
-*!*            lcName = "opg" + loFlag.root
-*!*            .addObjectToParent(m.lcName, "L7RadioButton")
-*!*            with loForm.&lcName
-*!*              .cHtmlName = m.lcName
-*!*              .cIDPrefix = ""
+      with .colFlags
+        .cGroupID = "MAIN"
+        .cLabel = "Query Conditions"
+        .cInstructions = "Leave everything N/A, except the conditions you wish to invoke"
+      endwith 
 
-*!*              .nStyle = L7_MULTISTYLE_HORIZONTAL
-*!*              .cLabel = loFlag.root
-*!*              .cLabelCssClass = 'align-label'
-*!*              .addItem("1", "Yes")
-*!*              .addItem("0", "No")
-*!*              .addItem("null", "N/A")
-*!*              .setValue("null")
-*!*            endwith
-*!*          next 
-*!*        endwith 
+      .addObject("opgUsage", "L7RadioButton")
+      with .opgUsage
+        .cGroupID = "MAIN"
+        .cHtmlName = "opgUsage"
+        .cIDPrefix = ""
+        .cLabel = "Usage"
+        .addItem("Table", "Detailed Table")
+        .addItem("Count", "Count")
+        .addItem("Email", "Mailing List")
+        .setValue("Table")
+      endwith 
     endwith 
     response.write(loForm.render())
     return 
@@ -377,8 +372,8 @@ define class ais_ArtList as aisMultiArtPage
   endfunc  
   * ----------------------------------------------------- *  
   function ProcessRequest
-    local loQry, loFlags, lnIdx, loItem, lcWord, lcProp, loFields, ;
-      loTbl, loCol, loGrp, loRE, loMtchs, loMtch, lcEnt, loPceQ
+    local loQry, lcUsage, ;
+      loRE, loMtchs, loMtch, lcEnt
     
     * do this late so url has been processed
     if !empty(this.cPage_Srch1)
@@ -394,10 +389,72 @@ define class ais_ArtList as aisMultiArtPage
     
     if request.cMethod = "GET"
       loQry = this.page_RunGetQuery()
+      lcUsage = "Table"
     else
       loQry = this.page_RunPostQuery()
+      lcUsage = request.form("opgUsage")
     endif
     
+    do case
+    case m.lcUsage = "Count"
+      response.write(textmerge([<div><strong><<loQry.nTally>> people</strong> meet those conditions.</div>]))
+      
+    case m.lcUsage = "Table"
+      response.write(this.Page_getTabularDisplay(m.loQry))
+      
+    case m.lcUsage = "Email"
+      response.write(this.Page_getMailingList(m.loQry))
+    
+    otherwise
+      this.badRequest("Unknown usage")
+    endcase
+    if poContext.lDeveloper
+      Response.Write(HTWrap(loQry.cSqlStatement, 'div,p', 'admin,debug'))
+    endif
+    return 
+  endfunc && ProcessRequest
+
+  * ----------------------------------------------------- *  
+  function Page_getMailingList(loQry)
+    local lcRet, llSend, loArt, lcToEmail, lcName, lcBadEmailMsg, lcSentToMsg, lnCount
+    store "" to lcBadEmailMsg, lcSentToMsg
+    lnCount = 0
+    select (loQry.cAlias)
+    scan 
+      scatter memo name loArt
+      llSend = .T.
+
+      if m.llSend
+        lcToEmail = trim(Art_Email)
+        lcName = AisArtistName(m.loArt)
+        llSend = !empty(m.lcToEmail) and IsValidEmail(m.lcToEmail)
+        if !m.llSend
+          lcBadEmailMsg = lcBadEmailMsg + m.lcName + ' [' + trim(Art_Phone) + ']'+ CRLF
+        else 
+          lcSentToMsg = lcSentToMsg + m.lcName + ' <' + m.lcToEmail + '>' + CRLF
+        endif 
+      endif 
+      if !m.llSend
+        loop 
+      endif 
+      lnCount = m.lnCount + 1
+    endscan 
+
+    lcRet = transform(m.lnCount) + " valid email addresses. " + crlf + ;
+          [<div style="clear: both;"></div>] + crlf + ;
+          [<div style="width: 50%; float: left;">] + crlf + ;
+            [<em>Mailing List:</em><br /><textarea style="width: 90%;" rows="20">] + ;
+            m.lcSentToMsg + [</textarea></div>] + crlf + ;
+          [<div style="width: 50%; float: left;">] + ;
+            [<em>Omitted Names (missing/bad email addresses):</em><br /><textarea style="width: 90%;" rows="12">] + ;
+            m.lcBadEmailMsg + [</textarea></div>] + crlf + ;
+          [<div style="clear: both;"></div>] + crlf 
+    return m.lcRet
+  endfunc 
+  * ----------------------------------------------------- *  
+  function Page_getTabularDisplay(loQry)
+    local lcRet, loPceQry, loTbl, loCol, loGrp
+
     loPceQ = createobject("AisPceQuery")
     with loPceQ
       .addOrderBy('Pce_Art_FK')
@@ -471,15 +528,10 @@ define class ais_ArtList as aisMultiArtPage
           'HTLink(StuffUrl(urls.item("ArtForm"), "art", Art_PK), "[Edit&nbsp;Artist...]")', 'no-print')
         loCol.cHeadingClass = "nosort no-print" 
       endif 
-      response.write(.render())
-
-      if poContext.lDeveloper
-        Response.Write(HTWrap(loQry.cSqlStatement, 'div,p', 'admin,debug'))
-      endif
+      lcret = .render()
     endwith 
-    return 
-  endfunc && ProcessRequest
-
+    return m.lcRet
+  endfunc && Page_getTabularDisplay
   * --------------------------------------------------------- *
   function page_RunGetQuery
     local loQry, lnIdx, lcProp
