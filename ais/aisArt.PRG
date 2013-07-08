@@ -25,7 +25,7 @@ function AisArtQueryFlags()
     ',{"root": "money", "field": "Art_Help_Money", "prompt": "Donate Money"}' + ;
     ',{"root": "materials", "field": "Art_Help_Materials", "prompt": "Donate Materials"}' + ;
     ',{"root": "undeliverable"}' + ;
-    ',{"root": "inactive", "combine": false, "prompt": "Deleted Artists"}' + ;
+    ',{"root": "inactiveinner", "combine": false, "prompt": "Deleted Artists"}' + ;
     ']' )
 
 endfunc 
@@ -188,42 +188,10 @@ define class aisArtPage as aisPage
     return this.oArtQueryFlags 
   endfunc 
   * --------------------------------------------------------- *
-  function page_RunPostQuery(lcCapts)
-    local loQry, loFlags, lnFlag, loFlag, lcName, lcVal, llVal, lcCombOp, lcProp, loCapts, lnCapt
-    loCapts = createobject("Collection")
+  function page_RunPostQuery()
+    local loQry
     loQry = createobject("AisArtQuery")
-    with loQry
-      loFlags = this.oArtQueryFlags
-      for lnFlag = 1 to loFlags.count
-        loFlag = loFlags.item[m.lnFlag]
-        lcName = "opg" + loFlag.root
-        lcVal = request.form(m.lcName)
-        if !m.lcVal = "null"
-          llVal = m.lcVal = "1"
-          lcProp = "l" + loFlag.root
-          loQry.&lcProp = m.llVal
-          if vartype(m.lcCapts) = "C"
-            loCapts.add(iif(m.llVal, "", "NOT ") + ;
-              iif(pemstatus(m.loFlag, "prompt", 5), loFlag.prompt, proper(loFlag.root)))
-          endif
-        endif 
-      next
-
-      lcCombOp = request.form("combine_operator")
-      if upper(m.lcCombOp) = "AND"
-        .lOrTypes = .f.
-      endif 
-
-      .addFields("Art_Email, Art_Phone, Art_Neighborhood, Art_Contact_Orig, Art_Comments, Art_Notes")
-      .addParticipationFields()
-      .execute()
-    endwith 
-    if vartype(m.lcCapts) = "C"
-      lcCapts = ""
-      for lnCapt = 1 to loCapts.count
-        lcCapts = m.lcCapts + iif(m.lnCapt = 1, "", m.lcCombOp + " ") + loCapts.item[m.lnCapt]
-      next 
-    endif
+    loQry.executeFromFlagPost()
     return m.loQry
   endfunc 
 enddefine 
@@ -595,8 +563,7 @@ define class ais_ArtList as aisMultiArtPage
   * ----------------------------------------------------- *  
   function ProcessRequest
     local loQry, lcUsage, ;
-      loRE, loMtchs, loMtch, lcEnt, lcCapt
-    lcCapt = ""
+      loRE, loMtchs, loMtch, lcEnt
     * do this late so url has been processed
     if !empty(this.cPage_Srch1)
       loRE = createobject("L7RegExp")
@@ -613,7 +580,7 @@ define class ais_ArtList as aisMultiArtPage
       loQry = this.page_RunGetQuery()
       lcUsage = "Table"
     else
-      loQry = this.page_RunPostQuery(@lcCapt)
+      loQry = this.page_RunPostQuery()
       lcUsage = request.form("opgUsage")
     endif
     
@@ -693,6 +660,7 @@ define class ais_ArtList as aisMultiArtPage
     select (loQry.cAlias)
     loTbl = createobject("AisTable")
     with loTbl
+      .cTableCaption = loQry.cCaption
       do case
       case this.cPage_Order = "location"
         loGrp = .AddGroup("Art_Neighborhood",,.t.,["Neighborhood: " + trim(Art_Neighborhood)])
@@ -2347,6 +2315,7 @@ define class AisArtQuery AS L7Query
   lAdmin = null
   lCore = null
   lUndeliverable = null
+  lInactiveInner = null 
   lArtist = null
   lStarred = null
   lInstall = null
@@ -2370,6 +2339,7 @@ define class AisArtQuery AS L7Query
   *aOrderBy[ 1, 1] = "UPPER(Par_Name)"
   aOrderBy[ 1, 1] = "Art_Last_Name"
 
+  cCaption = ""
   * --------------------------------------------------------- *
   function addParticipationFields
     this.addFields("Art_Towers, Art_Help_Install, Art_Help_Materials, Art_Help_Money, Art_Organizer, Art_Help_Outreach, Art_Help_Other" + ;
@@ -2383,6 +2353,41 @@ define class AisArtQuery AS L7Query
     return 
   endfunc
   * --------------------------------------------------------- *
+  function executeFromFlagPost
+    local loFlags, lnFlag, loFlag, lcName, lcVal, llVal, lcCombOp, lcProp, loCapts, lnCapt
+    loCapts = createobject("Collection")
+    with this
+      loFlags = AisArtQueryFlags()
+      for lnFlag = 1 to loFlags.count
+        loFlag = loFlags.item[m.lnFlag]
+        lcName = "opg" + loFlag.root
+        lcVal = request.form(m.lcName)
+        if !m.lcVal = "null"
+          llVal = m.lcVal = "1"
+          lcProp = "l" + loFlag.root
+          this.&lcProp = m.llVal
+          loCapts.add(iif(m.llVal, "", "NOT ") + ;
+            iif(pemstatus(m.loFlag, "prompt", 5), loFlag.prompt, proper(loFlag.root)))
+        endif 
+      next
+
+      lcCombOp = request.form("combine_operator")
+      if upper(m.lcCombOp) = "AND"
+        .lOrTypes = .f.
+      endif 
+
+      .addFields("Art_Email, Art_Phone, Art_Neighborhood, Art_Contact_Orig, Art_Comments, Art_Notes")
+      .addParticipationFields()
+      .execute()
+    endwith 
+    lcCapts = ""
+    for lnCapt = 1 to loCapts.count
+      lcCapts = m.lcCapts + iif(m.lnCapt = 1, "", " " + m.lcCombOp + " ") + loCapts.item[m.lnCapt]
+    next 
+    this.cCaption = m.lcCapts
+    return 
+  endfunc  && executeFromFlagPost
+  * --------------------------------------------------------- *
   function BuildWhereClause
     local lcStr, lcInnerWhere, loFlags, lnFlag, loFlag, lcField, lvVal, lnWords, lcWord1, lcWord2, lcSearchFields, lcTypeCombine
     with this 
@@ -2390,10 +2395,13 @@ define class AisArtQuery AS L7Query
       lcTypeCombine = iif(.lOrTypes, [ or ], [ and ])
   
       .lWhereBuilt = .T.
-      if isnull(.lInactive)
+      if isnull(.lInactive) or !isnull(this.lInactiveInner) && if inner version used, avoid an outer condition
         .cWhereClause = [WHERE .t.]
       else
         .cWhereClause = [WHERE Art_Inactive = ] + IIF(.lInactive, [.T.], [.F.])
+      endif 
+      if !isnull(.lInactiveInner)
+        lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + [Art_Inactive = ] + iif(.lInactiveInner, [.t.], [.f.])
       endif 
       
       if !isnull(.cID)
@@ -2461,32 +2469,32 @@ define class AisArtQuery AS L7Query
       endif 
 
       if !isnull(.lPanelSignup)
-        *.cWhereClause = .cWhereClause + [ and Art_Panel_Count] + iif(.lPanelSignup, [ > 0], [ = 0])
         lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + [Art_Panel_Count] + iif(.lPanelSignup, [ > 0], [ = 0])
       endif
 
       if !isnull(.lRailingSignup)
-        .cWhereClause = .cWhereClause + [ and Art_Railing_1_Count + Art_Railing_2_Count] + iif(.lRailingSignup, [ > 0], [ = 0])
+        lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + [Art_Railing_1_Count + Art_Railing_2_Count] + iif(.lRailingSignup, [ > 0], [ = 0])
       endif
 
       if !isnull(.lBitsOrPanelsSubmitted)
-        .cWhereClause = .cWhereClause + [ and Art_PK] + iif(.lBitsOrPanelsSubmitted, [ in ], [ not in ]) + ;
+        lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + ;
+          [Art_PK] + iif(.lBitsOrPanelsSubmitted, [ in ], [ not in ]) + ;
           [(select Pce_Art_FK from Piece where !Pce_Inactive and Pce_Type = 'Panels')]
       endif 
       
       if !isnull(.lPanelsSubmitted)
-        .cWhereClause = .cWhereClause + [ and Art_PK] + iif(.lPanelsSubmitted, [ in ], [ not in ]) + ;
+        lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + ;
+          [Art_PK] + iif(.lPanelsSubmitted, [ in ], [ not in ]) + ;
           [(select Pce_Art_FK from Piece where !Pce_Inactive and Pce_Type = 'Panels' and Pce_Whole_Panel)]
       endif 
 
       if !isnull(.lBitsSubmitted)
-        .cWhereClause = .cWhereClause + [ and Art_PK] + iif(.lBitsSubmitted, [ in ], [ not in ]) + ;
+        lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + ;
+          [Art_PK] + iif(.lBitsSubmitted, [ in ], [ not in ]) + ;
           [(select Pce_Art_FK from Piece where !Pce_Inactive and Pce_Type = 'Panels' and !Pce_Whole_Panel)]
       endif 
 
       if !isnull(.lRailingsSubmitted)
-        * .cWhereClause = .cWhereClause + [ and ] + 
-        
         lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + ;
           [Art_PK] + iif(.lRailingsSubmitted, [ in ], [ not in ]) + ;
           [(select Pce_Art_FK from Piece where !Pce_Inactive and Pce_Type = 'Railings')]
@@ -2499,10 +2507,6 @@ define class AisArtQuery AS L7Query
       if !isnull(.cGroupArt)
         .cWhereClause = .cWhereClause + [ and Art_Group_Art_FK = '] + .cGroupArt + [']
       endif 
-
-      *!*        if !isnull( .lStarred) && this is in flags 
-      *!*          lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + [Art_Starred = ] + IIF(.lStarred, [.T.], [.F.])
-      *!*        endif 
 
       loFlags = AisArtQueryFlags()
       for lnFlag = 1 to loFlags.count
