@@ -7,21 +7,25 @@ function AisArtQueryFlags()
   return L7JsonParse( ;
     '[' + ;
     '{"root": "core", "prompt": "Core Team"}' + ;
-    ',{"root": "starred", "prompt": "Starred for KtB Follow-Up"}' + ;
+    ',{"root": "starred", "prompt": "Starred (follow-up)"}' + ;
     ',{"root": "install", "field": "Art_Help_Install", "prompt": "Help Install"}' + ;
     ',{"root": "deinstall", "field": "Art_Help_Deinstall", "prompt": "Help Deinstall"}' + ;
     ',{"root": "stitching", "field": "Art_Help_Stitching", "prompt": "Help Stitching"}' + ;
     ',{"root": "monitoring", "field": "Art_Help_Monitoring", "prompt": "Help Monitoring"}' + ;
     ',{"root": "outreach", "field": "Art_Help_Outreach"}' + ;
     ',{"root": "organizer", "prompt": "Community Organizer"}' + ;
-    ',{"root": "towers", "prompt": "Machine Knit for Towers"}' + ;
+    ',{"root": "towers", "prompt": "Machine Knitting"}' + ;
     ',{"root": "money", "field": "Art_Help_Money", "prompt": "Donate Money"}' + ;
     ',{"root": "materials", "field": "Art_Help_Materials", "prompt": "Donate Materials"}' + ;
-    ',{"root": "inactive", "prompt": "Deleted Artists"}' + ;
     ',{"root": "undeliverable"}' + ;
+    ',{"root": "inactive", "combine": false, "prompt": "Deleted Artists"}' + ;
+    ',{"root": "panelsignup", "combine": false, "prompt": "Panel Sign-Up"}' + ;
+    ',{"root": "railingssubmitted", "combine": false, "prompt": "Submitted Railings"}' + ;
     ',{"root": "artist"}' + ;
     ',{"root": "admin", "menu": false}' + ;
     ']' )
+
+
 endfunc 
 
 * --------------------------------------------------------- *
@@ -106,6 +110,68 @@ function aisFormatParticipation(toData)
 
   return m.lcRet
 endfunc && aisFormatParticipation
+* --------------------------------------------------------- *
+function aisFormatCommentsAndNotes(toData)
+  local loData, lcRet
+  if vartype(m.toData) = 'O'
+    loData = m.toData
+  else
+    scatter memo name loData
+  endif
+  lcRet = ""
+  if !empty(loData.Art_Comments)
+    lcRet = m.lcRet + loData.Art_Comments
+  endif
+  if !empty(loData.Art_Notes)
+    lcRet = m.lcRet + iif(empty(m.lcRet), '', L7BR) + 'KtB Notes: ' + loData.Art_Notes
+  endif
+  
+  return m.lcRet
+endfunc && aisFormatCommentsAndNotes
+
+*** ========================================================= ***
+define class aisArtQueryCollection as L7CheckboxCollection
+  cDefaultControlPattern = '%l%s%c(%s%i)'
+  * --------------------------------------------------------- *
+  function Init
+    local loFlag, lnFlag, lcName
+    loFlags = AisArtQueryFlags()
+    for lnFlag = 1 to loFlags.count
+      loFlag = loFlags.item[m.lnFlag]
+      lcName = "opg" + loFlag.root
+      this.addObjectToParent(m.lcName, "L7RadioButton")
+      with this.parent.&lcName
+        .cHtmlName = m.lcName
+        .cIDPrefix = ""
+
+        .nStyle = L7_MULTISTYLE_HORIZONTAL
+        .cLabel = iif(pemstatus(m.loFlag, "prompt", 5), m.loFlag.prompt, proper(m.loFlag.root))
+        .cLabelCssClass = 'align-label'
+        .addItem("1", "Yes")
+        .addItem("0", "No")
+        .addItem("null", "N/A")
+        .setValue("null")
+      endwith
+    next 
+    lcName = "combine_operator"
+    this.addObjectToParent(m.lcName, "L7RadioButton")
+    with this.parent.&lcName
+      .cHtmlName = m.lcName
+      .cIDPrefix = ""
+      .cPattern = "%l%b%c(%b%i)"
+
+      .nStyle = L7_MULTISTYLE_VERTICAL
+      .cLabel = "Combine multiple choices with"
+      * .cLabelCssClass = 'align-label'
+      .addItem("OR", "OR (anyone matching any choice)")
+      .addItem("AND", "AND (only those matching all choices)")
+      .setValue("OR")
+    endwith
+    
+    return
+  endfunc
+enddefine 
+
 *** ========================================================= ***
 define class aisArtPage as aisPage 
   cArt = ""
@@ -118,6 +184,33 @@ define class aisArtPage as aisPage
       this.oArtQueryFlags = AisArtQueryFlags()
     endif
     return this.oArtQueryFlags 
+  endfunc 
+  * --------------------------------------------------------- *
+  function page_RunPostQuery()
+    local loQry, loFlags, lnFlag, loFlag, lcName, lcProp
+    loQry = createobject("AisArtQuery")
+    with loQry
+      loFlags = this.oArtQueryFlags
+      for lnFlag = 1 to loFlags.count
+        loFlag = loFlags.item[m.lnFlag]
+        lcName = "opg" + loFlag.root
+        lcVal = request.form(m.lcName)
+        if !m.lcVal = "null"
+          lcProp = "l" + loFlag.root
+          loQry.&lcProp = m.lcVal = "1"
+        endif 
+      next
+
+      lcVal = request.form("combine_operator")
+      if upper(m.lcVal) = "AND"
+        .lOrTypes = .f.
+      endif 
+
+      .addFields("Art_Email, Art_Phone, Art_Neighborhood, Art_Contact_Orig, Art_Comments, Art_Notes")
+      .addParticipationFields()
+      .execute()
+    endwith 
+    return m.loQry
   endfunc 
 enddefine 
 
@@ -144,58 +237,22 @@ define class aisMultiArtPage as aisArtPage
     dodefault()  && required bubble-up
     return    
   endfunc  
-enddefine 
-
-*** ========================================================= ***
-define class ais_ArtList as aisMultiArtPage 
-  lCoreRequired = .t.
-
-  cPage_Flags = null
-  lPage_Approved = null
-  lPage_Response = null
-  lPage_DupName = null
-  lPage_DupEmail = null
-  cSubTitle = "Artists N'At"
-  cPage_Srch1 = null
-  * --------------------------------------------------------- *
-  function BeforeProcessRequest
-    local lcStr
-
-    this.cPage_Srch1 = this.ReadQueryString("srch1", .t., .t., .t., L7_QS_CHARACTERS + ['])
-    this.ReadQueryString("btn", .t., .t., .t.) && clear search button from URL
-    this.cPage_Flags = this.ReadQueryString("flags", .t., .t.)
-
-    lcStr = this.ReadQueryString("approved", .t., .t.)
-    this.lPage_Approved = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
-
-    lcStr = this.ReadQueryString("response", .t., .t.)
-    this.lPage_Response = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
-
-    lcStr = this.ReadQueryString("dupname", .t., .t.)
-    this.lPage_DupName = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
-
-    lcStr = this.ReadQueryString("dupemail", .t., .t.)
-    this.lPage_DupEmail = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
-    
-    dodefault()  && required bubble-up
-
-    return    
-  endfunc  
   * ----------------------------------------------------- *  
   function AddDefaultMenu
     local loFlags, lnFlag, loFlag, lcPrompt
     with this
       .AddSubMenu("This", "PEOPLE")
 
-      loFlags = .oArtQueryFlags
-      for lnFlag = 1 to loFlags.count
-        loFlag = loFlags.item[m.lnFlag]
-        if pemstatus(loFlag, "menu", 5) and !loFlag.menu
-          loop
-        endif
-        lcPrompt = iif(pemstatus(m.loFlag, "prompt", 5), m.loFlag.prompt, proper(m.loFlag.root))
-        .addMenuItem("main\This", m.lcPrompt, StuffUrl(.cUrlB, "flags", loFlag.root, "fields", "names,contact"))
-      next 
+      *!*        loFlags = .oArtQueryFlags
+      *!*        for lnFlag = 1 to loFlags.count
+      *!*          loFlag = loFlags.item[m.lnFlag]
+      *!*          if pemstatus(loFlag, "menu", 5) and !loFlag.menu
+      *!*            loop
+      *!*          endif
+      *!*          lcPrompt = iif(pemstatus(m.loFlag, "prompt", 5), m.loFlag.prompt, proper(m.loFlag.root))
+      *!*          .addMenuItem("main\This", m.lcPrompt, StuffUrl(.cUrlB, loFlag.root, "1", "fields", "names,contact"))
+      *!*        next 
+
       if poContext.lAdmin
         *!*          ** .addMenuItem("main\Approvals", "Approved", StuffUrl(.cUrlB, "Approved", "1"),, !isnull(.lPage_Approved) and .lPage_Approved)
         *!*          .addMenuItem("main\This", "Not Approved", StuffUrl(.cUrlB, "Approved", "0", "fields", "registry,contact"),, !isnull(.lPage_Approved) and !.lPage_Approved)
@@ -217,17 +274,106 @@ define class ais_ArtList as aisMultiArtPage
       endif 
       .addMenuItem("main\Reports", "Sign-Up Listing", StuffUrl(.cUrlB, "order", "reg_time", "fields", "names,contact,registry"))
             
-      if poContext.lAdmin and empty(this.cPage_Flags) and empty(this.cPage_Srch1) && not a special query
-        .addMenuItem("main\Reports", "Edit All...", StuffUrl(.cUrlB, 2, "ArtBrowse", "order", this.cPage_Order, "fields", this.cPage_Fields))
-      endif       
+      * Edit All.. needs to be linked to query conditions
+      *!*        if poContext.lAdmin and empty(this.cPage_Srch1) && not a special query
+      *!*          .addMenuItem("main\Reports", "Edit All...", StuffUrl(.cUrlB, 2, "ArtBrowse", "order", this.cPage_Order, "fields", this.cPage_Fields))
+      *!*        endif       
     endwith
     dodefault()
     return 
   endfunc  && AddDefaultMenu
+enddefine 
+
+*** ========================================================= ***
+define class ais_ArtQuery as aisMultiArtPage
+  lArtRequired = .f.  
   * ----------------------------------------------------- *  
   function ProcessRequest
-    local loQry, loFlags, lnIdx, loItem, lcWord, lcProp, loFields, ;
-      loTbl, loCol, loGrp, loRE, loMtchs, loMtch, lcEnt, loPceQ
+    local loForm, loFlags, lnFlag, lcName
+    
+    loForm = this.createForm("AisForm", StuffUrl(this.cUrlA, 2, "ArtList", "fields", "part,contact"))
+    with loForm
+      .lResetButton = .t.
+      .cSubmitCaption = "Run Query"
+      .addObject("colFlags", "aisArtQueryCollection")
+      with .colFlags
+        .cGroupID = "MAIN"
+        .cLabel = "Query Conditions"
+        .cInstructions = "Leave everything N/A, except the conditions you wish to invoke"
+      endwith 
+
+      .addObject("opgUsage", "L7RadioButton")
+      with .opgUsage
+        .cGroupID = "MAIN"
+        .cHtmlName = "opgUsage"
+        .cIDPrefix = ""
+        .cLabel = "Usage"
+        .addItem("Table", "Detailed Table")
+        .addItem("Count", "Count")
+        .addItem("Email", "Mailing List")
+        .setValue("Table")
+      endwith 
+    endwith 
+    response.write(loForm.render())
+    return 
+  endfunc 
+enddefine 
+
+*** ========================================================= ***
+define class ais_ArtList as aisMultiArtPage 
+  lCoreRequired = .t.
+
+  lPage_Approved = null
+  lPage_Response = null
+  lPage_DupName = null
+  lPage_DupEmail = null
+  cSubTitle = "Artists N'At"
+  cPage_Srch1 = ""
+  
+  lPage_OrTypes = .t. 
+  add object oPage_flags as collection 
+  * --------------------------------------------------------- *
+  function BeforeProcessRequest
+    local lcStr, loFlags
+    with this
+      if request.cMethod = "GET"
+        .cPage_Srch1 = .ReadQueryString("srch1", .t., .t., .t., L7_QS_CHARACTERS + ['])
+        .ReadQueryString("btn", .t., .t., .t.) && clear search button from URL
+
+        * Read each flag:
+        loFlags = .oArtQueryFlags
+        for lnFlag = 1 to loFlags.count
+          loFlag = loFlags.item[m.lnFlag]
+          lcStr = .ReadQueryString(loFlag.root, .t., .t.)
+          if !empty(m.lcStr)
+            .oPage_flags.add(left(m.lcStr,1) $ '1yYtT', loFlag.root)
+          endif       
+        next 
+        *!* .cPage_Flags = .ReadQueryString("flags", .t., .t.)
+
+        lcStr = .ReadQueryString("approved", .t., .t.)
+        .lPage_Approved = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+
+        lcStr = .ReadQueryString("response", .t., .t.)
+        .lPage_Response = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+
+        lcStr = .ReadQueryString("dupname", .t., .t.)
+        .lPage_DupName = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+
+        lcStr = .ReadQueryString("dupemail", .t., .t.)
+        .lPage_DupEmail = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+        
+        .lPage_OrTypes = !.ReadQueryString("combine", .t., .t.) = "and"
+      endif     
+    endwith 
+    dodefault()  && required bubble-up
+
+    return    
+  endfunc  
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    local loQry, lcUsage, ;
+      loRE, loMtchs, loMtch, lcEnt
     
     * do this late so url has been processed
     if !empty(this.cPage_Srch1)
@@ -241,54 +387,73 @@ define class ais_ArtList as aisMultiArtPage
       endif
     endif
     
-    loQry = createobject("AisArtQuery")
-    with loQry
-      loFlags = this.oArtQueryFlags
-      for lnIdx = 1 to loFlags.count
-        loItem = loFlags.item[m.lnIdx]
-        if "," + loItem.root + "," $ "," + this.cPage_Flags + ","
-          lcProp = "l" + loItem.root
-          store .t. to loQry.&lcProp
+    if request.cMethod = "GET"
+      loQry = this.page_RunGetQuery()
+      lcUsage = "Table"
+    else
+      loQry = this.page_RunPostQuery()
+      lcUsage = request.form("opgUsage")
+    endif
+    
+    do case
+    case m.lcUsage = "Count"
+      response.write(textmerge([<div><strong><<loQry.nTally>> people</strong> meet those conditions.</div>]))
+      
+    case m.lcUsage = "Table"
+      response.write(this.Page_getTabularDisplay(m.loQry))
+      
+    case m.lcUsage = "Email"
+      response.write(this.Page_getMailingList(m.loQry))
+    
+    otherwise
+      this.badRequest("Unknown usage")
+    endcase
+    if poContext.lDeveloper
+      Response.Write(HTWrap(loQry.cSqlStatement, 'div,p', 'admin,debug'))
+    endif
+    return 
+  endfunc && ProcessRequest
+
+  * ----------------------------------------------------- *  
+  function Page_getMailingList(loQry)
+    local lcRet, llSend, loArt, lcToEmail, lcName, lcBadEmailMsg, lcSentToMsg, lnCount
+    store "" to lcBadEmailMsg, lcSentToMsg
+    lnCount = 0
+    select (loQry.cAlias)
+    scan 
+      scatter memo name loArt
+      llSend = .T.
+
+      if m.llSend
+        lcToEmail = trim(Art_Email)
+        lcName = AisArtistName(m.loArt)
+        llSend = !empty(m.lcToEmail) and IsValidEmail(m.lcToEmail)
+        if !m.llSend
+          lcBadEmailMsg = lcBadEmailMsg + m.lcName + ' [' + trim(Art_Phone) + ']'+ CRLF
+        else 
+          lcSentToMsg = lcSentToMsg + m.lcName + ' <' + m.lcToEmail + '>' + CRLF
         endif 
-      next 
-      .lKtbResponse = this.lPage_Response
-      .lAccountInactive = this.lPage_Approved
-      .cSrch1 = this.cPage_Srch1
-      
-      if this.oPage_Fields.getkey("location") > 0
-        .addFields("Art_Neighborhood, Art_Address")
       endif 
-      if this.oPage_Fields.getkey("part") > 0
-        .addParticipationFields()
+      if !m.llSend
+        loop 
       endif 
-      if this.oPage_Fields.getkey("registry") > 0
-        .addFields("Art_Register_Time, Art_KTB_Response, Art_Participation, Art_Comments, Art_Notes")
-      endif 
-      if this.oPage_Fields.getkey("contact") > 0
-        .addFields("Art_Email, Art_Phone, Art_Neighborhood, Art_Contact_Orig, Art_Comments, Art_Notes")
-      endif 
-      
-      do case
-      case !isnull(this.lPage_DupName)
-        .lDupName = this.lPage_DupName
-        .lNLN = .f. 
-        .AddOrderBy("Art_Last_Name")
-        .AddOrderBy("Art_First_Name", , .t.)
-      case !isnull(this.lPage_DupEmail)
-        .lDupEmail = this.lPage_DupEmail
-        .AddOrderBy("Art_Email")
-        .AddOrderBy("Art_Last_Name", , .t.)
-        .AddOrderBy("Art_First_Name", , .t.)
-      case this.cPage_Order = "location"
-        .AddOrderBy("Art_Neighborhood")
-      case this.cPage_Order = "reg_time"
-        .AddOrderBy("Art_Register_Time")
-      otherwise
-        .AddOrderBy("Art_Last_Name")
-      endcase
-      
-      .execute()
-    endwith 
+      lnCount = m.lnCount + 1
+    endscan 
+
+    lcRet = transform(m.lnCount) + " valid email addresses. " + crlf + ;
+          [<div style="clear: both;"></div>] + crlf + ;
+          [<div style="width: 50%; float: left;">] + crlf + ;
+            [<em>Mailing List:</em><br /><textarea style="width: 90%;" rows="20">] + ;
+            m.lcSentToMsg + [</textarea></div>] + crlf + ;
+          [<div style="width: 50%; float: left;">] + ;
+            [<em>Omitted Names (missing/bad email addresses):</em><br /><textarea style="width: 90%;" rows="12">] + ;
+            m.lcBadEmailMsg + [</textarea></div>] + crlf + ;
+          [<div style="clear: both;"></div>] + crlf 
+    return m.lcRet
+  endfunc 
+  * ----------------------------------------------------- *  
+  function Page_getTabularDisplay(loQry)
+    local lcRet, loPceQry, loTbl, loCol, loGrp
 
     loPceQ = createobject("AisPceQuery")
     with loPceQ
@@ -355,22 +520,70 @@ define class ais_ArtList as aisMultiArtPage
 
       if poContext.lAdmin
         if this.oPage_Fields.getkey("registry") > 0 or this.oPage_Fields.getkey("contact") > 0
-          loCol = .addCursorColumn("Art_Comments", "Comments")
-          loCol = .addCursorColumn("Art_Notes", "KtB Notes")
+          ** loCol = .addCursorColumn("Art_Comments", "Comments")
+          loCol = .addCursorColumn("Art_Notes", "Comments and KtB Notes", [aisFormatCommentsAndNotes()])
         endif
 
         loCol = .addCursorColumn("Art_PK", "Edit Artist", ;
           'HTLink(StuffUrl(urls.item("ArtForm"), "art", Art_PK), "[Edit&nbsp;Artist...]")', 'no-print')
         loCol.cHeadingClass = "nosort no-print" 
       endif 
-      response.write(.render())
-
-      if poContext.lDeveloper
-        Response.Write(HTWrap(loQry.cSqlStatement, 'div,p', 'admin,debug'))
-      endif
+      lcret = .render()
     endwith 
-    return 
-  endfunc && ProcessRequest
+    return m.lcRet
+  endfunc && Page_getTabularDisplay
+  * --------------------------------------------------------- *
+  function page_RunGetQuery
+    local loQry, lnIdx, lcProp
+    loQry = createobject("AisArtQuery")
+    with loQry
+      .lOrTypes = this.lPage_OrTypes  && use AND instead of OR
+      
+      for lnIdx = 1 to this.oPage_flags.count 
+        lcProp = "l" + this.oPage_flags.getkey(m.lnIdx)
+        store this.oPage_flags.item(m.lnIdx) to loQry.&lcProp
+      next
+      
+      .lKtbResponse = this.lPage_Response
+      .lAccountInactive = this.lPage_Approved
+      .cSrch1 = this.cPage_Srch1
+      
+      if this.oPage_Fields.getkey("location") > 0
+        .addFields("Art_Neighborhood, Art_Address")
+      endif 
+      if this.oPage_Fields.getkey("part") > 0
+        .addParticipationFields()
+      endif 
+      if this.oPage_Fields.getkey("registry") > 0
+        .addFields("Art_Register_Time, Art_KTB_Response, Art_Participation, Art_Comments, Art_Notes")
+      endif 
+      if this.oPage_Fields.getkey("contact") > 0
+        .addFields("Art_Email, Art_Phone, Art_Neighborhood, Art_Contact_Orig, Art_Comments, Art_Notes")
+      endif 
+      
+      do case
+      case !isnull(this.lPage_DupName)
+        .lDupName = this.lPage_DupName
+        .lNLN = .f. 
+        .AddOrderBy("Art_Last_Name")
+        .AddOrderBy("Art_First_Name", , .t.)
+      case !isnull(this.lPage_DupEmail)
+        .lDupEmail = this.lPage_DupEmail
+        .AddOrderBy("Art_Email")
+        .AddOrderBy("Art_Last_Name", , .t.)
+        .AddOrderBy("Art_First_Name", , .t.)
+      case this.cPage_Order = "location"
+        .AddOrderBy("Art_Neighborhood")
+      case this.cPage_Order = "reg_time"
+        .AddOrderBy("Art_Register_Time")
+      otherwise
+        .AddOrderBy("Art_Last_Name")
+      endcase
+      
+      .execute()
+    endwith 
+    return m.loQry
+  endfunc 
 enddefine && ais_ArtList 
 
 *** ===================================================== ***
@@ -1875,10 +2088,11 @@ define class AisArtBrowseForm AS AisForm
 enddefine && AisArtBrowseForm 
 
 *** ========================================================= ***
-define class Ais_Broadcast AS AisPage
+define class Ais_Broadcast AS AisArtPage
+  lArtRequired = .f.
   * ----------------------------------------------------- *  
   function ProcessRequest
-    this.cCancelUrl = stuffUrl(this.cUrlA, 2, "ArtList", "flags", "core")
+    this.cCancelUrl = stuffUrl(this.cUrlA, 2, "ArtList", "core", "1")
     local loForm, loQry
     local lcMsg, lcIndividualMsg, llSend, lnCount, llTesting, ;
       lcSentToMsg, lcBadEmailMsg, lcName, loArt, lcSubject, lcExtraHeaders, llHtml
@@ -1891,26 +2105,27 @@ define class Ais_Broadcast AS AisPage
       .doEvents()
       if .Valid()
 
-        loQry = createobject("AisArtQuery")
-        with loQry
-          if loForm.chkAdmin.vNewValue
-            .lAdmin = .t. 
-          endif
-          if loForm.chkCore.vNewValue
-            .lCore = .t.
-          endif
-          if loForm.chkArtist.vNewValue
-            .lArtist = .t.
-          endif
-          if loForm.chkNoShow.vNewValue
-            .lPanelSignup = .t.
-            .lBitsOrPanelsSubmitted = .f.
-          endif
-          if loForm.chkInstall.vNewValue
-            .lInstall = .t.
-          endif
-          .execute()
-        endwith
+        loQry = this.page_RunPostQuery()
+        *!*          loQry = createobject("AisArtQuery")
+        *!*          with loQry
+        *!*            if loForm.chkAdmin.vNewValue
+        *!*              .lAdmin = .t. 
+        *!*            endif
+        *!*            if loForm.chkCore.vNewValue
+        *!*              .lCore = .t.
+        *!*            endif
+        *!*            if loForm.chkArtist.vNewValue
+        *!*              .lArtist = .t.
+        *!*            endif
+        *!*            if loForm.chkNoShow.vNewValue
+        *!*              .lPanelSignup = .t.
+        *!*              .lBitsOrPanelsSubmitted = .f.
+        *!*            endif
+        *!*            if loForm.chkInstall.vNewValue
+        *!*              .lInstall = .t.
+        *!*            endif
+        *!*            .execute()
+        *!*          endwith
         
         lcIndividualMsg = ""
         lcSubject = .txtSubject.vNewValue
@@ -1973,15 +2188,16 @@ define class Ais_Broadcast AS AisPage
           endif 
         endscan 
         this.Confirm(transform(m.lnCount) + " messages " + ;
-          IIF(m.llTesting, "would have been", "were") + " sent." + ;
-          [<div style="clear: both;"></div>] + ;
-          [<div style="width: 50%; float: left;">] + ;
+          IIF(m.llTesting, "would have been", "were") + " sent." + crlf + ;
+          [<div style="clear: both;"></div>] + crlf + ;
+          [<div style="width: 50%; float: left;">] + crlf + ;
             [<em>Recipients:</em><br /><textarea style="width: 90%;" rows="20">] + ;
-            m.lcSentToMsg + [</textarea></div>] + ;
+            m.lcSentToMsg + [</textarea></div>] + crlf + ;
           [<div style="width: 50%; float: left;">] + ;
             [<em>Not sent to (missing/bad email addresses):</em><br /><textarea style="width: 90%;" rows="12">] + ;
-            m.lcBadEmailMsg + [</textarea></div>] + ;
-          [<div style="clear: both;"></div>] )
+            m.lcBadEmailMsg + [</textarea></div>] + crlf + ;
+          [<div style="clear: both;"></div>] + crlf + ;
+          [<div class="admin">] + loQry.cSqlStatement + [</div>] + crlf )
         return .F.  && allows meeting page to show
 
       endif 
@@ -2001,46 +2217,52 @@ define class AisBroadcastForm AS AisForm
   * ----------------------------------------------------- *  
   function AddControls
     with this
-      .AddObject("colWhom", "L7CheckboxCollection")  
-      with .colWhom
-        .cGroupId = "top"
-        .cCssStyle = "width: 40%;"
-        .lAutoRender = .T.
-        .cDefaultControlPattern = [(%l%s)%c(%s%i)(%b%v)]
+      .addObject("colFlags", "aisArtQueryCollection")
+      with .colFlags
         .cLabel = "Limit Sending to Whom"
         .cInstructions = "If nothing checked, message goes to EVERYBODY!"
-        .cInterControlText = L7BR  && CHR(38) + 'nbsp;'       && &nbsp
-      endwith
+      endwith 
       
-      .colWhom.AddObjectToParent("chkArtist", "L7Checkbox")
-      with .chkArtist
-        .cCaption = "Send to all Artists"
-        .cLabel = "Artists"
-      endwith
+*!*        .AddObject("colWhom", "L7CheckboxCollection")  
+*!*        with .colWhom
+*!*          .cGroupId = "top"
+*!*          .cCssStyle = "width: 40%;"
+*!*          .lAutoRender = .T.
+*!*          .cDefaultControlPattern = [(%l%s)%c(%s%i)(%b%v)]
+*!*          .cLabel = "Limit Sending to Whom"
+*!*          .cInstructions = "If nothing checked, message goes to EVERYBODY!"
+*!*          .cInterControlText = L7BR  && CHR(38) + 'nbsp;'       && &nbsp
+*!*        endwith
+*!*        
+*!*        .colWhom.AddObjectToParent("chkArtist", "L7Checkbox")
+*!*        with .chkArtist
+*!*          .cCaption = "Send to all Artists"
+*!*          .cLabel = "Artists"
+*!*        endwith
 
-      .colWhom.AddObjectToParent("chkInstall", "L7Checkbox")
-      with .chkInstall
-        .cCaption = "Send to all Installers"
-        .cLabel = "Installers"
-      endwith
+*!*        .colWhom.AddObjectToParent("chkInstall", "L7Checkbox")
+*!*        with .chkInstall
+*!*          .cCaption = "Send to all Installers"
+*!*          .cLabel = "Installers"
+*!*        endwith
 
-      .colWhom.AddObjectToParent("chkNoShow", "L7Checkbox")
-      with .chkNoShow
-        .cCaption = "Promised Panel, Delivered Nothing"
-        .cLabel = "Panel No-Shows"
-      endwith
+*!*        .colWhom.AddObjectToParent("chkNoShow", "L7Checkbox")
+*!*        with .chkNoShow
+*!*          .cCaption = "Promised Panel, Delivered Nothing"
+*!*          .cLabel = "Panel No-Shows"
+*!*        endwith
 
-      .colWhom.AddObjectToParent("chkCore", "L7Checkbox")
-      with .chkCore
-        .cCaption = "Send to Core Team"
-        .cLabel = "Core Team"
-      endwith
+*!*        .colWhom.AddObjectToParent("chkCore", "L7Checkbox")
+*!*        with .chkCore
+*!*          .cCaption = "Send to Core Team"
+*!*          .cLabel = "Core Team"
+*!*        endwith
 
-      .colWhom.AddObjectToParent("chkAdmin", "L7Checkbox")
-      with .chkAdmin
-        .cCaption = "Send to Admins"
-        .cLabel = "AIS Admins"
-      endwith
+*!*        .colWhom.AddObjectToParent("chkAdmin", "L7Checkbox")
+*!*        with .chkAdmin
+*!*          .cCaption = "Send to Admins"
+*!*          .cLabel = "AIS Admins"
+*!*        endwith
 
       * From info:
       .AddObject("txtFromName", "L7Textbox")
@@ -2138,6 +2360,7 @@ define class AisArtQuery AS L7Query
   * Account-based params:
   lInactive = .f.  && whole record deleted
   lUser = NULL
+  lHidden = .F. 
   lAccountInactive = null && surrogate is "approved"
   lDupName = null
   lDupEmail = null
@@ -2155,22 +2378,23 @@ define class AisArtQuery AS L7Query
   lNLN = null
   
   * Types of people:
-  lAdmin = .F.
-  lCore = .F.
-  lHidden = .F. 
+  lORTypes = .t.  && if .f. use AND 
+  
+  lAdmin = null
+  lCore = null
   lUndeliverable = null
-  lArtist = .F.
+  lArtist = null
   lStarred = null
-  lInstall = .F.
-  lDeinstall = .f.
-  lMonitoring = .f. 
-  lStitching = .f.
+  lInstall = null
+  lDeinstall = null
+  lMonitoring = null 
+  lStitching = null
 
-  lOrganizer = .F.
-  lOutreach = .f. 
-  lTowers = .F.
-  lMoney = .F.
-  lMaterials = .f. 
+  lOrganizer = null
+  lOutreach = null
+  lTowers = null
+  lMoney = null
+  lMaterials = null
 
   * Name Search
   cName = ""
@@ -2196,10 +2420,11 @@ define class AisArtQuery AS L7Query
   endfunc
   * --------------------------------------------------------- *
   function BuildWhereClause
-    local lcStr, lcInnerWhere, loFlags, lnFlag, loFlag, lcField, lnWords, lcWord1, lcWord2, lcSearchFields
-    store "" to lcInnerWhere
-
+    local lcStr, lcInnerWhere, loFlags, lnFlag, loFlag, lcField, lvVal, lnWords, lcWord1, lcWord2, lcSearchFields, lcTypeCombine
     with this 
+      store "" to lcInnerWhere
+      lcTypeCombine = iif(.lOrTypes, [ or ], [ and ])
+  
       .lWhereBuilt = .T.
       if isnull(.lInactive)
         .cWhereClause = [WHERE .t.]
@@ -2253,16 +2478,8 @@ define class AisArtQuery AS L7Query
         .cWhereClause = .cWhereClause + [ AND Art_Approved = ] + IIF(.lAccountInactive, [.T.], [.F.])
       endif 
 
-      if !isnull( .lStarred)
-        .cWhereClause = .cWhereClause + [ AND Art_Starred = ] + IIF(.lStarred, [.T.], [.F.])
-      endif 
-
       if !isnull( .lHidden)
         .cWhereClause = .cWhereClause + [ AND Art_Hidden = ] + IIF(.lHidden, [.T.], [.F.])
-      endif 
-
-      if !isnull( .lUndeliverable)
-        .cWhereClause = .cWhereClause + [ AND Art_Undeliverable = ] + IIF(.lUndeliverable, [.T.], [.F.])
       endif 
 
       if !isnull( .lKtbResponse)
@@ -2280,7 +2497,8 @@ define class AisArtQuery AS L7Query
       endif 
 
       if !isnull(.lPanelSignup)
-        .cWhereClause = .cWhereClause + [ and Art_Panel_Count] + iif(.lPanelSignup, [ > 0], [ = 0])
+        *.cWhereClause = .cWhereClause + [ and Art_Panel_Count] + iif(.lPanelSignup, [ > 0], [ = 0])
+        lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + [Art_Panel_Count] + iif(.lPanelSignup, [ > 0], [ = 0])
       endif
 
       if !isnull(.lRailingSignup)
@@ -2303,7 +2521,10 @@ define class AisArtQuery AS L7Query
       endif 
 
       if !isnull(.lRailingsSubmitted)
-        .cWhereClause = .cWhereClause + [ and Art_PK] + iif(.lRailingsSubmitted, [ in ], [ not in ]) + ;
+        * .cWhereClause = .cWhereClause + [ and ] + 
+        
+        lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + ;
+          [Art_PK] + iif(.lRailingsSubmitted, [ in ], [ not in ]) + ;
           [(select Pce_Art_FK from Piece where !Pce_Inactive and Pce_Type = 'Railings')]
       endif 
 
@@ -2315,18 +2536,26 @@ define class AisArtQuery AS L7Query
         .cWhereClause = .cWhereClause + [ and Art_Group_Art_FK = '] + .cGroupArt + [']
       endif 
 
+      *!*        if !isnull( .lStarred) && this is in flags 
+      *!*          lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + [Art_Starred = ] + IIF(.lStarred, [.T.], [.F.])
+      *!*        endif 
+
       loFlags = AisArtQueryFlags()
       for lnFlag = 1 to loFlags.count
         loFlag = loFlags.item[m.lnFlag]
-        if evaluate("this.l" + loFlag.root)
+        if pemstatus(loFlag, "combine", 5) and !loFlag.combine && handled separately, e.g., inactive flag
+          loop
+        endif
+        lvVal = evaluate("this.l" + loFlag.root)
+        if !isnull(m.lvVal)
           lcField = iif(pemstatus(loFlag, "field", 5), loFlag.field, "Art_" + proper(loFlag.root))
-          lcInnerWhere = m.lcInnerWhere + [ or ] + m.lcField + [ = .T.]
+          lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + iif(m.lvVal, [], [!]) + m.lcField + [ = .T.]
         endif
       next 
       
       * Combine inner-WHERE with WHERE clauses:
       if !empty( m.lcInnerWhere) 
-        .cWhereClause = .cWhereClause + [ and (] + substr(m.lcInnerWhere, 1 + len([ or ])) + [)]
+        .cWhereClause = .cWhereClause + [ and (] + substr(m.lcInnerWhere, 1 + len(m.lcTypeCombine)) + [)]
       endif 
 
     endwith   
