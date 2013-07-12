@@ -493,7 +493,7 @@ define class aisPage as L7Page
       ["><input id="srch1" alt="Search string" type="text" name="srch1" size="16" maxlen="60" value="" onchange="this.form.submit();">] + ;
       m.lcLpInfo + ;
       [<br><input style="margin: 1px 0px 0px 0px;" name="btn" type="submit" value="Search People">] + ;
-      [<input name="fields" type="hidden" value="contact,registry">] + ;
+      [<input name="fields" type="hidden" value="contact,part">] + ;
       [</form>]
     this.AddMenuItem("main\Search", m.lcForm, .t.)
 

@@ -227,26 +227,11 @@ define class aisMultiArtPage as aisArtPage
     with this
       .AddSubMenu("This", "PEOPLE")
 
-      *!*        loFlags = .oArtQueryFlags
-      *!*        for lnFlag = 1 to loFlags.count
-      *!*          loFlag = loFlags.item[m.lnFlag]
-      *!*          if pemstatus(loFlag, "menu", 5) and !loFlag.menu
-      *!*            loop
-      *!*          endif
-      *!*          lcPrompt = iif(pemstatus(m.loFlag, "prompt", 5), m.loFlag.prompt, proper(m.loFlag.root))
-      *!*          .addMenuItem("main\This", m.lcPrompt, StuffUrl(.cUrlB, loFlag.root, "1", "fields", "names,contact"))
-      *!*        next 
-
       if poContext.lAdmin
-        *!*          ** .addMenuItem("main\Approvals", "Approved", StuffUrl(.cUrlB, "Approved", "1"),, !isnull(.lPage_Approved) and .lPage_Approved)
-        *!*          .addMenuItem("main\This", "Not Approved", StuffUrl(.cUrlB, "Approved", "0", "fields", "registry,contact"),, !isnull(.lPage_Approved) and !.lPage_Approved)
-        *!*          .addMenuItem("main\This", "Approved and Not Approved", StuffUrl(.cUrlB, "Approved", .f.),, isnull(.lPage_Approved))
-
-        *!*          .addMenuItem("main\This", "Process Approvals", StuffUrl(.cUrlB, 2, "BrowseUnapproved"))
-        *!*          .addMenuItem("main\This", "Response Needed", StuffUrl(.cUrlB, "Response", "0", "fields", "registry,contact,part"),, !isnull(.lPage_Response))
         .addMenuItem("main\This", "New Sign-Up...", StuffUrl(.cUrlA, 2, "ArtNew"))
       endif 
       if poContext.lDeveloper
+        .addMenuItem("main\This", "Query Artists...", StuffUrl(.cUrlA, 2, "ArtQuery"))
         .addMenuItem("main\This", "Duplicate Name Check", StuffUrl(.cUrlB, "dupname", "1", "fields", "contact,part"))
         .addMenuItem("main\This", "Duplicate Email Check", StuffUrl(.cUrlB, "dupemail", "1", "fields", "contact,part"))
         .addMenuItem("main\This", "Broadcast Email...", StuffUrl(.cUrlA, 2, "Broadcast"))
