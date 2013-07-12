@@ -74,15 +74,9 @@ define class aisTrnPage as aisPage
     dodefault()
     return 
   endfunc 
-enddefine && AisTrnPage
-
-*** ========================================================= ***
-define class ais_TrnList as aisTrnPage 
-  lTrnRequired = .f.
-  cSubTitle = "Training Sessions"
   * ----------------------------------------------------- *  
-  function ProcessRequest
-    local loTrnQry, loTbl, loCol, loGrp
+  function module_listTrainingSessions()
+    local lcRet, loTrnQry, loTbl, loCol, loGrp
        
     * Main query:
     loTrnQry = createobject("AisTrnQuery")
@@ -94,15 +88,27 @@ define class ais_TrnList as aisTrnPage
 
     loTbl = createobject("AisTable")
     with loTbl
+      .cTableCaption = "All Training Sessions" 
+      
       loCol = .addCursorColumn("Trn_PK", "Training", ;
         [HTLink(StuffUrl(urls.item("TrnHome"), "trn", Trn_PK), AisTrainingName(Trn_PK))])
       loCol = .addCursorColumn("Trn_Date", "Training Date")
       loCol = .addCursorColumn("Trn_Start_Time", "Start Time")
       loCol = .addCursorColumn("Trn_End_Time", "End Time")
       loCol = .addCursorColumn("Trn_Comments", "Comments")
+      lcRet = .render()
     endwith 
-    
-    response.write(loTbl.render())    
+    return m.lcRet  
+  endfunc 
+enddefine && AisTrnPage
+
+*** ========================================================= ***
+define class ais_TrnList as aisTrnPage 
+  lTrnRequired = .f.
+  cSubTitle = "Training Sessions"
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    response.write(this.module_listTrainingSessions())
     return 
   endfunc 
 enddefine && TrnList
@@ -119,6 +125,7 @@ define class ais_TrnHome as aisTrnPage
   function ProcessRequest
     this.cSubTitle = "Training: " + AisTrainingName(this.oTrn)
     response.write(this.page_getMainRecord())
+    response.write(this.module_listTrainingSessions())
     return 
   endfunc 
   * ----------------------------------------------------- *  
