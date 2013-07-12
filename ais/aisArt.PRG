@@ -526,10 +526,11 @@ define class ais_ArtList as aisMultiArtPage
   add object oPage_flags as collection 
   * --------------------------------------------------------- *
   function BeforeProcessRequest
-    local lcStr, loFlags
+    local lcStr, loFlags, llAny
     with this
       if request.cMethod = "GET"
         .cPage_Srch1 = .ReadQueryString("srch1", .t., .t., .t., L7_QS_CHARACTERS + ['])
+        llAny = m.llAny or !empty(.cPage_Srch1)
         .ReadQueryString("btn", .t., .t., .t.) && clear search button from URL
 
         * Read each flag:
@@ -539,24 +540,32 @@ define class ais_ArtList as aisMultiArtPage
           lcStr = .ReadQueryString(loFlag.root, .t., .t.)
           if !empty(m.lcStr)
             .oPage_flags.add(left(m.lcStr,1) $ '1yYtT', loFlag.root)
+            llAny = .t. 
           endif       
         next 
-        *!* .cPage_Flags = .ReadQueryString("flags", .t., .t.)
 
         lcStr = .ReadQueryString("approved", .t., .t.)
+        llAny = m.llAny or !empty(m.lcStr)
         .lPage_Approved = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
 
         lcStr = .ReadQueryString("response", .t., .t.)
+        llAny = m.llAny or !empty(m.lcStr)
         .lPage_Response = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
 
         lcStr = .ReadQueryString("dupname", .t., .t.)
+        llAny = m.llAny or !empty(m.lcStr)
         .lPage_DupName = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
 
         lcStr = .ReadQueryString("dupemail", .t., .t.)
+        llAny = m.llAny or !empty(m.lcStr)
         .lPage_DupEmail = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
         
         .lPage_OrTypes = !.ReadQueryString("combine", .t., .t.) = "and"
-      endif     
+
+        if !m.llAny  && no params--abort rather than list everybody
+          this.redirect(stuffUrl(.cUrlA, 2, "ArtQuery"))
+        endif
+      endif && GET
     endwith 
     dodefault()  && required bubble-up
 
