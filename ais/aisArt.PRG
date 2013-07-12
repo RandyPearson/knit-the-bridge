@@ -1232,6 +1232,7 @@ define class ais_ArtForm as aisArtPage
   lAdding = .f.
   lAdminRequired = .t.
   cPage_FormClass = "aisArtistForm"
+  cSubTitle = "Edit Artist Record"
   * ----------------------------------------------------- *  
   function page_setAdditionalFields(toForm)
   endfunc 
@@ -1251,6 +1252,7 @@ define class ais_ArtForm as aisArtPage
     loForm = this.createForm(this.cPage_FormClass)
     with loForm
       .lNewRecord = THIS.lAdding
+      .cTitle = iif(this.lAdding, "Entering New Artist", "Editing " + AisArtistName(this.oArt))
       .AddControls()
       .DoEvents() 
 
@@ -1708,6 +1710,7 @@ define class aisRegisterForm AS aisArtistForms
       
       if this.lCustom_Participation
         .addParticipationControls()
+        .addTrainingControls()
       endif 
       
       if this.lNewRecord
@@ -1919,6 +1922,7 @@ define class aisArtistForm AS aisArtistForms
       endwith
 
       .AddParticipationControls()
+      .addTrainingControls()
       
       .AddObject("edtComments", "L7Textarea")
       with .edtComments
@@ -1949,7 +1953,6 @@ define class aisArtistForm AS aisArtistForms
         .cCssClass = "FormControlPrivate"
       endwith
 
-      .addTrainingControls()
       .addAdditionalControls()
       
       .addSecurityControls()
