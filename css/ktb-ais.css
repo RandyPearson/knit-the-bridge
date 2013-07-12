@@ -140,7 +140,7 @@ tr.deleted, tr.excluded {text-decoration: line-through;}
 
 table tfoot th {padding: 3px 10px 0 1px;border-top: 1px solid black;}
 
-table td {padding: 3px 10px 0 1px;}
+table td {padding: 3px 2px 0 2px;}
 table td.center {text-align: center;}
 
 /* First para, subsequent para margins in table cells */

@@ -17,8 +17,9 @@ function AisArtQueryFlags()
     ',{"root": "starred", "prompt": "Starred (follow-up)"}' + ;
     ',{"root": "install", "field": "Art_Help_Install", "prompt": "Help Install"}' + ;
     ',{"root": "deinstall", "field": "Art_Help_Deinstall", "prompt": "Help Deinstall"}' + ;
-    ',{"root": "waiver", "field": "Art_Waiver_Signed", "prompt": "Signed Waiver"}' + ;
-    ',{"root": "training", "field": "Art_Training_Signed", "prompt": "Signed as Trained"}' + ;
+    ',{"root": "training", "combine": false, "prompt": "Training Session Assigned"}' + ;
+    ',{"root": "signedwaiver", "field": "Art_Waiver_Signed", "prompt": "Signed Waiver"}' + ;
+    ',{"root": "signedtraining", "field": "Art_Training_Signed", "prompt": "Signed as Trained"}' + ;
     ',{"root": "stitching", "field": "Art_Help_Stitching", "prompt": "Help Stitching"}' + ;
     ',{"root": "monitoring", "field": "Art_Help_Monitoring", "prompt": "Help Monitoring"}' + ;
     ',{"root": "outreach", "field": "Art_Help_Outreach"}' + ;
@@ -168,9 +169,9 @@ define class aisArtQueryCollection as L7CheckboxCollection
       .nStyle = L7_MULTISTYLE_VERTICAL
       .cLabel = "Combine multiple choices with"
       * .cLabelCssClass = 'align-label'
+      .addItem("AND", "AND (restrictive - must match ALL choices)")
       .addItem("OR", "OR (anyone matching any choice)")
-      .addItem("AND", "AND (only those matching all choices)")
-      .setValue("OR")
+      .setValue("AND")
     endwith
     
     return
@@ -486,10 +487,10 @@ define class ais_ArtQuery as aisMultiArtPage
         .cHtmlName = "opgUsage"
         .cIDPrefix = ""
         .cLabel = "Usage"
-        .addItem("Table", "Detailed Table")
-        .addItem("Count", "Count")
+        .addItem("Count", "Count Matches")
+        .addItem("Table", "List Matches in Table")
         .addItem("Email", "Mailing List")
-        .setValue("Table")
+        .setValue("Count")
       endwith 
     endwith 
     response.write(loForm.render())
@@ -581,9 +582,9 @@ define class ais_ArtList as aisMultiArtPage
       lcUsage = request.form("opgUsage")
     endif
     
+    response.write(textmerge([<div><strong><<loQry.nTally>> people</strong> meet the conditions: <<loQry.cCaption>></div>]))
     do case
     case m.lcUsage = "Count"
-      response.write(textmerge([<div><strong><<loQry.nTally>> people</strong> meet the conditions: <<loQry.cCaption>></div>]))
       
     case m.lcUsage = "Table"
       response.write(this.Page_getTabularDisplay(m.loQry))
@@ -657,7 +658,7 @@ define class ais_ArtList as aisMultiArtPage
     select (loQry.cAlias)
     loTbl = createobject("AisTable")
     with loTbl
-      .cTableCaption = loQry.cCaption
+      *!* .cTableCaption = loQry.cCaption
       do case
       case this.cPage_Order = "location"
         loGrp = .AddGroup("Art_Neighborhood",,.t.,["Neighborhood: " + trim(Art_Neighborhood)])
@@ -672,6 +673,7 @@ define class ais_ArtList as aisMultiArtPage
 
       loCol = .AddCursorColumn("Art_PK", 'Work', ;
         [iif(seek(Art_PK, '] + loPceQ.cAlias + [', 'Art'), ] + loPceQ.cAlias + [.PieceCount, 0)], , ,"N")
+      loCol.cCellStyle = "text-align: center;"
       
       if !isnull(this.lPage_DupName) or !isnull(this.lPage_DupEmail) && when dupe checking, be explicit
         loCol = .addCursorColumn("Art_First_Name", "First Name")
@@ -2320,8 +2322,9 @@ define class AisArtQuery AS L7Query
   lStarred = null
   lInstall = null
   lDeinstall = null
-  lWaiver = null 
   lTraining = null
+  lSignedWaiver = null 
+  lSignedTraining = null
   lMonitoring = null 
   lStitching = null
 
@@ -2469,6 +2472,10 @@ define class AisArtQuery AS L7Query
         .cWhereClause = .cWhereClause + [ and art_email] + iif(.lDupEmail, [ in ], [ not in ]) + ;
           [(select art_email from artist where !art_inactive and !empty(art_Email) and !art_no_count group by 1 having count(*) >= 2)]
       endif 
+
+      if !isnull(.lTraining)
+        lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + iif(.lTraining, [!], []) + [empty(Art_Installation_Trn_FK)]
+      endif
 
       if !isnull(.lPanelSignup)
         lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + [Art_Panel_Count] + iif(.lPanelSignup, [ > 0], [ = 0])
