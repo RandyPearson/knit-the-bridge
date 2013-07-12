@@ -141,11 +141,15 @@ tr.deleted, tr.excluded {text-decoration: line-through;}
 table tfoot th {padding: 3px 10px 0 1px;border-top: 1px solid black;}
 
 table td {padding: 3px 10px 0 1px;}
-table td.center {	text-align: center;}
+table td.center {text-align: center;}
 
 /* First para, subsequent para margins in table cells */
-td ul, td p{ margin: 0;}
-td p+p, td ul+p, td p+ul{margin: 10px 0 0 0;}
+td p, td ul, td ol{ margin: 0;}
+td p+p, td ul+p, td p+ul{margin: 10px 2px 0 2px;}
+
+/* Bullets in table cells */
+td ul, td ol { margin-left:1em; padding-left:1em; }
+td li { margin-bottom:0.1em; }
 
 /* Ledger row classes */
 table tr.oddX { background-color: #eeffee;}
