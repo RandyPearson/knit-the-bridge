@@ -103,6 +103,7 @@ function aisFormatParticipation(toData)
       "* 9 x 80 Railing pieces: " + transform(loData.Art_Railing_3_Count) + crlf) + ;
     iif(!loData.ART_TOWERS, "", "* Machine Knitting for Towers" + crlf) + ;
     iif(!loData.ART_HELP_INSTALL, "", "* Helping with *Installation*" + crlf) + ;
+    iif(empty(loData.Art_Installation_Trn_FK), "", "* Signed up for *training*" + crlf) + ;
     iif(!loData.ART_HELP_DEINSTALL, "", "* Helping with *Deinstallation*" + crlf) + ;
     iif(!loData.ART_HELP_Monitoring, "", "* Helping with *Monitoring*" + crlf) + ;
     iif(!loData.ART_HELP_Stitching, "", "* Helping with *Stitching*" + crlf) + ;
@@ -2341,7 +2342,7 @@ define class AisArtQuery AS L7Query
   * --------------------------------------------------------- *
   function addParticipationFields
     this.addFields("Art_Towers, Art_Help_Install, Art_Help_Materials, Art_Help_Money, Art_Organizer, Art_Help_Outreach, Art_Help_Other" + ;
-      ", Art_Help_Deinstall, Art_Help_Monitoring, Art_Help_Stitching" + ;
+      ", Art_Help_Deinstall, Art_Installation_Trn_FK, Art_Help_Monitoring, Art_Help_Stitching" + ;
       ", Art_Partial_Panel, Art_Panel_Info, Art_Panel_Count, Art_Railing_1_Count, Art_Railing_2_Count, Art_Railing_3_Count")
     return 
   endfunc
