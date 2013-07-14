@@ -9,6 +9,7 @@ function AisArtQueryFlags()
     '{"root": "core", "prompt": "Core Team"}' + ;
     ',{"root": "admin", "menu": false}' + ;
     ',{"root": "artist", "prompt": "All Artists"}' + ;
+    ',{"root": "release", "field": "Art_Release_Name", "prompt": "Release Name"}' + ;
     ',{"root": "panelsignup", "combine": false, "prompt": "Panel Sign-Up"}' + ;
     ',{"root": "panelssubmitted", "combine": false, "prompt": "Submitted Panels"}' + ;
     ',{"root": "bitsorpanelssubmitted", "combine": false, "prompt": "Submitted Bits/Panels"}' + ;
@@ -2319,6 +2320,7 @@ define class AisArtQuery AS L7Query
   lUndeliverable = null
   lInactiveInner = null 
   lArtist = null
+  lRelease = null 
   lStarred = null
   lInstall = null
   lDeinstall = null
