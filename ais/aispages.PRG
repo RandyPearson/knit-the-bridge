@@ -516,6 +516,7 @@ define class aisPage as L7Page
     endif       
 
     lcMenu = "main\Links"
+    this.addMenuItem(m.lcMenu, 'Find A Panel', StuffUrl(this.cUrlA, 2, "Locate"))
     this.addMenuItem(m.lcMenu, 'KtB Webpage', "/")
     this.addMenuItem(m.lcMenu, 'KtB Blog', "http://knitthebridge.wordpress.com/")
 
@@ -973,6 +974,115 @@ define class ais_Home as aisPage
   endfunc 
 
 enddefine && Home 
+
+*** ========================================================= ***
+define class ais_Locate as aisPage 
+  nMinLoginLevel = L7_NONE  
+  cSubTitle = "Find A Panel"
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    with response
+      .Write(this.page_locateByPanelID())
+    endwith
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_locateByPanelID
+    local loForm
+    loForm = this.createForm("AisLocateByPanelIDForm", ;
+      StuffUrl(this.cUrlA, 2, "LocateByPanelID"))
+    with loForm
+      .addControls()
+      return .render()
+    endwith 
+  endfunc 
+  * ----------------------------------------------------- *  
+enddefine 
+
+*** ========================================================= ***
+define class ais_LocateByPanelID as aisPage 
+  nMinLoginLevel = L7_NONE  
+  cSubTitle = "Locate a Panel"
+  cPage_ID = null
+  * ----------------------------------------------------- *  
+  function BeforeProcessRequest
+    if request.cMethod = "GET"
+      this.cPage_ID = this.readQueryString("pnl_id", .t., .t.)
+    endif
+    dodefault()
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    this.cCancelUrl = StuffUrl(this.cUrlA, 2, "Locate")
+    local loForm, lcID, loQry, loLoc
+    if request.cMethod = "POST"
+      loForm = this.createForm("AisLocateByPanelIDForm")
+      with loForm
+        .addControls()
+        .doEvents()
+        this.cPage_ID = .txtPnl_Id.vNewValue
+      endwith
+    endif 
+    if empty(this.cPage_ID)
+      this.redirect(this.cCancelUrl)
+      return
+    endif
+    * clean entry to real ID candidate:
+    this.cPage_ID = "PNL" + padl(chrtran(this.cPage_ID, chrtran(this.cPage_ID, '0123456789', ''), ''), 5, '0')
+    loQry = createobject("AisPnlQuery")
+    with loQry
+      .cID = this.cPage_ID
+      .lExcluded = null && need to find if excluded
+      .Execute()
+      if .nTally = 0
+        this.notFound("Panel Not Found")
+        return 
+      endif 
+    endwith 
+    this.cSubTitle = "Found " + this.cPage_ID
+    select (loQry.cAlias)
+    loLoc = aisGetPanelLocation(Pnl_PK)
+    with response  
+      do case
+      case Pnl_Excluded
+        .WriteTag(textmerge([Panel <<this.cPage_ID>> was not able to be installed on the bridge.]), 'p')
+      case isnull(m.loLoc)
+        .WriteTag(textmerge([Panel <<this.cPage_ID>> doe not yet have a location on the bridge.]), 'p')
+      otherwise      
+        .WriteTag(textmerge([Panel <<this.cPage_ID>> bridge location found!]), 'p')
+        .WriteTag(AisDescribeLocation(m.loLoc), 'div')
+      endcase 
+      .writeTag(AisPanelImage(this.cPage_ID, "_main"), 'div')
+    endwith
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+enddefine 
+
+*** ========================================================= ***
+define class AisLocateByForm as AisForm
+  cSubmitCaption = "Locate"
+  lCancelButton = .f. 
+  lToolbarAtTop = .f. 
+  cCssStyle = "width: 40em;"
+enddefine 
+
+*** ========================================================= ***
+define class AisLocateByPanelIDForm as AisLocateByForm
+  cTitle = "Locate a Panel"
+  * ----------------------------------------------------- *  
+  function AddControls
+    with this
+      .addObject("txtPnl_ID", "L7Textbox")
+      with .txtPnl_ID
+        .cLabel = "Panel ID to Locate"
+        .nSize = 20
+      endwith 
+    endwith
+    return 
+  endfunc 
+enddefine 
 
 *** ========================================================= ***
 define class ais_About as aisPage 

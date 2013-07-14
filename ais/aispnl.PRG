@@ -741,6 +741,9 @@ define class ais_PnlHome as aisPnlPage
       endif
       use in select("v_Active_Panel_Set")
       
+      .addMenuItem("main\This,page", "Find Panel (public)", ;
+        StuffUrl(.cUrlA, 2, "LocateByPanelID", "pnl_id", .oPnl.Pnl_ID))
+
       if poContext.lAdmin
         .addMenuItem("main\This,page", "Upload Panel File...", StuffUrl(.cUrlA, 2, "PnlFilNew", "pnl", .cPnl))
 
