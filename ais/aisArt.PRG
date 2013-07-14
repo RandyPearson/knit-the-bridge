@@ -2340,8 +2340,8 @@ define class AisArtQuery AS L7Query
   cName = ""
   cUser_Id = ""
   cSrch1 = ""
-  cPrivateSearchFields = "Art_Last_Name + Art_First_Name + Art_Full_Name + Art_ID + Art_Email + Art_Comments + Art_Notes + Art_Participation"
-  cPublicSearchFields  = "Art_Last_Name + Art_First_Name + Art_Full_Name + Art_ID"
+  cPrivateSearchFields = "Art_Last_Name + Art_First_Name + Art_Full_Name + Art_ID + Art_Neighborhood + Art_Email + Art_Comments + Art_Notes + Art_Help_Other"
+  cPublicSearchFields  = "Art_Last_Name + Art_First_Name + Art_Full_Name + Art_ID + Art_Neighborhood"
   lPublicSearch = .f. && controls which of above is used 
 
   nOrderBy = 1
