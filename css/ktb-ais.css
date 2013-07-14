@@ -100,6 +100,8 @@ p.break { margin-bottom: 5em }
 .gallery-toc{padding-bottom: 5px; font-weight: bold; text-align: center;}
 .gallery-group{float: none; clear: both; padding: 5px 0; font-weight: bold;}
 
+.img-panel img{border: 8px solid black; padding: 3px; width: auto;}
+
 .panel-select{border: 1px solid purple; background-color: #eee;}
 .panel-select div img {vertical-align: middle;}
 .panel-select div{padding: 1px 3px;}

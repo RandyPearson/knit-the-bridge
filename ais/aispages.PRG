@@ -1053,7 +1053,8 @@ define class ais_LocateByPanelID as aisPage
         .WriteTag(textmerge([Panel <<this.cPage_ID>> bridge location found!]), 'p')
         .WriteTag(AisDescribeLocation(m.loLoc), 'div')
       endcase 
-      .writeTag(AisPanelImage(this.cPage_ID, "_main"), 'div')
+      .WriteTag("Panel Thumbnail Image:", 'p')
+      .writeTag(AisPanelImage(this.cPage_ID, "_main"), 'div', 'img-panel')
     endwith
     return 
   endfunc 

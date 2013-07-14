@@ -49,6 +49,7 @@ define class aisLocater as custom
     local lcItems
     this.queryLocations(m.loLoc)
     lcItems = ""
+    lcItems = m.lcItems + "* " + this.DescribeID(m.loLoc) + crlf 
     lcItems = m.lcItems + "* " + this.DescribeOrientation(m.loLoc) + crlf 
     lcItems = m.lcItems + "* " + this.DescribeSide(m.loLoc) + crlf
     lcItems = m.lcItems + "* " + this.DescribeHowFar(m.loLoc) + crlf
@@ -56,6 +57,12 @@ define class aisLocater as custom
     lcItems = m.lcItems + "* " + this.ListComments(m.loLoc) + crlf
     lcItems = L7ParseOnView(m.lcItems)
     return m.lcItems
+  endfunc && DescribeLocation
+  * --------------------------------------------------------- *
+  function DescribeID(loLoc)
+    local lcRet
+    lcRet = "KtB Location ID: *" + aisFormatPanelLocation(m.loLoc) + "*"
+    return m.lcRet
   endfunc && DescribeLocation
   * --------------------------------------------------------- *
   function DescribeSide(loLoc)
@@ -90,7 +97,7 @@ define class aisLocater as custom
     select abs(Loc_No - m.lnLocNo) as _Dist_ , * from (this.cAlias) where !empty(Loc_Marker) order by 1 into cursor this.cAlias + "Markers_"
     lcRel = icase(;
       loLoc.Loc_No = Loc_No, "right at this panel location", ;
-      loLoc.Loc_No > Loc_No, "<<loLoc.Loc_No - Loc_No>> spaces closer to Downtown", ;
+      loLoc.Loc_No > Loc_No, "<<loLoc.Loc_No - Loc_No>> panels closer to Downtown", ;
       "<<Loc_No - loLoc.Loc_No>> spaces closer to North Shore")
 
     lcRet = "closest marker: *" + trim(Loc_Marker) + "*, which is " + textmerge(m.lcRel)
@@ -103,7 +110,7 @@ define class aisLocater as custom
     select abs(Loc_No - m.lnLocNo) as _Dist_ , * from (this.cAlias) where !empty(Loc_Comments) order by 1 into cursor this.cAlias + "Comments_"
     lcRel = icase(;
       loLoc.Loc_No = Loc_No, "right at this panel location", ;
-      loLoc.Loc_No > Loc_No, "<<loLoc.Loc_No - Loc_No>> spaces closer to Downtown", ;
+      loLoc.Loc_No > Loc_No, "<<loLoc.Loc_No - Loc_No>> panels closer to Downtown", ;
       "<<Loc_No - loLoc.Loc_No>> spaces closer to North Shore")
 
     lcRet = "closest landmark: *" + Loc_Comments + "*, which is " + textmerge(m.lcRel) 
