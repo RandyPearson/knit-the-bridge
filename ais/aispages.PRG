@@ -481,51 +481,49 @@ define class aisPage as L7Page
   endfunc 
   * ----------------------------------------------------- *  
   function AddDefaultMenu
-    local lcMenu, lcLpInfo, lcForm
+    local lcMenu, lcLpInfo, lcForm, llPublic
+    llPublic = poContext.lAnonymous
     lcMenu = "main\Navigate"
-    this.addMenuItem(m.lcMenu, 'People - Query Form', StuffUrl(this.cUrlA, 2, "ArtQuery"))
-    this.addMenuItem(m.lcMenu, 'People - Core List', StuffUrl(this.cUrlA, 2, "ArtList", "core", "1", "fields", "contact"))
-    this.addMenuItem(m.lcMenu, 'Neighborhood Summary Report', StuffUrl(this.cUrlA, 2, "NeighborhoodSumList"))
 
-    lcLpInfo = THIS.GetBaseHiddenFormvars() && sustains license plate, etc. for GET form
-    
-    lcForm = [<form style="margin:0;" method="get" action="] + StuffUrl(THIS.cUrlA, 2, "ArtList") + ;
-      ["><input id="srch1" alt="Search string" type="text" name="srch1" size="16" maxlen="60" value="" onchange="this.form.submit();">] + ;
-      m.lcLpInfo + ;
-      [<br><input style="margin: 1px 0px 0px 0px;" name="btn" type="submit" value="Search People">] + ;
-      [<input name="fields" type="hidden" value="contact,part">] + ;
-      [</form>]
-    this.AddMenuItem("main\Search", m.lcForm, .t.)
+    if !m.llPublic
+      this.addMenuItem(m.lcMenu, 'People - Query Form', StuffUrl(this.cUrlA, 2, "ArtQuery"))
+      this.addMenuItem(m.lcMenu, 'People - Core List', StuffUrl(this.cUrlA, 2, "ArtList", "core", "1", "fields", "contact"))
+      this.addMenuItem(m.lcMenu, 'Neighborhood Summary Report', StuffUrl(this.cUrlA, 2, "NeighborhoodSumList"))
 
-    this.addMenuItem(m.lcMenu, 'Pieces (Available)', StuffUrl(this.cUrlA, 2, "PceList", "type", "Panels", "orphans", "1"))
-    this.addMenuItem(m.lcMenu, 'Railing Summary',    StuffUrl(this.cUrlA, 2, "PceList", "type", "Railings", "order", "size"))
-    this.addMenuItem(m.lcMenu, 'Panel Summary', StuffUrl(this.cUrlA, 2, "PnlSummary"))
-    this.addMenuItem(m.lcMenu, 'Panel Gallery (Unassigned)', StuffUrl(this.cUrlA, 2, "PnlList", "style", "gallery", "location", "0", "order", "categ"))
-    this.addMenuItem(m.lcMenu, 'Panel List', StuffUrl(this.cUrlA, 2, "PnlList"))
+      lcLpInfo = THIS.GetBaseHiddenFormvars() && sustains license plate, etc. for GET form
+      
+      lcForm = [<form style="margin:0;" method="get" action="] + StuffUrl(THIS.cUrlA, 2, "ArtList") + ;
+        ["><input id="srch1" alt="Search string" type="text" name="srch1" size="16" maxlen="60" value="" onchange="this.form.submit();">] + ;
+        m.lcLpInfo + ;
+        [<br><input style="margin: 1px 0px 0px 0px;" name="btn" type="submit" value="Search People">] + ;
+        [<input name="fields" type="hidden" value="contact,part">] + ;
+        [</form>]
+      this.AddMenuItem("main\Search", m.lcForm, .t.)
 
-    this.addMenuItem(m.lcMenu, 'Facilities', StuffUrl(this.cUrlA, 2, "FacList"))
-    ** this.addMenuItem(m.lcMenu, 'Bridge Locations', StuffUrl(this.cUrlA, 2, "LocList"))
-    this.addMenuItem(m.lcMenu, 'Picture Panels on Bridge!', StuffUrl(this.cUrlA, 2, "LocDisplay"  ))
-    *!*      this.addMenuItem(m.lcMenu, 'Down-River Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Down"))
-    *!*      this.addMenuItem(m.lcMenu, 'Up-River Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Up"))
+      this.addMenuItem(m.lcMenu, 'Pieces (Available)', StuffUrl(this.cUrlA, 2, "PceList", "type", "Panels", "orphans", "1"))
+      this.addMenuItem(m.lcMenu, 'Railing Summary',    StuffUrl(this.cUrlA, 2, "PceList", "type", "Railings", "order", "size"))
+      this.addMenuItem(m.lcMenu, 'Panel Summary', StuffUrl(this.cUrlA, 2, "PnlSummary"))
+      this.addMenuItem(m.lcMenu, 'Panel Gallery (Unassigned)', StuffUrl(this.cUrlA, 2, "PnlList", "style", "gallery", "location", "0", "order", "categ"))
+      this.addMenuItem(m.lcMenu, 'Panel List', StuffUrl(this.cUrlA, 2, "PnlList"))
 
-    this.addMenuItem(m.lcMenu, 'Training', StuffUrl(this.cUrlA, 2, "TrnList"))
-    this.addMenuItem(m.lcMenu, 'Donation Report', StuffUrl(this.cUrlA, 2, "DonList"))
-    this.addMenuItem(m.lcMenu, 'DIS Report', StuffUrl(this.cUrlA, 2, "DisReport"))
-    this.addMenuItem(m.lcMenu, 'Management Report', StuffUrl(this.cUrlA, 2, "Home"))
-    
-    ** this.addMenuItem(m.lcMenu, 'About', StuffUrl(this.cUrlA, 2, "About"), "About")
-    if poContext.lAdmin
-      *!* this.addMenuItem("main\Admin", 'Refresh Content', StuffUrl(this.cUrlA, 2, "RefreshContent"))
-    endif
+      this.addMenuItem(m.lcMenu, 'Facilities', StuffUrl(this.cUrlA, 2, "FacList"))
+      this.addMenuItem(m.lcMenu, 'Picture Panels on Bridge!', StuffUrl(this.cUrlA, 2, "LocDisplay"  ))
+
+      this.addMenuItem(m.lcMenu, 'Training', StuffUrl(this.cUrlA, 2, "TrnList"))
+      this.addMenuItem(m.lcMenu, 'Donation Report', StuffUrl(this.cUrlA, 2, "DonList"))
+      this.addMenuItem(m.lcMenu, 'DIS Report', StuffUrl(this.cUrlA, 2, "DisReport"))
+      this.addMenuItem(m.lcMenu, 'Management Report', StuffUrl(this.cUrlA, 2, "Home"))
+    endif       
 
     lcMenu = "main\Links"
     this.addMenuItem(m.lcMenu, 'KtB Webpage', "/")
     this.addMenuItem(m.lcMenu, 'KtB Blog', "http://knitthebridge.wordpress.com/")
 
-    this.addMenuItem('main\User', 'My Account', StuffUrl(this.cUrlA, 2, 'ArtHome', 'art', CurrentUser.getUserKey()))
-    this.addMenuItem('main\User', 'Sign Out', StuffUrl(this.cUrlA, 2, 'Login', 'l', '0'))
-
+    if !m.llPublic
+      this.addMenuItem('main\User', 'My Account', StuffUrl(this.cUrlA, 2, 'ArtHome', 'art', CurrentUser.getUserKey()))
+      this.addMenuItem('main\User', 'Sign Out', StuffUrl(this.cUrlA, 2, 'Login', 'l', '0'))
+    endif
+    
     dodefault()  && always chain upward
     return 
   endfunc  && addDefaultMenu
