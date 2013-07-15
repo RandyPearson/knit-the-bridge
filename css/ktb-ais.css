@@ -102,6 +102,8 @@ p.break { margin-bottom: 5em }
 
 .img-panel img{border: 8px solid black; padding: 3px; width: auto;}
 
+div.panel-info{border-top: 2px solid #999; padding-top: 3px; padding-bottom: 3px;}
+
 .panel-select{border: 1px solid purple; background-color: #eee;}
 .panel-select div img {vertical-align: middle;}
 .panel-select div{padding: 1px 3px;}

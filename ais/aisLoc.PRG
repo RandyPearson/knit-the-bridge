@@ -46,7 +46,8 @@ define class aisLocater as custom
   endfunc 
   * --------------------------------------------------------- *
   function DescribeLocation(loLoc)
-    local lcItems
+    local lcItems, loSelect
+    loSelect = createobject("L7PreserveSelect")
     this.queryLocations(m.loLoc)
     lcItems = ""
     lcItems = m.lcItems + "* " + this.DescribeID(m.loLoc) + crlf 

@@ -1026,7 +1026,7 @@ define class ais_LocateByPanelID as aisPage
   * ----------------------------------------------------- *  
   function ProcessRequest
     this.cCancelUrl = StuffUrl(this.cUrlA, 2, "Locate")
-    local loForm, loQry, loLoc
+    local loForm, loQry, loLoc, loPceQry, loPnl, loArt, lcName
     if request.cMethod = "POST"
       loForm = this.createForm("AisLocateByPanelIDForm")
       with loForm
@@ -1050,22 +1050,55 @@ define class ais_LocateByPanelID as aisPage
         this.notFound("Panel Not Found")
         return 
       endif 
+      scatter memo name loPnl
     endwith 
+    
     this.cSubTitle = "Found " + this.cPage_ID
     select (loQry.cAlias)
     loLoc = aisGetPanelLocation(Pnl_PK)
-    with response  
+
+    select (loQry.cAlias)
+    loPceQry = createobject("AisPceQuery")
+    with loPceQry
+      .lJoinArtist = .t.
+      .cPnl = loPnl.Pnl_PK
+      .execute()
+    endwith
+    
+    with response
+      .WriteTag("Panel " + loPnl.Pnl_Id, 'h3')
+      select (loPceQry.cAlias)
+      if !loPnl.Pnl_Single_Piece
+        .Write("<p>Pieces created by:</p><ul>")
+      endif
+      scan
+        if Art_Release_Name
+          scatter memo name loArt
+          lcName = HtWrap(AisArtistName(m.loArt), 'strong')
+        else
+          lcName = "Anonymous"
+        endif 
+        if loPnl.Pnl_Single_Piece
+          .WriteTag("Full Panel created by: " + m.lcName, "p")
+        else
+          .WriteTag(m.lcName, "li")
+        endif
+      endscan
+      if !loPnl.Pnl_Single_Piece
+        .Write("</ul>")
+      endif
+
       do case
-      case Pnl_Excluded
-        .WriteTag(textmerge([Panel <<this.cPage_ID>> was not able to be installed on the bridge.]), 'p')
+      case loPnl.Pnl_Excluded
+        .WriteTag(textmerge([Panel <<loPnl.Pnl_Id>> was not able to be installed on the bridge.]), 'p')
       case isnull(m.loLoc)
-        .WriteTag(textmerge([Panel <<this.cPage_ID>> doe not yet have a location on the bridge.]), 'p')
+        .WriteTag(textmerge([Panel <<loPnl.Pnl_Id>> does not yet have a location on the bridge.]), 'p')
       otherwise      
-        .WriteTag(textmerge([Panel <<this.cPage_ID>> bridge location found!]), 'p')
+        .WriteTag(textmerge([Panel <<loPnl.Pnl_Id>> bridge location found!]), 'p')
         .WriteTag(AisDescribeLocation(m.loLoc), 'div')
       endcase 
       .WriteTag("Panel Thumbnail Image:", 'p')
-      .writeTag(AisPanelImage(this.cPage_ID, "_main"), 'div', 'img-panel')
+      .writeTag(AisPanelImage(loPnl.Pnl_Id, "_main"), 'div', 'img-panel')
     endwith
     return 
   endfunc 

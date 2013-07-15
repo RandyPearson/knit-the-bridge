@@ -967,20 +967,32 @@ define class ais_ArtPublicWork as ais_ArtHome
     select (loQry.cAlias)
     count for Pce_Type = "Panels" and Pce_Whole_Panel to lnTally
     if m.lnTally > 0
-      lcRet = m.lcRet + HTWrap("Created and donated " + transform(m.lnTally) + ' whole panel' + iif(m.lnTally = 1, "", "s"), 'li')
+      lcRet = m.lcRet + HTWrap("Created and donated " + transform(m.lnTally) + ' whole panel' + iif(m.lnTally = 1, "", "s") + " (details below)", 'li')
     endif 
     return m.lcRet 
   endfunc && page_getPanelData
   * ----------------------------------------------------- *  
   function page_getPanelDetails(loQry)
-    local lcRet, lnTally
+    local lcRet, lnTally, lcItem, loLoc
     lcRet = ""
     select (loQry.cAlias)
     scan for Pce_Type = "Panels" and Pce_Whole_Panel 
-      lcRet = m.lcRet + HtWrap(Pnl_Id, 'p')
-      lcRet = m.lcRet + HtWrap(aisFormatPanelLocation(Pce_Pnl_FK), 'p')
-      lcRet = m.lcRet + HtWrap(AisPanelImage(Pnl_Id, "_main"), 'div',, 'img-panel')
+      lcItem = HtWrap("Panel " + Pnl_Id, 'h3')
 
+      if Pnl_Excluded
+        lcItem = m.lcItem + HtWrap(textmerge([Panel <<Pnl_ID>> was not able to be installed on the bridge.]), 'p')
+      else
+        loLoc = aisGetPanelLocation(Pce_Pnl_FK)
+        if isnull(m.loLoc)
+          lcItem = m.lcItem + HtWrap(textmerge([Panel <<Pnl_ID>> does not yet have a location on the bridge.]), 'p')
+        else
+          lcItem = m.lcItem + HtWrap(AisDescribeLocation(m.loLoc), 'div')
+        endif 
+      endif 
+      lcItem = m.lcItem + HtWrap("Panel Thumbnail Image:", 'p')
+      lcItem = m.lcItem + HtWrap(AisPanelImage(Pnl_Id, "_main"), 'div',, 'img-panel')
+
+      lcRet = m.lcRet + HtWrap(m.lcItem, "div", , "panel")
     endscan 
     return m.lcRet 
   endfunc && page_getPanelDetails

@@ -886,7 +886,7 @@ define class AisPceQuery as L7Query
         dimension .aJoins[.nJoins, 3]
         .aJoins[.nJoins, 1] = "Artist"
         .aJoins[.nJoins, 2] = "Pce_Art_FK = Art_PK"
-        .AddFields("Art_ID,Art_Last_Name,Art_First_Name,Art_Anonymous,Art_Full_Name")
+        .AddFields("Art_ID, Art_Last_Name, Art_First_Name, Art_Anonymous, Art_Full_Name, Art_Release_Name")
       endif 
 
       if .lJoinFacility
@@ -904,7 +904,7 @@ define class AisPceQuery as L7Query
         .aJoins[.nJoins, 1] = "Panel"
         .aJoins[.nJoins, 2] = "Pce_Pnl_FK = Pnl_PK"
         .aJoins[.nJoins, 3] = "LEFT OUTER"
-        .AddFields("Pnl_ID, Pnl_Fac_FK")
+        .AddFields("Pnl_ID, Pnl_Fac_FK, Pnl_Excluded")
       endif 
 
       if .lJoinPanelLocation
