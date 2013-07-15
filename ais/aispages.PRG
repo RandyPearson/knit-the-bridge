@@ -1094,7 +1094,7 @@ define class ais_LocateByPanelID as aisPage
       case isnull(m.loLoc)
         .WriteTag(textmerge([Panel <<loPnl.Pnl_Id>> does not yet have a location on the bridge.]), 'p')
       otherwise      
-        .WriteTag(textmerge([Panel <<loPnl.Pnl_Id>> bridge location found!]), 'p')
+        .WriteTag(textmerge([Panel <<loPnl.Pnl_Id>> bridge location:]), 'p')
         .WriteTag(AisDescribeLocation(m.loLoc), 'div')
       endcase 
       .WriteTag("Panel Thumbnail Image:", 'p')

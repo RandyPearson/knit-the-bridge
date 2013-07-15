@@ -899,7 +899,7 @@ define class ais_AgeSumList as aisArtPage
 enddefine && ais_AgeSumList 
 
 *** ========================================================= ***
-define class ais_ArtPublicWork as ais_ArtHome
+define class ais_ArtPublicWork as aisArtPage
   nMinLoginLevel = L7_NONE  
   * ----------------------------------------------------- *  
   function AddDefaultMenu
