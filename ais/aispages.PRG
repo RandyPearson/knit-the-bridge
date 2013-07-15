@@ -983,6 +983,7 @@ define class ais_Locate as aisPage
   function ProcessRequest
     with response
       .Write(this.page_locateByPanelID())
+      .Write(this.page_locateByArtistSearch())
     endwith
     return 
   endfunc 
@@ -991,6 +992,16 @@ define class ais_Locate as aisPage
     local loForm
     loForm = this.createForm("AisLocateByPanelIDForm", ;
       StuffUrl(this.cUrlA, 2, "LocateByPanelID"))
+    with loForm
+      .addControls()
+      return .render()
+    endwith 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_locateByArtistSearch
+    local loForm
+    loForm = this.createForm("AisPublicArtistSearchForm", ;
+      StuffUrl(this.cUrlA, 2, "LocateByArtistSearch"))
     with loForm
       .addControls()
       return .render()
@@ -1015,7 +1026,7 @@ define class ais_LocateByPanelID as aisPage
   * ----------------------------------------------------- *  
   function ProcessRequest
     this.cCancelUrl = StuffUrl(this.cUrlA, 2, "Locate")
-    local loForm, lcID, loQry, loLoc
+    local loForm, loQry, loLoc
     if request.cMethod = "POST"
       loForm = this.createForm("AisLocateByPanelIDForm")
       with loForm
@@ -1062,6 +1073,68 @@ define class ais_LocateByPanelID as aisPage
 enddefine 
 
 *** ========================================================= ***
+define class ais_LocateByArtistSearch as aisPage 
+  nMinLoginLevel = L7_NONE  
+  cSubTitle = "Locate Artists"
+  cPage_Search = null
+  * ----------------------------------------------------- *  
+  function BeforeProcessRequest
+    if request.cMethod = "GET"
+      this.cPage_Search = this.readQueryString("search", .t., .t.)
+    endif
+    dodefault()
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    this.cCancelUrl = StuffUrl(this.cUrlA, 2, "Locate")
+    local loForm, loQry, lcUrl
+    if request.cMethod = "POST"
+      loForm = this.createForm("AisPublicArtistSearchForm")
+      with loForm
+        .addControls()
+        .doEvents()
+        this.cPage_Search = .txtSearch.vNewValue
+      endwith
+    endif 
+    if empty(this.cPage_Search)
+      this.redirect(this.cCancelUrl)
+      return
+    endif
+    loQry = createobject("AisArtQuery")
+    with loQry
+      .cSrch1 = this.cPage_Search
+      .lRelease = .t. && only those releasing their name 
+      .lPublicSearch = .t. && controls which fields searched
+      .lBitsOrPanelsSubmitted = .t. 
+      .Execute()
+      if .nTally = 0
+        this.Confirm("No matches found. ")
+        return 
+      endif 
+    endwith 
+    with response
+      .WriteTag(;
+          [The following matched were found from people that submitted panels ] ;
+          + [and released their names to the public. ] ; 
+          + [Select a name to see their bridge location(s). ] ;
+        , 'p')
+      select (loQry.cAlias)
+      lcUrl = stuffUrl(this.cUrlA, 2, "ArtPublicWork")
+      .Write('<ol>' + crlf)
+      scan
+        scatter memo name loArt
+        .writeTag(HtLink(StuffUrl(m.lcUrl, "art", Art_PK), aisArtistName(m.loArt)), 'li')
+      endscan
+      .Write('</ol>' + crlf)
+      .WriteTag(HTLink(this.cCancelUrl, "Try Another Search..."), 'p')
+    endwith 
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+enddefine 
+
+*** ========================================================= ***
 define class AisLocateByForm as AisForm
   cSubmitCaption = "Locate"
   lCancelButton = .f. 
@@ -1079,6 +1152,23 @@ define class AisLocateByPanelIDForm as AisLocateByForm
       with .txtPnl_ID
         .cLabel = "Panel ID to Locate"
         .nSize = 20
+      endwith 
+    endwith
+    return 
+  endfunc 
+enddefine 
+
+*** ========================================================= ***
+define class AisPublicArtistSearchForm as AisLocateByForm
+  cTitle = "Locate an Artist"
+  * ----------------------------------------------------- *  
+  function AddControls
+    with this
+      .addObject("txtSearch", "L7Textbox")
+      with .txtSearch
+        .cLabel = "Artist's Name to Locate"
+        .nSize = 20
+        .cInstructions = "Enter only one word or portion of word"
       endwith 
     endwith
     return 

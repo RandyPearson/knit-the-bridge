@@ -899,11 +899,101 @@ define class ais_AgeSumList as aisArtPage
 enddefine && ais_AgeSumList 
 
 *** ========================================================= ***
+define class ais_ArtPublicWork as ais_ArtHome
+  nMinLoginLevel = L7_NONE  
+  * ----------------------------------------------------- *  
+  function AddDefaultMenu
+    if poContext.lCore
+      this.AddSubMenu("This", AisArtistName(this.oArt))
+      this.addMenuItem("main\This,page", "Artist Page", StuffUrl(this.cUrlA, 2, "ArtHome", "art", this.cArt), , "ArtHome")
+    endif
+    dodefault()
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    this.assert(this.oArt.Art_Release_Name, "Artist prefers to be anonymous.")
+    this.cSubTitle = AisArtistName(this.oArt)
+    local loQry 
+    lcRet = ""
+    loQry = createobject("AisPceQuery")
+    with loQry
+      .cArt = this.cArt
+      .lJoinPanel = .t. 
+      .lJoinPanelLocation = .f. && this has issues...
+      .lExcluded = null
+      .Execute()
+    endwith 
+    with response
+      .writeTag(this.cSubTitle, 'h2')
+      .write([<ul>])
+      .write(this.page_getRailingData(m.loQry))
+      .write(this.page_getBitData(m.loQry))
+      .write(this.page_getPanelData(m.loQry))
+      .write([</ul>])
+      .write(this.page_getPanelDetails(m.loQry))
+      if poContext.lDeveloper
+        * .Write(HTWrap(loQry.cSqlStatement, 'div,p', 'admin,debug'))
+      endif
+    endwith
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_getRailingData(loQry)
+    local lcRet, lnTally
+    lcRet = ""
+    select (loQry.cAlias)
+    count for Pce_Type = "Railings" to lnTally
+    if m.lnTally > 0
+      lcRet = m.lcRet + HTWrap("Created and donated " + transform(m.lnTally) + " railing cover" + iif(m.lnTally = 1, "", "s"), 'li')
+    endif 
+    return m.lcRet 
+  endfunc && page_getRailingData
+  * ----------------------------------------------------- *  
+  function page_getBitData(loQry)
+    local lcRet, lnTally
+    lcRet = ""
+    select (loQry.cAlias)
+    count for Pce_Type = "Panels" and !Pce_Whole_Panel to lnTally
+    if m.lnTally > 0
+      lcRet = m.lcRet + HTWrap("Created and donated " + transform(m.lnTally) + ' "bit' + iif(m.lnTally = 1, "", "s") + '" (partial panels) for building into panels' , 'li')
+    endif 
+    return m.lcRet 
+  endfunc && page_getBitData
+  * ----------------------------------------------------- *  
+  function page_getPanelData(loQry)
+    local lcRet, lnTally
+    lcRet = ""
+    select (loQry.cAlias)
+    count for Pce_Type = "Panels" and Pce_Whole_Panel to lnTally
+    if m.lnTally > 0
+      lcRet = m.lcRet + HTWrap("Created and donated " + transform(m.lnTally) + ' whole panel' + iif(m.lnTally = 1, "", "s"), 'li')
+    endif 
+    return m.lcRet 
+  endfunc && page_getPanelData
+  * ----------------------------------------------------- *  
+  function page_getPanelDetails(loQry)
+    local lcRet, lnTally
+    lcRet = ""
+    select (loQry.cAlias)
+    scan for Pce_Type = "Panels" and Pce_Whole_Panel 
+      lcRet = m.lcRet + HtWrap(Pnl_Id, 'p')
+      lcRet = m.lcRet + HtWrap(aisFormatPanelLocation(Pce_Pnl_FK), 'p')
+      lcRet = m.lcRet + HtWrap(AisPanelImage(Pnl_Id, "_main"), 'div',, 'img-panel')
+
+    endscan 
+    return m.lcRet 
+  endfunc && page_getPanelDetails
+  * ----------------------------------------------------- *  
+enddefine  && ais_ArtPublicWork 
+
+*** ========================================================= ***
 define class ais_ArtHome as aisArtPage 
   * ----------------------------------------------------- *  
   function AddDefaultMenu
     this.AddSubMenu("This", AisArtistName(this.oArt))
 
+    this.addMenuItem("main\This,page", "Public Page", StuffUrl(this.cUrlA, 2, "ArtPublicWork", "art", this.cArt), , "ArtPublicWork")
     this.addMenuItem("main\This,page", "Edit This Person...", StuffUrl(this.cUrlA, 2, "ArtForm", "art", this.cArt))
     if this.oArt.Art_Artist
       this.addMenuItem("main\This,page", "Submit WHOLE PANEL Piece...", ;
@@ -1130,6 +1220,9 @@ define class ais_ArtHome as aisArtPage
         lcRet = m.lcRet + .Render()
       endwith 
     endif 
+    if poContext.lDeveloper
+      * lcRet = m.lcRet + HTWrap(loQ.cSqlStatement, 'div,p', 'admin,debug')
+    endif
     
     return m.lcRet
   endfunc && page_getPieceInfo
