@@ -511,7 +511,7 @@ define class aisPage as L7Page
 
       this.addMenuItem(m.lcMenu, 'Training', StuffUrl(this.cUrlA, 2, "TrnList"))
       this.addMenuItem(m.lcMenu, 'Donation Report', StuffUrl(this.cUrlA, 2, "DonList"))
-      this.addMenuItem(m.lcMenu, 'DIS Report', StuffUrl(this.cUrlA, 2, "DisReport"))
+      this.addMenuItem(m.lcMenu, 'DIS Report', StuffUrl(this.cUrlA, 2, "DisReport", "whole", '1'))
       this.addMenuItem(m.lcMenu, 'Management Report', StuffUrl(this.cUrlA, 2, "Home"))
     endif       
 
