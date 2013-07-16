@@ -235,7 +235,7 @@ define class ais_LocDisplay as aisLocPage
       .execute()
     endwith
     
-    urls.add(StuffUrl(this.cUrlA, 2, "LocUnassign"), "LocUnassign")
+    urls.add(StuffUrl(this.cUrlA, 2, "LocUnassign"), "LocUnassign") && see aisPnl 
     urls.add(StuffUrl(this.cUrlA, 2, "LocAssign"), "LocAssign")
     urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
 
@@ -499,37 +499,37 @@ define class ais_LocSumList as aisLocPage
   endfunc 
 enddefine && LocSumList
 
-*** ========================================================= ***
-define class ais_LocUnassign as aisLocPage 
-  lLocRequired = .f.
-  cPlc = null
-  * --------------------------------------------------------- *
-  function BeforeProcessRequest
-    this.cPlc = this.readQueryString("plc", .t., .t.)
-    dodefault()
-    return 
-  endfunc   
-  * ----------------------------------------------------- *  
-  function ProcessRequest
-    this.Assert(poContext.lAdmin)
-    local vp_cPlc_PK, lcXml
-    vp_cPlc_PK = this.cPlc
-    use V_PanelLocation in select("V_PanelLocation")
-    cursorsetprop("Buffering", 5, "V_PanelLocation")
-    select V_PanelLocation
-    this.Assert(!eof(), "PLC not found")
-    this.cCancelUrl = stuffUrl(this.cUrlA, 2, "LocDisplay")
-    this.Assert(!Plc_Inactive, "PLC already removed")
-    
-    replace Plc_Inactive with .t.
-    StampRec( CurrentUser, THIS.tNow )
-    
-    lcXml = ''
-    this.AssertTransaction("V_PanelLocation", @lcXml)
-    this.confirm(textmerge('Link from Panel to Location removed'), this.cCancelUrl)
-    return
-  endfunc
-enddefine  && ais_LocUnassign 
+*!*  *** ========================================================= ***
+*!*  define class ais_LocUnassign as aisLocPage 
+*!*    lLocRequired = .f.
+*!*    cPlc = null
+*!*    * --------------------------------------------------------- *
+*!*    function BeforeProcessRequest
+*!*      this.cPlc = this.readQueryString("plc", .t., .t.)
+*!*      dodefault()
+*!*      return 
+*!*    endfunc   
+*!*    * ----------------------------------------------------- *  
+*!*    function ProcessRequest
+*!*      this.Assert(poContext.lAdmin)
+*!*      local vp_cPlc_PK, lcXml
+*!*      vp_cPlc_PK = this.cPlc
+*!*      use V_PanelLocation in select("V_PanelLocation")
+*!*      cursorsetprop("Buffering", 5, "V_PanelLocation")
+*!*      select V_PanelLocation
+*!*      this.Assert(!eof(), "PLC not found")
+*!*      this.cCancelUrl = stuffUrl(this.cUrlA, 2, "LocDisplay")
+*!*      this.Assert(!Plc_Inactive, "PLC already removed")
+*!*      
+*!*      replace Plc_Inactive with .t.
+*!*      StampRec( CurrentUser, THIS.tNow )
+*!*      
+*!*      lcXml = ''
+*!*      this.AssertTransaction("V_PanelLocation", @lcXml)
+*!*      this.confirm(textmerge('Link from Panel to Location removed'), this.cCancelUrl)
+*!*      return
+*!*    endfunc
+*!*  enddefine  && ais_LocUnassign 
     
 *** ========================================================= ***
 define class ais_LocAssign as aisLocPage 
