@@ -647,20 +647,22 @@ define class ais_DisReport as aisPage
     set database to (goL7App.cDatabase)
     select pce_pk, pce_whole_panel, pce_art_fk, pce_pnl_fk, .f. as Pnl_, .f. as Loc_ ;
       from Piece ;
-      where pce_type = "Panels" and !pce_inactive ;
+      where pce_type = "Panels" and !pce_inactive and !pce_excluded ;
         and empty(pce_pnl_fk) ;
       into cursor DisReport_NoPanel_
 
     select pce_pk, pce_whole_panel, pce_art_fk, pce_pnl_fk, .t. as Pnl_, .t. as Loc_ ;
       from Piece ;
-      where pce_type = "Panels" and !pce_inactive ;
+      join Panel on Pce_Pnl_FK = Pnl_PK ;
+      where pce_type = "Panels" and !pce_inactive and !pce_excluded and !pnl_excluded ;
         and !empty(Pce_Pnl_Fk) ; 
         and exists (select * from PanelLocation where !Plc_Inactive and Plc_Pnl_FK = Piece.Pce_Pnl_FK) ;
       into cursor DisReport_Loc_
 
     select pce_pk, pce_whole_panel, pce_art_fk, pce_pnl_fk, .t. as Pnl_, .f. as Loc_ ;
       from Piece ;
-      where pce_type = "Panels" and !pce_inactive ;
+      join Panel on Pce_Pnl_FK = Pnl_PK ;
+      where pce_type = "Panels" and !pce_inactive and !pce_excluded and !pnl_excluded ;
         and !empty(Pce_Pnl_Fk) ; 
         and !exists (select * from PanelLocation where !Plc_Inactive and Plc_Pnl_FK = Piece.Pce_Pnl_FK) ;
       into cursor DisReport_NoLoc_

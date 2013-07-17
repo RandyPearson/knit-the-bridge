@@ -1196,7 +1196,7 @@ define class ais_ArtHome as aisArtPage
       loTbl = createobject("AisTable")
       with loTbl
         .cDataRowClass = .cDataRowClass + ;
-          iif(empty(.cDataRowClass), [], [ + ]) + [iif(Pce_Inactive, " deleted", "") + iif(Pce_Excluded, " excluded", "")] 
+          iif(empty(.cDataRowClass), [], [ + ]) + [iif(Pce_Inactive, " deleted", "") + iif(Pce_Excluded or nvl(Pnl_Excluded, .f.) = .t., " excluded", "")] 
         
         loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
         loCol = .addCursorColumn("Pce_ID", "Piece ID", ;

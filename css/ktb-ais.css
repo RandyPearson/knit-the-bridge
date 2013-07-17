@@ -111,7 +111,8 @@ div.panel-info{border-top: 2px solid #999; padding-top: 3px; padding-bottom: 3px
 .panel-select div{padding: 1px 3px; border-bottom: 1px solid #999;}
 .panel-select span.panel-data{display: inline-block; width: 24em;}
 
-div.loc-display{width: 400px; float: left; overflow-y:visible; padding: 0 20px;}
+/*div.loc-display{width: 400px; float: left; overflow-y:visible; padding: 0 20px;}*/
+div.loc-display{float: left; overflow:visible; padding: 0 10px 0 0;}
 div.loc-display table{background-color: #ffe; }
 div.loc-display th{color: white; background-color: black; padding: 10px 0px; text-align: center;}
 /* div.loc-display td div.loc-img {min-height: 60px;} */
