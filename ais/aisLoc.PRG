@@ -46,9 +46,11 @@ define class aisLocater as custom
   endfunc 
   * --------------------------------------------------------- *
   function DescribeLocation(loLoc)
-    local lcItems
+    local lcItems, loSelect
+    loSelect = createobject("L7PreserveSelect")
     this.queryLocations(m.loLoc)
     lcItems = ""
+    lcItems = m.lcItems + "* " + this.DescribeID(m.loLoc) + crlf 
     lcItems = m.lcItems + "* " + this.DescribeOrientation(m.loLoc) + crlf 
     lcItems = m.lcItems + "* " + this.DescribeSide(m.loLoc) + crlf
     lcItems = m.lcItems + "* " + this.DescribeHowFar(m.loLoc) + crlf
@@ -56,6 +58,12 @@ define class aisLocater as custom
     lcItems = m.lcItems + "* " + this.ListComments(m.loLoc) + crlf
     lcItems = L7ParseOnView(m.lcItems)
     return m.lcItems
+  endfunc && DescribeLocation
+  * --------------------------------------------------------- *
+  function DescribeID(loLoc)
+    local lcRet
+    lcRet = "KtB Location ID: *" + aisFormatPanelLocation(m.loLoc) + "*"
+    return m.lcRet
   endfunc && DescribeLocation
   * --------------------------------------------------------- *
   function DescribeSide(loLoc)
@@ -90,7 +98,7 @@ define class aisLocater as custom
     select abs(Loc_No - m.lnLocNo) as _Dist_ , * from (this.cAlias) where !empty(Loc_Marker) order by 1 into cursor this.cAlias + "Markers_"
     lcRel = icase(;
       loLoc.Loc_No = Loc_No, "right at this panel location", ;
-      loLoc.Loc_No > Loc_No, "<<loLoc.Loc_No - Loc_No>> spaces closer to Downtown", ;
+      loLoc.Loc_No > Loc_No, "<<loLoc.Loc_No - Loc_No>> panels closer to Downtown", ;
       "<<Loc_No - loLoc.Loc_No>> spaces closer to North Shore")
 
     lcRet = "closest marker: *" + trim(Loc_Marker) + "*, which is " + textmerge(m.lcRel)
@@ -103,7 +111,7 @@ define class aisLocater as custom
     select abs(Loc_No - m.lnLocNo) as _Dist_ , * from (this.cAlias) where !empty(Loc_Comments) order by 1 into cursor this.cAlias + "Comments_"
     lcRel = icase(;
       loLoc.Loc_No = Loc_No, "right at this panel location", ;
-      loLoc.Loc_No > Loc_No, "<<loLoc.Loc_No - Loc_No>> spaces closer to Downtown", ;
+      loLoc.Loc_No > Loc_No, "<<loLoc.Loc_No - Loc_No>> panels closer to Downtown", ;
       "<<Loc_No - loLoc.Loc_No>> spaces closer to North Shore")
 
     lcRet = "closest landmark: *" + Loc_Comments + "*, which is " + textmerge(m.lcRel) 
@@ -227,7 +235,7 @@ define class ais_LocDisplay as aisLocPage
       .execute()
     endwith
     
-    urls.add(StuffUrl(this.cUrlA, 2, "LocUnassign"), "LocUnassign")
+    urls.add(StuffUrl(this.cUrlA, 2, "LocUnassign"), "LocUnassign") && see aisPnl 
     urls.add(StuffUrl(this.cUrlA, 2, "LocAssign"), "LocAssign")
     urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
 
@@ -277,14 +285,14 @@ define class ais_LocDisplay as aisLocPage
               if !(loLoc.Loc_H1 = 36 and loLoc.Loc_W1 = 75 and loLoc.Loc_H2 = 0)
                 lcCell = m.lcCell + L7BR + HTLink(StuffUrl(m.lcUrl, "special", .t.), "special...")
               endif
-              select (loCatQ.cAlias)
-              scan for !empty(Pnl_Design_Category)
-                lcCell = m.lcCell + L7BR + HTLink(StuffUrl(m.lcUrl, "categ", trim(Pnl_Design_Category)), trim(Pnl_Design_Category) + "...")
-              endscan 
+*!*                select (loCatQ.cAlias)
+*!*                scan for !empty(Pnl_Design_Category)
+*!*                  lcCell = m.lcCell + L7BR + HTLink(StuffUrl(m.lcUrl, "categ", trim(Pnl_Design_Category)), trim(Pnl_Design_Category) + "...")
+*!*                endscan 
               lcCell = m.lcCell + '</td>' + crlf 
             endif 
           else
-            lcCell = '<td class="loc-link">' + ;
+            lcCell = '<td class="loc-link' + iif(loPlc.Pnl_Completed, '', ' incomplete') + '">' + ;
               '<span class="id-field panel">' + HtLink(stuffUrl(urls.item("PnlHome"), "pnl", loPlc.Pnl_Id), AisFormatID(loPlc.Pnl_Id)) + '</span>' + ;
               '<br>(' + trim(loPlc.Pnl_Dim_1) + 'x' + trim(loPlc.Pnl_Dim_2) + ', ' + trim(loPlc.Pnl_Design_Category) + ')' + ;
               L7BR + HTLink(StuffUrl(urls.item("LocUnassign"), "plc", loPlc.Plc_PK), "Remove...", "Detach panel from location") + ;
@@ -491,37 +499,37 @@ define class ais_LocSumList as aisLocPage
   endfunc 
 enddefine && LocSumList
 
-*** ========================================================= ***
-define class ais_LocUnassign as aisLocPage 
-  lLocRequired = .f.
-  cPlc = null
-  * --------------------------------------------------------- *
-  function BeforeProcessRequest
-    this.cPlc = this.readQueryString("plc", .t., .t.)
-    dodefault()
-    return 
-  endfunc   
-  * ----------------------------------------------------- *  
-  function ProcessRequest
-    this.Assert(poContext.lAdmin)
-    local vp_cPlc_PK, lcXml
-    vp_cPlc_PK = this.cPlc
-    use V_PanelLocation in select("V_PanelLocation")
-    cursorsetprop("Buffering", 5, "V_PanelLocation")
-    select V_PanelLocation
-    this.Assert(!eof(), "PLC not found")
-    this.cCancelUrl = stuffUrl(this.cUrlA, 2, "LocDisplay")
-    this.Assert(!Plc_Inactive, "PLC already removed")
-    
-    replace Plc_Inactive with .t.
-    StampRec( CurrentUser, THIS.tNow )
-    
-    lcXml = ''
-    this.AssertTransaction("V_PanelLocation", @lcXml)
-    this.confirm(textmerge('Link from Panel to Location removed'), this.cCancelUrl)
-    return
-  endfunc
-enddefine  && ais_LocUnassign 
+*!*  *** ========================================================= ***
+*!*  define class ais_LocUnassign as aisLocPage 
+*!*    lLocRequired = .f.
+*!*    cPlc = null
+*!*    * --------------------------------------------------------- *
+*!*    function BeforeProcessRequest
+*!*      this.cPlc = this.readQueryString("plc", .t., .t.)
+*!*      dodefault()
+*!*      return 
+*!*    endfunc   
+*!*    * ----------------------------------------------------- *  
+*!*    function ProcessRequest
+*!*      this.Assert(poContext.lAdmin)
+*!*      local vp_cPlc_PK, lcXml
+*!*      vp_cPlc_PK = this.cPlc
+*!*      use V_PanelLocation in select("V_PanelLocation")
+*!*      cursorsetprop("Buffering", 5, "V_PanelLocation")
+*!*      select V_PanelLocation
+*!*      this.Assert(!eof(), "PLC not found")
+*!*      this.cCancelUrl = stuffUrl(this.cUrlA, 2, "LocDisplay")
+*!*      this.Assert(!Plc_Inactive, "PLC already removed")
+*!*      
+*!*      replace Plc_Inactive with .t.
+*!*      StampRec( CurrentUser, THIS.tNow )
+*!*      
+*!*      lcXml = ''
+*!*      this.AssertTransaction("V_PanelLocation", @lcXml)
+*!*      this.confirm(textmerge('Link from Panel to Location removed'), this.cCancelUrl)
+*!*      return
+*!*    endfunc
+*!*  enddefine  && ais_LocUnassign 
     
 *** ========================================================= ***
 define class ais_LocAssign as aisLocPage 
@@ -594,17 +602,30 @@ define class ais_LocAssign as aisLocPage
   endfunc && processRequest
   * --------------------------------------------------------- *
   function page_SelectPanel(loQ)
-    local lcTmp, lcItem, lcSel, lcRet
+    local lcTmp, lcItem, lcSel, lcRet, lcClass, lcArt, lcLinks
     lcRet = ""
     lcSel = ""
     text to lcTmp noshow pretext 3
-      <<Pnl_ID>>  (<<trim(Pnl_Dim_1)>> x <<trim(Pnl_Dim_2)>>, <<trim(Pnl_Design_Category)>>) <<AisPanelImage(Pnl_Id, "_h50")>>
+      <span class="panel-data">Choose <<Pnl_ID>> <<iif(Pnl_Completed,'','INCOMPLETE!')>>
+       (<<trim(Pnl_Dim_1)>> x <<trim(Pnl_Dim_2)>>, 
+       <<trim(Pnl_Design_Category)>>,
+       <<iif(Pnl_Single_Piece, "1-piece", "bits")>>)
+      </span> 
+      <<AisPanelImage(Pnl_Id, "_h50")>>
       
     endtext 
     select (loQ.cAlias)
     scan
+      lcClass = iif(Pnl_Completed, "", "incomplete")
+      lcArt = iif(empty(Pnl_Stitcher_Art_FK), "multi-artist", HtWrap(AisArtistName(Pnl_Stitcher_Art_FK), 'strong'))
       lcItem = textmerge(m.lcTmp)
-      lcSel = m.lcSel + HTWrap(HTLink(StuffUrl(this.cUrlC, "pnlsel", Pnl_PK), m.lcItem), 'div')
+      lcLinks = HTLink(StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", Pnl_PK), "[Panel...]")
+      if !empty(Pnl_Stitcher_Art_FK)
+        lcLinks = m.lcLinks + " " + HTLink(StuffUrl(this.cUrlA, 2, "ArtHome", "art", Pnl_Stitcher_Art_FK), "[Artist...]")
+      endif
+      lcSel = m.lcSel + HTWrap( ; 
+        HTLink(StuffUrl(this.cUrlC, "pnlsel", Pnl_PK), m.lcItem) + m.lcArt + " " + m.lcLinks, ;
+        'div', , m.lcClass)
 
     endscan
     lcRet = HTWrap(m.lcSel, 'div', , 'panel-select')
@@ -836,7 +857,7 @@ define class AisPlcQuery as L7Query
         dimension .aJoins[.nJoins, 3]
         .aJoins[.nJoins, 1] = "Panel"
         .aJoins[.nJoins, 2] = "Plc_Pnl_FK = Pnl_PK"
-        .AddFields("Pnl_ID, Pnl_Stitcher_Art_FK, Pnl_Single_Piece, Pnl_Dim_1, Pnl_Dim_2, Pnl_Design_Category")
+        .AddFields("Pnl_ID, Pnl_Stitcher_Art_FK, Pnl_Single_Piece, Pnl_Dim_1, Pnl_Dim_2, Pnl_Design_Category, Pnl_Completed")
       endif 
 
       if !isnull(.cSide)

@@ -122,7 +122,7 @@ FUNCTION HTWrap(lcText, lcElems, lcAttribs, lcClasses)
   	ENDIF
   ENDFOR
   * Wrap the passed text in the elements:
-  RETURN m.lcPref + m.lcText + m.lcSuf
+  RETURN m.lcPref + nvl(m.lcText, set("Nulldisplay")) + m.lcSuf
 
 ENDFUNC  && HTWrap
 

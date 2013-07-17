@@ -266,6 +266,11 @@ define class ais_PnlList as aisPnlPage
     else
       response.write(this.page_getGalleryDisplay(m.loQry))
     endif
+
+    if poContext.lDeveloper
+      Response.Write(HTWrap(loQry.cSqlStatement, 'div,p', 'admin,debug'))
+    endif
+    
     return 
   endfunc 
 
@@ -277,7 +282,7 @@ define class ais_PnlList as aisPnlPage
     lcCat = null
     llIsCat = lower(this.cPage_Order) == "categ"
     text to lcTmp noshow 
-      <div class="gallery-item">
+      <div class="gallery-item<<iif(Pnl_Completed,'',' incomplete')>>">
        <<AisPanelImage(Pnl_Id, "_h50", urls.item("PnlFilNew"), Pnl_PK, poContext.lAdmin)>>
        <div class="gallery-item-info">
         <<HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), AisFormatID(Pnl_ID))>>
@@ -301,7 +306,7 @@ define class ais_PnlList as aisPnlPage
     if m.llIsCat 
       lcToc = HTWrap("Design Categories:&nbsp;" + m.lcToc, "div", , "gallery-toc")
     endif
-    return m.lcToc + m.lcRet
+    return m.lcToc + m.lcRet + [<div class="clear"></div>] + crlf
   endfunc && page_getGalleryDisplay
     
   * ----------------------------------------------------- *  
@@ -433,8 +438,19 @@ define class ais_PnlAddPiece as aisPnlPage
 enddefine  && ais_PnlAddPiece 
 
 *** ========================================================= ***
+* sub-class for arriving via LocDisplay: 
+define class ais_LocUnassign as ais_PnlRemLoc 
+  lPnlRequired = .f.
+  * ----------------------------------------------------- *  
+  function page_getCancelUrl()
+    return StuffURL(THIS.cUrlA, 2, "LocDisplay")
+  endfunc 
+enddefine 
+
+*** ========================================================= ***
 define class ais_PnlRemLoc as aisPnlPage 
   cPage_Plc = null 
+  cSubTitle = "Remove Panel Location" 
   * --------------------------------------------------------- *
   function BeforeProcessRequest
     this.cPage_Plc = this.readQueryString("plc", .t., .t.)
@@ -442,11 +458,13 @@ define class ais_PnlRemLoc as aisPnlPage
     return 
   endfunc   
   * ----------------------------------------------------- *  
+  function page_getCancelUrl()
+    return StuffURL(THIS.cUrlB, 2, "PnlHome")
+  endfunc 
+  * ----------------------------------------------------- *  
   function ProcessRequest
-    this.cCancelUrl = StuffURL(THIS.cUrlB, 2, "PnlHome")
-    
+    this.cCancelUrl = this.page_getCancelUrl()
     this.Assert(poContext.lAdmin)
-    this.cSubTitle = "Remove Panel Location for " + AisFormatID(this.oPnl.Pnl_ID)
 
     local loForm, vp_cPlc_PK, lcAlias, lcXml
     lcAlias = "V_PanelLocation"
@@ -741,6 +759,9 @@ define class ais_PnlHome as aisPnlPage
       endif
       use in select("v_Active_Panel_Set")
       
+      .addMenuItem("main\This,page", "Find Panel (public)", ;
+        StuffUrl(.cUrlA, 2, "LocateByPanelID", "pnl_id", .oPnl.Pnl_ID))
+
       if poContext.lAdmin
         .addMenuItem("main\This,page", "Upload Panel File...", StuffUrl(.cUrlA, 2, "PnlFilNew", "pnl", .cPnl))
 

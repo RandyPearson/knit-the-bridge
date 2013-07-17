@@ -247,13 +247,20 @@ define class aisBody AS L7PageElement
       text to lcTmp noshow pretext 3
         <h2 id="server-app-title"><<page.cTitle>></h2>
         <h1 id="server-page-title"><<page.cSubTitle>></h1>
-        <div class="user">
-          User: <span class="user-name"><<CurrentUser.getUserName()>></span> 
-          (<a href="<<stuffUrl(page.cUrlA,'l','0',2,'Login')>>" id="signOut">sign out</a>)
-        </div>
 
       endtext
       .Write(textmerge(m.lcTmp))
+
+      if !CurrentUser.IsAnonymous()
+        text to lcTmp noshow pretext 3
+          <div class="user">
+            User: <span class="user-name"><<CurrentUser.getUserName()>></span> 
+            (<a href="<<stuffUrl(page.cUrlA,'l','0',2,'Login')>>" id="signOut">sign out</a>)
+          </div>
+
+        endtext
+        .Write(textmerge(m.lcTmp))
+      endif
 
       lcText = m.lcText + .Render() + CRLF
     endwith 
