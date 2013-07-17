@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     30
+#DEFINE THISAPP_DATABASE_REVISION     31
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -540,6 +540,23 @@ define class AisApp AS KtbApp
       index on Art_Installation_Trn_FK tag Inst_Trn
       use in select("Artist")
       
+    case m.lnRev = 31
+      select 0
+      use PanelLocation again 
+      scan for Plc_Inactive = .t. 
+        if Plc_Inactive and !empty(Plc_Pnl_FK)
+          if rlock()
+            replace Plc_Pnl_FK with "" ;
+              Plc_Loc_FK with "" ;
+              Plc_Orientation with ""
+            unlock 
+            this.app_log(L7_SEVERITY_NOTICE, "Cleared PLC FKS for " + Plc_PK)
+          else 
+            this.app_log(L7_SEVERITY_WARNING, "Could not lock PLC " + Plc_PK)
+          endif 
+        endif
+      endscan 
+      use 
 
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 

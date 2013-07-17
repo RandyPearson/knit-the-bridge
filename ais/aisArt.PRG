@@ -9,6 +9,7 @@ function AisArtQueryFlags()
     '{"root": "core", "prompt": "Core Team"}' + ;
     ',{"root": "admin", "menu": false}' + ;
     ',{"root": "artist", "prompt": "All Artists"}' + ;
+    ',{"root": "release", "field": "Art_Release_Name", "prompt": "Release Name"}' + ;
     ',{"root": "panelsignup", "combine": false, "prompt": "Panel Sign-Up"}' + ;
     ',{"root": "panelssubmitted", "combine": false, "prompt": "Submitted Panels"}' + ;
     ',{"root": "bitsorpanelssubmitted", "combine": false, "prompt": "Submitted Bits/Panels"}' + ;
@@ -898,11 +899,113 @@ define class ais_AgeSumList as aisArtPage
 enddefine && ais_AgeSumList 
 
 *** ========================================================= ***
+define class ais_ArtPublicWork as aisArtPage
+  nMinLoginLevel = L7_NONE  
+  * ----------------------------------------------------- *  
+  function AddDefaultMenu
+    if poContext.lCore
+      this.AddSubMenu("This", AisArtistName(this.oArt))
+      this.addMenuItem("main\This,page", "Artist Page", StuffUrl(this.cUrlA, 2, "ArtHome", "art", this.cArt), , "ArtHome")
+    endif
+    dodefault()
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    this.assert(this.oArt.Art_Release_Name, "Artist prefers to be anonymous.")
+    this.cSubTitle = AisArtistName(this.oArt)
+    local loQry 
+    lcRet = ""
+    loQry = createobject("AisPceQuery")
+    with loQry
+      .cArt = this.cArt
+      .lJoinPanel = .t. 
+      .lJoinPanelLocation = .f. && this has issues...
+      .lExcluded = null
+      .Execute()
+    endwith 
+    with response
+      .writeTag(this.cSubTitle, 'h2')
+      .write([<ul>])
+      .write(this.page_getRailingData(m.loQry))
+      .write(this.page_getBitData(m.loQry))
+      .write(this.page_getPanelData(m.loQry))
+      .write([</ul>])
+      .write(this.page_getPanelDetails(m.loQry))
+      if poContext.lDeveloper
+        * .Write(HTWrap(loQry.cSqlStatement, 'div,p', 'admin,debug'))
+      endif
+    endwith
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_getRailingData(loQry)
+    local lcRet, lnTally
+    lcRet = ""
+    select (loQry.cAlias)
+    count for Pce_Type = "Railings" to lnTally
+    if m.lnTally > 0
+      lcRet = m.lcRet + HTWrap("Created and donated " + transform(m.lnTally) + " railing cover" + iif(m.lnTally = 1, "", "s"), 'li')
+    endif 
+    return m.lcRet 
+  endfunc && page_getRailingData
+  * ----------------------------------------------------- *  
+  function page_getBitData(loQry)
+    local lcRet, lnTally
+    lcRet = ""
+    select (loQry.cAlias)
+    count for Pce_Type = "Panels" and !Pce_Whole_Panel to lnTally
+    if m.lnTally > 0
+      lcRet = m.lcRet + HTWrap("Created and donated " + transform(m.lnTally) + ' "bit' + iif(m.lnTally = 1, "", "s") + '" (partial panels) for building into panels' , 'li')
+    endif 
+    return m.lcRet 
+  endfunc && page_getBitData
+  * ----------------------------------------------------- *  
+  function page_getPanelData(loQry)
+    local lcRet, lnTally
+    lcRet = ""
+    select (loQry.cAlias)
+    count for Pce_Type = "Panels" and Pce_Whole_Panel to lnTally
+    if m.lnTally > 0
+      lcRet = m.lcRet + HTWrap("Created and donated " + transform(m.lnTally) + ' whole panel' + iif(m.lnTally = 1, "", "s") + " (details below)", 'li')
+    endif 
+    return m.lcRet 
+  endfunc && page_getPanelData
+  * ----------------------------------------------------- *  
+  function page_getPanelDetails(loQry)
+    local lcRet, lnTally, lcItem, loLoc
+    lcRet = ""
+    select (loQry.cAlias)
+    scan for Pce_Type = "Panels" and Pce_Whole_Panel 
+      lcItem = HtWrap("Panel " + Pnl_Id, 'h3')
+
+      if Pnl_Excluded
+        lcItem = m.lcItem + HtWrap(textmerge([Panel <<Pnl_ID>> was not able to be installed on the bridge.]), 'p')
+      else
+        loLoc = aisGetPanelLocation(Pce_Pnl_FK)
+        if isnull(m.loLoc)
+          lcItem = m.lcItem + HtWrap(textmerge([Panel <<Pnl_ID>> does not yet have a location on the bridge.]), 'p')
+        else
+          lcItem = m.lcItem + HtWrap(AisDescribeLocation(m.loLoc), 'div')
+        endif 
+      endif 
+      lcItem = m.lcItem + HtWrap("Panel Thumbnail Image:", 'p')
+      lcItem = m.lcItem + HtWrap(AisPanelImage(Pnl_Id, "_main"), 'div',, 'img-panel')
+
+      lcRet = m.lcRet + HtWrap(m.lcItem, "div", , "panel")
+    endscan 
+    return m.lcRet 
+  endfunc && page_getPanelDetails
+  * ----------------------------------------------------- *  
+enddefine  && ais_ArtPublicWork 
+
+*** ========================================================= ***
 define class ais_ArtHome as aisArtPage 
   * ----------------------------------------------------- *  
   function AddDefaultMenu
     this.AddSubMenu("This", AisArtistName(this.oArt))
 
+    this.addMenuItem("main\This,page", "Public Page", StuffUrl(this.cUrlA, 2, "ArtPublicWork", "art", this.cArt), , "ArtPublicWork")
     this.addMenuItem("main\This,page", "Edit This Person...", StuffUrl(this.cUrlA, 2, "ArtForm", "art", this.cArt))
     if this.oArt.Art_Artist
       this.addMenuItem("main\This,page", "Submit WHOLE PANEL Piece...", ;
@@ -1093,7 +1196,7 @@ define class ais_ArtHome as aisArtPage
       loTbl = createobject("AisTable")
       with loTbl
         .cDataRowClass = .cDataRowClass + ;
-          iif(empty(.cDataRowClass), [], [ + ]) + [iif(Pce_Inactive, " deleted", "") + iif(Pce_Excluded, " excluded", "")] 
+          iif(empty(.cDataRowClass), [], [ + ]) + [iif(Pce_Inactive, " deleted", "") + iif(Pce_Excluded or nvl(Pnl_Excluded, .f.) = .t., " excluded", "")] 
         
         loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
         loCol = .addCursorColumn("Pce_ID", "Piece ID", ;
@@ -1129,6 +1232,9 @@ define class ais_ArtHome as aisArtPage
         lcRet = m.lcRet + .Render()
       endwith 
     endif 
+    if poContext.lDeveloper
+      * lcRet = m.lcRet + HTWrap(loQ.cSqlStatement, 'div,p', 'admin,debug')
+    endif
     
     return m.lcRet
   endfunc && page_getPieceInfo
@@ -1391,6 +1497,7 @@ define class aisArtistForms AS AisForm
 
       .AddObject("cboTrn_FK", "L7Popup")
       with .cboTrn_FK
+        .cGroupId = "train"
         .cControlSource = "V_artist.Art_Installation_Trn_FK"
         .lRequired = .f.
         .cLabel = "Training Session"
@@ -1406,6 +1513,7 @@ define class aisArtistForms AS AisForm
 
       .AddObject("chkTraining_Signed", "L7Checkbox")
       with .chkTraining_Signed
+        .cGroupId = "train"
         .cControlSource = "V_artist.Art_Training_Signed"
         .cCaption = "Signed as Reading Training"
         .cLabel = "Training"
@@ -1413,13 +1521,14 @@ define class aisArtistForms AS AisForm
 
       .AddObject("chkWaiver_Signed", "L7Checkbox")
       with .chkWaiver_Signed
+        .cGroupId = "train"
         .cControlSource = "V_artist.Art_Waiver_Signed"
         .cCaption = "Signed Waiver"
         .cLabel = "Waiver"
       endwith
     endwith 
     return
-  endfunc 
+  endfunc  && addTrainingControls 
   * --------------------------------------------------------- *
   function addParticipationControls()
     with this
@@ -1557,25 +1666,16 @@ define class aisArtistForms AS AisForm
         .cCaption = "Help with Outreach"
       endwith
 
-      .colPart.AddObjectToParent("edtHelp_Other", "L7Textarea")
+      .addObject("edtHelp_Other", "L7Textarea")
       with .edtHelp_Other
         .cGroupId = "part"
         .cControlSource = "V_artist.Art_Help_Other"
         .cLabel = "Other ways you want to help"
-        .cPattern = [(%l%s)%c(%s%i)(%b%v)]
         .nRows = 3
       endwith
 
       if poContext.lAdmin 
         if !this.lNewRecord
-          .AddObject("edtParticipation", "L7Textarea")
-          with .edtParticipation
-            .cGroupId = "part"
-            .cControlSource = "V_artist.Art_Participation"
-            .cLabel = "Original Participation answers (e.g., from blog)"
-            .nRows = 3
-            .cCssClass = "FormControlPrivate"
-          endwith
 
           .AddObject("lblRegister_Time", "L7Label")
           with .lblRegister_Time
@@ -1711,8 +1811,8 @@ define class aisRegisterForm AS aisArtistForms
       endif 
       
       if this.lCustom_Participation
-        .addParticipationControls()
         .addTrainingControls()
+        .addParticipationControls()
       endif 
       
       if this.lNewRecord
@@ -1876,23 +1976,6 @@ define class aisArtistForm AS aisArtistForms
         .cCssStyle = "width: 40%;"
       endwith
 
-      .AddObject("edtName_Orig", "L7Textarea")
-      with .edtName_Orig
-        .cGroupID = "orig1"
-        .cControlSource = "V_artist.Art_Name_Orig"
-        .nRows = 2
-        .cLabel = "Original Name (e.g., from blog)"
-        .cCssClass = "FormControlPrivate"
-      endwith
-      .AddObject("edtContact_Orig", "L7Textarea")
-      with .edtContact_Orig
-        .cGroupID = "orig1"
-        .cControlSource = "V_artist.Art_Contact_Orig"
-        .nRows = 2
-        .cLabel = "Original Contact (e.g., from blog)"
-        .cCssClass = "FormControlPrivate"
-      endwith
-
       .AddObject("divDemo", "L7Divider")
       with .divDemo
         .cLabel = "Demograhic Information"
@@ -1914,18 +1997,7 @@ define class aisArtistForm AS aisArtistForms
         .cControlSource = "V_artist.Art_Neighborhood"
         .cLabel = "Neighborhood"
       endwith
-      .AddObject("edtAddress", "L7Textarea")
-      with .edtAddress
-        .cGroupID  ="demo"
-        .cControlSource = "V_artist.Art_Address"
-        .nRows = 2
-        .cLabel = "Original Neighborhood (e.g., from blog)"
-        .cCssClass = "FormControlPrivate"
-      endwith
 
-      .AddParticipationControls()
-      .addTrainingControls()
-      
       .AddObject("edtComments", "L7Textarea")
       with .edtComments
         .cGroupID = "notes"
@@ -1955,11 +2027,13 @@ define class aisArtistForm AS aisArtistForms
         .cCssClass = "FormControlPrivate"
       endwith
 
+      .addTrainingControls()
+      .addParticipationControls()
       .addAdditionalControls()
-      
       .addSecurityControls()
       
     endwith
+    return 
   endfunc  && AddControls
   * --------------------------------------------------------- *
   function addAdditionalControls()
@@ -1968,6 +2042,42 @@ define class aisArtistForm AS aisArtistForms
       .AddObject("divSS", "L7Divider")
       with .divSS
         .cLabel = "Additional Spreadsheet Columns"
+      endwith
+
+      .AddObject("edtName_Orig", "L7Textarea")
+      with .edtName_Orig
+        .cGroupID = "ss1"
+        .cControlSource = "V_artist.Art_Name_Orig"
+        .nRows = 2
+        .cLabel = "Original Name (e.g., from blog)"
+        .cCssClass = "FormControlPrivate"
+      endwith
+
+      .AddObject("edtContact_Orig", "L7Textarea")
+      with .edtContact_Orig
+        .cGroupID = "ss1"
+        .cControlSource = "V_artist.Art_Contact_Orig"
+        .nRows = 2
+        .cLabel = "Original Contact (e.g., from blog)"
+        .cCssClass = "FormControlPrivate"
+      endwith
+
+      .AddObject("edtAddress", "L7Textarea")
+      with .edtAddress
+        .cGroupID  ="ss1"
+        .cControlSource = "V_artist.Art_Address"
+        .nRows = 2
+        .cLabel = "Original Neighborhood (e.g., from blog)"
+        .cCssClass = "FormControlPrivate"
+      endwith
+
+      .AddObject("edtParticipation", "L7Textarea")
+      with .edtParticipation
+        .cGroupId = "ss1"
+        .cControlSource = "V_artist.Art_Participation"
+        .cLabel = "Original Participation answers (e.g., from blog)"
+        .nRows = 3
+        .cCssClass = "FormControlPrivate"
       endwith
 
       .AddObject("chkReceived", "L7Checkbox")
@@ -2319,6 +2429,7 @@ define class AisArtQuery AS L7Query
   lUndeliverable = null
   lInactiveInner = null 
   lArtist = null
+  lRelease = null 
   lStarred = null
   lInstall = null
   lDeinstall = null
@@ -2338,6 +2449,9 @@ define class AisArtQuery AS L7Query
   cName = ""
   cUser_Id = ""
   cSrch1 = ""
+  cPrivateSearchFields = "Art_Last_Name + Art_First_Name + Art_Full_Name + Art_ID + Art_Neighborhood + Art_Email + Art_Comments + Art_Notes + Art_Help_Other"
+  cPublicSearchFields  = "Art_Last_Name + Art_First_Name + Art_Full_Name + Art_ID + Art_Neighborhood"
+  lPublicSearch = .f. && controls which of above is used 
 
   nOrderBy = 1
   DIMENSION aOrderBy[ 1, 2]
@@ -2419,8 +2533,7 @@ define class AisArtQuery AS L7Query
       
       * NOTE: next few use double quotes on purpose to allow searching stuff like "O'Brien"
       if !empty(.cSrch1)
-        lcSearchFields = "Art_Last_Name + Art_First_Name + Art_Full_Name + Art_Email + Art_ID + Art_Comments + Art_Notes + Art_Participation"
-
+        lcSearchFields = iif(.lPublicSearch, .cPublicSearchFields, .cPrivateSearchFields)
         lcStr = lower(.cSrch1)
         lnWords = getwordcount(m.lcStr)
         if m.lnWords = 2

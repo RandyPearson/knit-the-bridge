@@ -481,51 +481,50 @@ define class aisPage as L7Page
   endfunc 
   * ----------------------------------------------------- *  
   function AddDefaultMenu
-    local lcMenu, lcLpInfo, lcForm
+    local lcMenu, lcLpInfo, lcForm, llPublic
+    llPublic = poContext.lAnonymous
     lcMenu = "main\Navigate"
-    this.addMenuItem(m.lcMenu, 'People - Query Form', StuffUrl(this.cUrlA, 2, "ArtQuery"))
-    this.addMenuItem(m.lcMenu, 'People - Core List', StuffUrl(this.cUrlA, 2, "ArtList", "core", "1", "fields", "contact"))
-    this.addMenuItem(m.lcMenu, 'Neighborhood Summary Report', StuffUrl(this.cUrlA, 2, "NeighborhoodSumList"))
 
-    lcLpInfo = THIS.GetBaseHiddenFormvars() && sustains license plate, etc. for GET form
-    
-    lcForm = [<form style="margin:0;" method="get" action="] + StuffUrl(THIS.cUrlA, 2, "ArtList") + ;
-      ["><input id="srch1" alt="Search string" type="text" name="srch1" size="16" maxlen="60" value="" onchange="this.form.submit();">] + ;
-      m.lcLpInfo + ;
-      [<br><input style="margin: 1px 0px 0px 0px;" name="btn" type="submit" value="Search People">] + ;
-      [<input name="fields" type="hidden" value="contact,part">] + ;
-      [</form>]
-    this.AddMenuItem("main\Search", m.lcForm, .t.)
+    if !m.llPublic
+      this.addMenuItem(m.lcMenu, 'People - Query Form', StuffUrl(this.cUrlA, 2, "ArtQuery"))
+      this.addMenuItem(m.lcMenu, 'People - Core List', StuffUrl(this.cUrlA, 2, "ArtList", "core", "1", "fields", "contact"))
+      this.addMenuItem(m.lcMenu, 'Neighborhood Summary Report', StuffUrl(this.cUrlA, 2, "NeighborhoodSumList"))
 
-    this.addMenuItem(m.lcMenu, 'Pieces (Available)', StuffUrl(this.cUrlA, 2, "PceList", "type", "Panels", "orphans", "1"))
-    this.addMenuItem(m.lcMenu, 'Railing Summary',    StuffUrl(this.cUrlA, 2, "PceList", "type", "Railings", "order", "size"))
-    this.addMenuItem(m.lcMenu, 'Panel Summary', StuffUrl(this.cUrlA, 2, "PnlSummary"))
-    this.addMenuItem(m.lcMenu, 'Panel Gallery (Unassigned)', StuffUrl(this.cUrlA, 2, "PnlList", "style", "gallery", "location", "0", "order", "categ"))
-    this.addMenuItem(m.lcMenu, 'Panel List', StuffUrl(this.cUrlA, 2, "PnlList"))
+      lcLpInfo = THIS.GetBaseHiddenFormvars() && sustains license plate, etc. for GET form
+      
+      lcForm = [<form style="margin:0;" method="get" action="] + StuffUrl(THIS.cUrlA, 2, "ArtList") + ;
+        ["><input id="srch1" alt="Search string" type="text" name="srch1" size="16" maxlen="60" value="" onchange="this.form.submit();">] + ;
+        m.lcLpInfo + ;
+        [<br><input style="margin: 1px 0px 0px 0px;" name="btn" type="submit" value="Search People">] + ;
+        [<input name="fields" type="hidden" value="contact,part">] + ;
+        [</form>]
+      this.AddMenuItem("main\Search", m.lcForm, .t.)
 
-    this.addMenuItem(m.lcMenu, 'Facilities', StuffUrl(this.cUrlA, 2, "FacList"))
-    ** this.addMenuItem(m.lcMenu, 'Bridge Locations', StuffUrl(this.cUrlA, 2, "LocList"))
-    this.addMenuItem(m.lcMenu, 'Picture Panels on Bridge!', StuffUrl(this.cUrlA, 2, "LocDisplay"  ))
-    *!*      this.addMenuItem(m.lcMenu, 'Down-River Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Down"))
-    *!*      this.addMenuItem(m.lcMenu, 'Up-River Locations', StuffUrl(this.cUrlA, 2, "LocList", "side", "Up"))
+      this.addMenuItem(m.lcMenu, 'Pieces (Available)', StuffUrl(this.cUrlA, 2, "PceList", "type", "Panels", "orphans", "1"))
+      this.addMenuItem(m.lcMenu, 'Railing Summary',    StuffUrl(this.cUrlA, 2, "PceList", "type", "Railings", "order", "size"))
+      this.addMenuItem(m.lcMenu, 'Panel Summary', StuffUrl(this.cUrlA, 2, "PnlSummary"))
+      this.addMenuItem(m.lcMenu, 'Panel Gallery (Unassigned)', StuffUrl(this.cUrlA, 2, "PnlList", "style", "gallery", "location", "0", "order", "categ"))
+      this.addMenuItem(m.lcMenu, 'Panel List', StuffUrl(this.cUrlA, 2, "PnlList"))
 
-    this.addMenuItem(m.lcMenu, 'Training', StuffUrl(this.cUrlA, 2, "TrnList"))
-    this.addMenuItem(m.lcMenu, 'Donation Report', StuffUrl(this.cUrlA, 2, "DonList"))
-    this.addMenuItem(m.lcMenu, 'DIS Report', StuffUrl(this.cUrlA, 2, "DisReport"))
-    this.addMenuItem(m.lcMenu, 'Management Report', StuffUrl(this.cUrlA, 2, "Home"))
-    
-    ** this.addMenuItem(m.lcMenu, 'About', StuffUrl(this.cUrlA, 2, "About"), "About")
-    if poContext.lAdmin
-      *!* this.addMenuItem("main\Admin", 'Refresh Content', StuffUrl(this.cUrlA, 2, "RefreshContent"))
-    endif
+      this.addMenuItem(m.lcMenu, 'Facilities', StuffUrl(this.cUrlA, 2, "FacList"))
+      this.addMenuItem(m.lcMenu, 'Picture Panels on Bridge!', StuffUrl(this.cUrlA, 2, "LocDisplay"  ))
+
+      this.addMenuItem(m.lcMenu, 'Training', StuffUrl(this.cUrlA, 2, "TrnList"))
+      this.addMenuItem(m.lcMenu, 'Donation Report', StuffUrl(this.cUrlA, 2, "DonList"))
+      this.addMenuItem(m.lcMenu, 'DIS Report', StuffUrl(this.cUrlA, 2, "DisReport", "whole", '1'))
+      this.addMenuItem(m.lcMenu, 'Management Report', StuffUrl(this.cUrlA, 2, "Home"))
+    endif       
 
     lcMenu = "main\Links"
+    this.addMenuItem(m.lcMenu, 'Find A Panel', StuffUrl(this.cUrlA, 2, "Locate"))
     this.addMenuItem(m.lcMenu, 'KtB Webpage', "/")
     this.addMenuItem(m.lcMenu, 'KtB Blog', "http://knitthebridge.wordpress.com/")
 
-    this.addMenuItem('main\User', 'My Account', StuffUrl(this.cUrlA, 2, 'ArtHome', 'art', CurrentUser.getUserKey()))
-    this.addMenuItem('main\User', 'Sign Out', StuffUrl(this.cUrlA, 2, 'Login', 'l', '0'))
-
+    if !m.llPublic
+      this.addMenuItem('main\User', 'My Account', StuffUrl(this.cUrlA, 2, 'ArtHome', 'art', CurrentUser.getUserKey()))
+      this.addMenuItem('main\User', 'Sign Out', StuffUrl(this.cUrlA, 2, 'Login', 'l', '0'))
+    endif
+    
     dodefault()  && always chain upward
     return 
   endfunc  && addDefaultMenu
@@ -556,6 +555,7 @@ define class ais_DisReport as aisPage
   cSubTitle = "Dis Report"
   lPage_Whole = null
   lPage_Multi = null 
+  lPage_Complete = null 
   * --------------------------------------------------------- *
   function BeforeProcessRequest
     local lcStr
@@ -565,6 +565,9 @@ define class ais_DisReport as aisPage
     
     lcStr = this.ReadQueryString("Multi", .t., .t.)
     this.lPage_Multi = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+
+    lcStr = this.ReadQueryString("Complete", .t., .t.)
+    this.lPage_Complete = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
 
     dodefault()  && required bubble-up
     return    
@@ -578,6 +581,7 @@ define class ais_DisReport as aisPage
 
       .addMenuItem(m.lcMenu, "Whole-Panel Submitters", StuffUrl(.cUrlB, "whole", "1"))
       .addMenuItem(m.lcMenu, "Multi-Panel Submitters", StuffUrl(.cUrlB, "multi", "1"))
+      .addMenuItem(m.lcMenu, "Completely-Dissed List", StuffUrl(.cUrlB, "complete", "1"))
       .addMenuItem(m.lcMenu, "Full Report",            .cUrlB)
 
     endwith 
@@ -594,6 +598,9 @@ define class ais_DisReport as aisPage
       endif 
       if !isnull(.lPage_Multi)
         lcFilter = m.lcFilter + [ and ] + iif(.lPage_Multi, [Count_ - Piece_ > 1], [Count_ - Piece_ <= 1])
+      endif 
+      if !isnull(.lPage_Complete)
+        lcFilter = m.lcFilter + [ and ] + iif(.lPage_Complete, [Pce_On_Bridge_ + Pnl_On_Bridge_ = 0], [Pce_On_Bridge_ + Pnl_On_Bridge_ > 0])
       endif 
     endwith 
     return substr(m.lcFilter, 1 + len([ and ]))
@@ -648,20 +655,22 @@ define class ais_DisReport as aisPage
     set database to (goL7App.cDatabase)
     select pce_pk, pce_whole_panel, pce_art_fk, pce_pnl_fk, .f. as Pnl_, .f. as Loc_ ;
       from Piece ;
-      where pce_type = "Panels" and !pce_inactive ;
+      where pce_type = "Panels" and !pce_inactive and !pce_excluded ;
         and empty(pce_pnl_fk) ;
       into cursor DisReport_NoPanel_
 
     select pce_pk, pce_whole_panel, pce_art_fk, pce_pnl_fk, .t. as Pnl_, .t. as Loc_ ;
       from Piece ;
-      where pce_type = "Panels" and !pce_inactive ;
+      join Panel on Pce_Pnl_FK = Pnl_PK ;
+      where pce_type = "Panels" and !pce_inactive and !pce_excluded and !pnl_excluded ;
         and !empty(Pce_Pnl_Fk) ; 
         and exists (select * from PanelLocation where !Plc_Inactive and Plc_Pnl_FK = Piece.Pce_Pnl_FK) ;
       into cursor DisReport_Loc_
 
     select pce_pk, pce_whole_panel, pce_art_fk, pce_pnl_fk, .t. as Pnl_, .f. as Loc_ ;
       from Piece ;
-      where pce_type = "Panels" and !pce_inactive ;
+      join Panel on Pce_Pnl_FK = Pnl_PK ;
+      where pce_type = "Panels" and !pce_inactive and !pce_excluded and !pnl_excluded ;
         and !empty(Pce_Pnl_Fk) ; 
         and !exists (select * from PanelLocation where !Plc_Inactive and Plc_Pnl_FK = Piece.Pce_Pnl_FK) ;
       into cursor DisReport_NoLoc_
@@ -859,7 +868,7 @@ define class ais_Home as aisPage
     addproperty(m.loState, "estimatedShortfall", 0)
     addproperty(m.loState, "noShowFraction", 0.75)
     addproperty(m.loState, "bitsPerPerson", 1.70)
-    addproperty(m.loState, "railingNoShowFraction", 0.40)
+    addproperty(m.loState, "railingNoShowFraction", 0.70)
     return m.loState
   endfunc && page_getState
   * ----------------------------------------------------- *  
@@ -896,11 +905,8 @@ define class ais_Home as aisPage
           <tr><th>- Panels Available for Location Assignment</th>
             <td></td><td><<loState.unlocatedPanels>></td></tr>
             
-          <tr><th>Panels Still Needed</th>
-            <td></td><td class="total"><<loState.neededPanels>></td></tr>
-
-          <tr><th>Whole Panels No-Shows</th>
-            <td><<loState.duePanels>></td><td></td></tr>
+          <tr><th><<iif(loState.neededPanels > 0, "Panels Still Needed", "Panel Surplus!")>></th>
+            <td></td><td class="total"><<iif(loState.neededPanels > 0, loState.neededPanels, -loState.neededPanels)>></td></tr>
 
           <tr><th class="section" colspan="3">RAILING ESTIMATES: 9 x 105</th></tr>
 
@@ -956,6 +962,9 @@ define class ais_Home as aisPage
 *!*            <tr><th>- Est. Contribution from Pending Bits</th>
 *!*              <td></td><td><<loState.estimatedBitPanels>></td></tr>
 
+*!*            <tr><th>Whole Panels No-Shows</th>
+*!*              <td><<loState.duePanels>></td><td></td></tr>
+
     return m.lcTmp
   endfunc && page_getTemplate
 
@@ -975,6 +984,239 @@ define class ais_Home as aisPage
   endfunc 
 
 enddefine && Home 
+
+*** ========================================================= ***
+define class ais_Locate as aisPage 
+  nMinLoginLevel = L7_NONE  
+  cSubTitle = "Find A Panel"
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    with response
+      .Write(this.page_locateByPanelID())
+      .Write(this.page_locateByArtistSearch())
+    endwith
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_locateByPanelID
+    local loForm
+    loForm = this.createForm("AisLocateByPanelIDForm", ;
+      StuffUrl(this.cUrlA, 2, "LocateByPanelID"))
+    with loForm
+      .addControls()
+      return .render()
+    endwith 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_locateByArtistSearch
+    local loForm
+    loForm = this.createForm("AisPublicArtistSearchForm", ;
+      StuffUrl(this.cUrlA, 2, "LocateByArtistSearch"))
+    with loForm
+      .addControls()
+      return .render()
+    endwith 
+  endfunc 
+  * ----------------------------------------------------- *  
+enddefine 
+
+*** ========================================================= ***
+define class ais_LocateByPanelID as aisPage 
+  nMinLoginLevel = L7_NONE  
+  cSubTitle = "Locate a Panel"
+  cPage_ID = null
+  * ----------------------------------------------------- *  
+  function BeforeProcessRequest
+    if request.cMethod = "GET"
+      this.cPage_ID = this.readQueryString("pnl_id", .t., .t.)
+    endif
+    dodefault()
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    this.cCancelUrl = StuffUrl(this.cUrlA, 2, "Locate")
+    local loForm, loQry, loLoc, loPceQry, loPnl, loArt, lcName
+    if request.cMethod = "POST"
+      loForm = this.createForm("AisLocateByPanelIDForm")
+      with loForm
+        .addControls()
+        .doEvents()
+        this.cPage_ID = .txtPnl_Id.vNewValue
+      endwith
+    endif 
+    if empty(this.cPage_ID)
+      this.redirect(this.cCancelUrl)
+      return
+    endif
+    * clean entry to real ID candidate:
+    this.cPage_ID = "PNL" + padl(chrtran(this.cPage_ID, chrtran(this.cPage_ID, '0123456789', ''), ''), 5, '0')
+    loQry = createobject("AisPnlQuery")
+    with loQry
+      .cID = this.cPage_ID
+      .lExcluded = null && need to find if excluded
+      .Execute()
+      if .nTally = 0
+        this.notFound("Panel Not Found")
+        return 
+      endif 
+      scatter memo name loPnl
+    endwith 
+    
+    this.cSubTitle = "Found " + this.cPage_ID
+    select (loQry.cAlias)
+    loLoc = aisGetPanelLocation(Pnl_PK)
+
+    select (loQry.cAlias)
+    loPceQry = createobject("AisPceQuery")
+    with loPceQry
+      .lJoinArtist = .t.
+      .cPnl = loPnl.Pnl_PK
+      .execute()
+    endwith
+    
+    with response
+      .WriteTag("Panel " + loPnl.Pnl_Id, 'h3')
+      select (loPceQry.cAlias)
+      if !loPnl.Pnl_Single_Piece
+        .Write("<p>Pieces created by:</p><ul>")
+      endif
+      scan
+        if Art_Release_Name
+          scatter memo name loArt
+          lcName = HtWrap(AisArtistName(m.loArt), 'strong')
+        else
+          lcName = "Anonymous"
+        endif 
+        if loPnl.Pnl_Single_Piece
+          .WriteTag("Full Panel created by: " + m.lcName, "p")
+        else
+          .WriteTag(m.lcName, "li")
+        endif
+      endscan
+      if !loPnl.Pnl_Single_Piece
+        .Write("</ul>")
+      endif
+
+      do case
+      case loPnl.Pnl_Excluded
+        .WriteTag(textmerge([Panel <<loPnl.Pnl_Id>> was not able to be installed on the bridge.]), 'p')
+      case isnull(m.loLoc)
+        .WriteTag(textmerge([Panel <<loPnl.Pnl_Id>> does not yet have a location on the bridge.]), 'p')
+      otherwise      
+        .WriteTag(textmerge([Panel <<loPnl.Pnl_Id>> bridge location:]), 'p')
+        .WriteTag(AisDescribeLocation(m.loLoc), 'div')
+      endcase 
+      .WriteTag("Panel Thumbnail Image:", 'p')
+      .writeTag(AisPanelImage(loPnl.Pnl_Id, "_main"), 'div', 'img-panel')
+    endwith
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+enddefine 
+
+*** ========================================================= ***
+define class ais_LocateByArtistSearch as aisPage 
+  nMinLoginLevel = L7_NONE  
+  cSubTitle = "Locate Artists"
+  cPage_Search = null
+  * ----------------------------------------------------- *  
+  function BeforeProcessRequest
+    if request.cMethod = "GET"
+      this.cPage_Search = this.readQueryString("search", .t., .t.)
+    endif
+    dodefault()
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    this.cCancelUrl = StuffUrl(this.cUrlA, 2, "Locate")
+    local loForm, loQry, lcUrl
+    if request.cMethod = "POST"
+      loForm = this.createForm("AisPublicArtistSearchForm")
+      with loForm
+        .addControls()
+        .doEvents()
+        this.cPage_Search = .txtSearch.vNewValue
+      endwith
+    endif 
+    if empty(this.cPage_Search)
+      this.redirect(this.cCancelUrl)
+      return
+    endif
+    loQry = createobject("AisArtQuery")
+    with loQry
+      .cSrch1 = this.cPage_Search
+      .lRelease = .t. && only those releasing their name 
+      .lPublicSearch = .t. && controls which fields searched
+      .lBitsOrPanelsSubmitted = .t. 
+      .Execute()
+      if .nTally = 0
+        this.Confirm("No matches found. ")
+        return 
+      endif 
+    endwith 
+    with response
+      .WriteTag(;
+          [The following matched were found from people that submitted panels ] ;
+          + [and released their names to the public. ] ; 
+          + [Select a name to see their bridge location(s). ] ;
+        , 'p')
+      select (loQry.cAlias)
+      lcUrl = stuffUrl(this.cUrlA, 2, "ArtPublicWork")
+      .Write('<ol>' + crlf)
+      scan
+        scatter memo name loArt
+        .writeTag(HtLink(StuffUrl(m.lcUrl, "art", Art_PK), aisArtistName(m.loArt)), 'li')
+      endscan
+      .Write('</ol>' + crlf)
+      .WriteTag(HTLink(this.cCancelUrl, "Try Another Search..."), 'p')
+    endwith 
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+enddefine 
+
+*** ========================================================= ***
+define class AisLocateByForm as AisForm
+  cSubmitCaption = "Locate"
+  lCancelButton = .f. 
+  lToolbarAtTop = .f. 
+  cCssStyle = "width: 40em;"
+enddefine 
+
+*** ========================================================= ***
+define class AisLocateByPanelIDForm as AisLocateByForm
+  cTitle = "Locate a Panel"
+  * ----------------------------------------------------- *  
+  function AddControls
+    with this
+      .addObject("txtPnl_ID", "L7Textbox")
+      with .txtPnl_ID
+        .cLabel = "Panel ID to Locate"
+        .nSize = 20
+      endwith 
+    endwith
+    return 
+  endfunc 
+enddefine 
+
+*** ========================================================= ***
+define class AisPublicArtistSearchForm as AisLocateByForm
+  cTitle = "Locate an Artist"
+  * ----------------------------------------------------- *  
+  function AddControls
+    with this
+      .addObject("txtSearch", "L7Textbox")
+      with .txtSearch
+        .cLabel = "Artist's Name to Locate"
+        .nSize = 20
+        .cInstructions = "Enter only one word or portion of word"
+      endwith 
+    endwith
+    return 
+  endfunc 
+enddefine 
 
 *** ========================================================= ***
 define class ais_About as aisPage 

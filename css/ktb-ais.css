@@ -94,17 +94,25 @@ ul.contextMenu { margin-left: 0px; padding-left: 0; list-style-type: none; margi
 
 p.break { margin-bottom: 5em }
 
+.incomplete {background-color: #ccc;}
+
 .gallery-item {width: 150px; height: 75px; float: left; border: 1px solid #999; padding: 2px; }
 .gallery-item a {text-align: center;}
 .gallery-item-info {font-weight: normal; text-align: center;}
 .gallery-toc{padding-bottom: 5px; font-weight: bold; text-align: center;}
 .gallery-group{float: none; clear: both; padding: 5px 0; font-weight: bold;}
 
-.panel-select{border: 1px solid purple; background-color: #eee;}
-.panel-select div img {vertical-align: middle;}
-.panel-select div{padding: 1px 3px;}
+.img-panel img{border: 8px solid black; padding: 3px; width: auto;}
 
-div.loc-display{width: 400px; float: left; overflow-y:visible; padding: 0 20px;}
+div.panel-info{border-top: 2px solid #999; padding-top: 3px; padding-bottom: 3px;}
+
+.panel-select{border: 1px solid purple; background-color: #ffe;}
+.panel-select div img {vertical-align: middle;} /* display: inline-block; width: 20em; */
+.panel-select div{padding: 1px 3px; border-bottom: 1px solid #999;}
+.panel-select span.panel-data{display: inline-block; width: 24em;}
+
+/*div.loc-display{width: 400px; float: left; overflow-y:visible; padding: 0 20px;}*/
+div.loc-display{float: left; overflow:visible; padding: 0 10px 0 0;}
 div.loc-display table{background-color: #ffe; }
 div.loc-display th{color: white; background-color: black; padding: 10px 0px; text-align: center;}
 /* div.loc-display td div.loc-img {min-height: 60px;} */
