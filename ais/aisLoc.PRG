@@ -285,14 +285,14 @@ define class ais_LocDisplay as aisLocPage
               if !(loLoc.Loc_H1 = 36 and loLoc.Loc_W1 = 75 and loLoc.Loc_H2 = 0)
                 lcCell = m.lcCell + L7BR + HTLink(StuffUrl(m.lcUrl, "special", .t.), "special...")
               endif
-              select (loCatQ.cAlias)
-              scan for !empty(Pnl_Design_Category)
-                lcCell = m.lcCell + L7BR + HTLink(StuffUrl(m.lcUrl, "categ", trim(Pnl_Design_Category)), trim(Pnl_Design_Category) + "...")
-              endscan 
+*!*                select (loCatQ.cAlias)
+*!*                scan for !empty(Pnl_Design_Category)
+*!*                  lcCell = m.lcCell + L7BR + HTLink(StuffUrl(m.lcUrl, "categ", trim(Pnl_Design_Category)), trim(Pnl_Design_Category) + "...")
+*!*                endscan 
               lcCell = m.lcCell + '</td>' + crlf 
             endif 
           else
-            lcCell = '<td class="loc-link">' + ;
+            lcCell = '<td class="loc-link' + iif(loPlc.Pnl_Completed, '', ' incomplete') + '">' + ;
               '<span class="id-field panel">' + HtLink(stuffUrl(urls.item("PnlHome"), "pnl", loPlc.Pnl_Id), AisFormatID(loPlc.Pnl_Id)) + '</span>' + ;
               '<br>(' + trim(loPlc.Pnl_Dim_1) + 'x' + trim(loPlc.Pnl_Dim_2) + ', ' + trim(loPlc.Pnl_Design_Category) + ')' + ;
               L7BR + HTLink(StuffUrl(urls.item("LocUnassign"), "plc", loPlc.Plc_PK), "Remove...", "Detach panel from location") + ;
@@ -602,7 +602,7 @@ define class ais_LocAssign as aisLocPage
   endfunc && processRequest
   * --------------------------------------------------------- *
   function page_SelectPanel(loQ)
-    local lcTmp, lcItem, lcSel, lcRet
+    local lcTmp, lcItem, lcSel, lcRet, lcClass
     lcRet = ""
     lcSel = ""
     text to lcTmp noshow pretext 3
@@ -611,8 +611,9 @@ define class ais_LocAssign as aisLocPage
     endtext 
     select (loQ.cAlias)
     scan
+      lcClass = iif(Pnl_Completed, "", "incomplete")
       lcItem = textmerge(m.lcTmp)
-      lcSel = m.lcSel + HTWrap(HTLink(StuffUrl(this.cUrlC, "pnlsel", Pnl_PK), m.lcItem), 'div')
+      lcSel = m.lcSel + HTWrap(HTLink(StuffUrl(this.cUrlC, "pnlsel", Pnl_PK), m.lcItem), 'div', , m.lcClass)
 
     endscan
     lcRet = HTWrap(m.lcSel, 'div', , 'panel-select')
@@ -844,7 +845,7 @@ define class AisPlcQuery as L7Query
         dimension .aJoins[.nJoins, 3]
         .aJoins[.nJoins, 1] = "Panel"
         .aJoins[.nJoins, 2] = "Plc_Pnl_FK = Pnl_PK"
-        .AddFields("Pnl_ID, Pnl_Stitcher_Art_FK, Pnl_Single_Piece, Pnl_Dim_1, Pnl_Dim_2, Pnl_Design_Category")
+        .AddFields("Pnl_ID, Pnl_Stitcher_Art_FK, Pnl_Single_Piece, Pnl_Dim_1, Pnl_Dim_2, Pnl_Design_Category, Pnl_Completed")
       endif 
 
       if !isnull(.cSide)

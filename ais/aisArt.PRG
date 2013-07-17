@@ -1497,6 +1497,7 @@ define class aisArtistForms AS AisForm
 
       .AddObject("cboTrn_FK", "L7Popup")
       with .cboTrn_FK
+        .cGroupId = "train"
         .cControlSource = "V_artist.Art_Installation_Trn_FK"
         .lRequired = .f.
         .cLabel = "Training Session"
@@ -1512,6 +1513,7 @@ define class aisArtistForms AS AisForm
 
       .AddObject("chkTraining_Signed", "L7Checkbox")
       with .chkTraining_Signed
+        .cGroupId = "train"
         .cControlSource = "V_artist.Art_Training_Signed"
         .cCaption = "Signed as Reading Training"
         .cLabel = "Training"
@@ -1519,13 +1521,14 @@ define class aisArtistForms AS AisForm
 
       .AddObject("chkWaiver_Signed", "L7Checkbox")
       with .chkWaiver_Signed
+        .cGroupId = "train"
         .cControlSource = "V_artist.Art_Waiver_Signed"
         .cCaption = "Signed Waiver"
         .cLabel = "Waiver"
       endwith
     endwith 
     return
-  endfunc 
+  endfunc  && addTrainingControls 
   * --------------------------------------------------------- *
   function addParticipationControls()
     with this
@@ -1663,25 +1666,16 @@ define class aisArtistForms AS AisForm
         .cCaption = "Help with Outreach"
       endwith
 
-      .colPart.AddObjectToParent("edtHelp_Other", "L7Textarea")
+      .addObject("edtHelp_Other", "L7Textarea")
       with .edtHelp_Other
         .cGroupId = "part"
         .cControlSource = "V_artist.Art_Help_Other"
         .cLabel = "Other ways you want to help"
-        .cPattern = [(%l%s)%c(%s%i)(%b%v)]
         .nRows = 3
       endwith
 
       if poContext.lAdmin 
         if !this.lNewRecord
-          .AddObject("edtParticipation", "L7Textarea")
-          with .edtParticipation
-            .cGroupId = "part"
-            .cControlSource = "V_artist.Art_Participation"
-            .cLabel = "Original Participation answers (e.g., from blog)"
-            .nRows = 3
-            .cCssClass = "FormControlPrivate"
-          endwith
 
           .AddObject("lblRegister_Time", "L7Label")
           with .lblRegister_Time
@@ -1817,8 +1811,8 @@ define class aisRegisterForm AS aisArtistForms
       endif 
       
       if this.lCustom_Participation
-        .addParticipationControls()
         .addTrainingControls()
+        .addParticipationControls()
       endif 
       
       if this.lNewRecord
@@ -1982,23 +1976,6 @@ define class aisArtistForm AS aisArtistForms
         .cCssStyle = "width: 40%;"
       endwith
 
-      .AddObject("edtName_Orig", "L7Textarea")
-      with .edtName_Orig
-        .cGroupID = "orig1"
-        .cControlSource = "V_artist.Art_Name_Orig"
-        .nRows = 2
-        .cLabel = "Original Name (e.g., from blog)"
-        .cCssClass = "FormControlPrivate"
-      endwith
-      .AddObject("edtContact_Orig", "L7Textarea")
-      with .edtContact_Orig
-        .cGroupID = "orig1"
-        .cControlSource = "V_artist.Art_Contact_Orig"
-        .nRows = 2
-        .cLabel = "Original Contact (e.g., from blog)"
-        .cCssClass = "FormControlPrivate"
-      endwith
-
       .AddObject("divDemo", "L7Divider")
       with .divDemo
         .cLabel = "Demograhic Information"
@@ -2020,18 +1997,7 @@ define class aisArtistForm AS aisArtistForms
         .cControlSource = "V_artist.Art_Neighborhood"
         .cLabel = "Neighborhood"
       endwith
-      .AddObject("edtAddress", "L7Textarea")
-      with .edtAddress
-        .cGroupID  ="demo"
-        .cControlSource = "V_artist.Art_Address"
-        .nRows = 2
-        .cLabel = "Original Neighborhood (e.g., from blog)"
-        .cCssClass = "FormControlPrivate"
-      endwith
 
-      .AddParticipationControls()
-      .addTrainingControls()
-      
       .AddObject("edtComments", "L7Textarea")
       with .edtComments
         .cGroupID = "notes"
@@ -2061,11 +2027,13 @@ define class aisArtistForm AS aisArtistForms
         .cCssClass = "FormControlPrivate"
       endwith
 
+      .addTrainingControls()
+      .addParticipationControls()
       .addAdditionalControls()
-      
       .addSecurityControls()
       
     endwith
+    return 
   endfunc  && AddControls
   * --------------------------------------------------------- *
   function addAdditionalControls()
@@ -2074,6 +2042,42 @@ define class aisArtistForm AS aisArtistForms
       .AddObject("divSS", "L7Divider")
       with .divSS
         .cLabel = "Additional Spreadsheet Columns"
+      endwith
+
+      .AddObject("edtName_Orig", "L7Textarea")
+      with .edtName_Orig
+        .cGroupID = "ss1"
+        .cControlSource = "V_artist.Art_Name_Orig"
+        .nRows = 2
+        .cLabel = "Original Name (e.g., from blog)"
+        .cCssClass = "FormControlPrivate"
+      endwith
+
+      .AddObject("edtContact_Orig", "L7Textarea")
+      with .edtContact_Orig
+        .cGroupID = "ss1"
+        .cControlSource = "V_artist.Art_Contact_Orig"
+        .nRows = 2
+        .cLabel = "Original Contact (e.g., from blog)"
+        .cCssClass = "FormControlPrivate"
+      endwith
+
+      .AddObject("edtAddress", "L7Textarea")
+      with .edtAddress
+        .cGroupID  ="ss1"
+        .cControlSource = "V_artist.Art_Address"
+        .nRows = 2
+        .cLabel = "Original Neighborhood (e.g., from blog)"
+        .cCssClass = "FormControlPrivate"
+      endwith
+
+      .AddObject("edtParticipation", "L7Textarea")
+      with .edtParticipation
+        .cGroupId = "ss1"
+        .cControlSource = "V_artist.Art_Participation"
+        .cLabel = "Original Participation answers (e.g., from blog)"
+        .nRows = 3
+        .cCssClass = "FormControlPrivate"
       endwith
 
       .AddObject("chkReceived", "L7Checkbox")

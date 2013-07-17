@@ -282,7 +282,7 @@ define class ais_PnlList as aisPnlPage
     lcCat = null
     llIsCat = lower(this.cPage_Order) == "categ"
     text to lcTmp noshow 
-      <div class="gallery-item">
+      <div class="gallery-item<<iif(Pnl_Completed,'',' incomplete')>>">
        <<AisPanelImage(Pnl_Id, "_h50", urls.item("PnlFilNew"), Pnl_PK, poContext.lAdmin)>>
        <div class="gallery-item-info">
         <<HTLink(StuffUrl(urls.item("PnlHome"), "pnl", Pnl_PK), AisFormatID(Pnl_ID))>>
@@ -306,7 +306,7 @@ define class ais_PnlList as aisPnlPage
     if m.llIsCat 
       lcToc = HTWrap("Design Categories:&nbsp;" + m.lcToc, "div", , "gallery-toc")
     endif
-    return m.lcToc + m.lcRet
+    return m.lcToc + m.lcRet + [<div class="clear"></div>] + crlf
   endfunc && page_getGalleryDisplay
     
   * ----------------------------------------------------- *  
