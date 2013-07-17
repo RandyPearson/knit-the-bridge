@@ -602,11 +602,11 @@ define class ais_LocAssign as aisLocPage
   endfunc && processRequest
   * --------------------------------------------------------- *
   function page_SelectPanel(loQ)
-    local lcTmp, lcItem, lcSel, lcRet, lcClass, lcArt
+    local lcTmp, lcItem, lcSel, lcRet, lcClass, lcArt, lcLinks
     lcRet = ""
     lcSel = ""
     text to lcTmp noshow pretext 3
-      <span class="panel-data"><<Pnl_ID>> <<iif(Pnl_Completed,'','INCOMPLETE!')>>
+      <span class="panel-data">Choose <<Pnl_ID>> <<iif(Pnl_Completed,'','INCOMPLETE!')>>
        (<<trim(Pnl_Dim_1)>> x <<trim(Pnl_Dim_2)>>, 
        <<trim(Pnl_Design_Category)>>,
        <<iif(Pnl_Single_Piece, "1-piece", "bits")>>)
@@ -617,10 +617,14 @@ define class ais_LocAssign as aisLocPage
     select (loQ.cAlias)
     scan
       lcClass = iif(Pnl_Completed, "", "incomplete")
-      lcArt = iif(empty(Pnl_Stitcher_Art_FK), "multi-artist", AisArtistName(Pnl_Stitcher_Art_FK))
+      lcArt = iif(empty(Pnl_Stitcher_Art_FK), "multi-artist", HtWrap(AisArtistName(Pnl_Stitcher_Art_FK), 'strong'))
       lcItem = textmerge(m.lcTmp)
+      lcLinks = HTLink(StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", Pnl_PK), "[Panel...]")
+      if !empty(Pnl_Stitcher_Art_FK)
+        lcLinks = m.lcLinks + " " + HTLink(StuffUrl(this.cUrlA, 2, "ArtHome", "art", Pnl_Stitcher_Art_FK), "[Artist...]")
+      endif
       lcSel = m.lcSel + HTWrap( ; 
-        HTLink(StuffUrl(this.cUrlC, "pnlsel", Pnl_PK), m.lcItem) + m.lcArt, ;
+        HTLink(StuffUrl(this.cUrlC, "pnlsel", Pnl_PK), m.lcItem) + m.lcArt + " " + m.lcLinks, ;
         'div', , m.lcClass)
 
     endscan
