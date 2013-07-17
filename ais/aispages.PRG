@@ -555,6 +555,7 @@ define class ais_DisReport as aisPage
   cSubTitle = "Dis Report"
   lPage_Whole = null
   lPage_Multi = null 
+  lPage_Complete = null 
   * --------------------------------------------------------- *
   function BeforeProcessRequest
     local lcStr
@@ -564,6 +565,9 @@ define class ais_DisReport as aisPage
     
     lcStr = this.ReadQueryString("Multi", .t., .t.)
     this.lPage_Multi = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
+
+    lcStr = this.ReadQueryString("Complete", .t., .t.)
+    this.lPage_Complete = iif(empty(m.lcStr), null, left(m.lcStr,1) $ '1yYtT')
 
     dodefault()  && required bubble-up
     return    
@@ -577,6 +581,7 @@ define class ais_DisReport as aisPage
 
       .addMenuItem(m.lcMenu, "Whole-Panel Submitters", StuffUrl(.cUrlB, "whole", "1"))
       .addMenuItem(m.lcMenu, "Multi-Panel Submitters", StuffUrl(.cUrlB, "multi", "1"))
+      .addMenuItem(m.lcMenu, "Completely-Dissed List", StuffUrl(.cUrlB, "complete", "1"))
       .addMenuItem(m.lcMenu, "Full Report",            .cUrlB)
 
     endwith 
@@ -593,6 +598,9 @@ define class ais_DisReport as aisPage
       endif 
       if !isnull(.lPage_Multi)
         lcFilter = m.lcFilter + [ and ] + iif(.lPage_Multi, [Count_ - Piece_ > 1], [Count_ - Piece_ <= 1])
+      endif 
+      if !isnull(.lPage_Complete)
+        lcFilter = m.lcFilter + [ and ] + iif(.lPage_Complete, [Pce_On_Bridge_ + Pnl_On_Bridge_ = 0], [Pce_On_Bridge_ + Pnl_On_Bridge_ > 0])
       endif 
     endwith 
     return substr(m.lcFilter, 1 + len([ and ]))
@@ -860,7 +868,7 @@ define class ais_Home as aisPage
     addproperty(m.loState, "estimatedShortfall", 0)
     addproperty(m.loState, "noShowFraction", 0.75)
     addproperty(m.loState, "bitsPerPerson", 1.70)
-    addproperty(m.loState, "railingNoShowFraction", 0.40)
+    addproperty(m.loState, "railingNoShowFraction", 0.70)
     return m.loState
   endfunc && page_getState
   * ----------------------------------------------------- *  
@@ -897,11 +905,8 @@ define class ais_Home as aisPage
           <tr><th>- Panels Available for Location Assignment</th>
             <td></td><td><<loState.unlocatedPanels>></td></tr>
             
-          <tr><th>Panels Still Needed</th>
-            <td></td><td class="total"><<loState.neededPanels>></td></tr>
-
-          <tr><th>Whole Panels No-Shows</th>
-            <td><<loState.duePanels>></td><td></td></tr>
+          <tr><th><<iif(loState.neededPanels > 0, "Panels Still Needed", "Panel Surplus!")>></th>
+            <td></td><td class="total"><<iif(loState.neededPanels > 0, loState.neededPanels, -loState.neededPanels)>></td></tr>
 
           <tr><th class="section" colspan="3">RAILING ESTIMATES: 9 x 105</th></tr>
 
@@ -956,6 +961,9 @@ define class ais_Home as aisPage
 
 *!*            <tr><th>- Est. Contribution from Pending Bits</th>
 *!*              <td></td><td><<loState.estimatedBitPanels>></td></tr>
+
+*!*            <tr><th>Whole Panels No-Shows</th>
+*!*              <td><<loState.duePanels>></td><td></td></tr>
 
     return m.lcTmp
   endfunc && page_getTemplate
