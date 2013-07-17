@@ -602,18 +602,26 @@ define class ais_LocAssign as aisLocPage
   endfunc && processRequest
   * --------------------------------------------------------- *
   function page_SelectPanel(loQ)
-    local lcTmp, lcItem, lcSel, lcRet, lcClass
+    local lcTmp, lcItem, lcSel, lcRet, lcClass, lcArt
     lcRet = ""
     lcSel = ""
     text to lcTmp noshow pretext 3
-      <<Pnl_ID>>  (<<trim(Pnl_Dim_1)>> x <<trim(Pnl_Dim_2)>>, <<trim(Pnl_Design_Category)>>) <<AisPanelImage(Pnl_Id, "_h50")>>
+      <span class="panel-data"><<Pnl_ID>> <<iif(Pnl_Completed,'','INCOMPLETE!')>>
+       (<<trim(Pnl_Dim_1)>> x <<trim(Pnl_Dim_2)>>, 
+       <<trim(Pnl_Design_Category)>>,
+       <<iif(Pnl_Single_Piece, "1-piece", "bits")>>)
+      </span> 
+      <<AisPanelImage(Pnl_Id, "_h50")>>
       
     endtext 
     select (loQ.cAlias)
     scan
       lcClass = iif(Pnl_Completed, "", "incomplete")
+      lcArt = iif(empty(Pnl_Stitcher_Art_FK), "multi-artist", AisArtistName(Pnl_Stitcher_Art_FK))
       lcItem = textmerge(m.lcTmp)
-      lcSel = m.lcSel + HTWrap(HTLink(StuffUrl(this.cUrlC, "pnlsel", Pnl_PK), m.lcItem), 'div', , m.lcClass)
+      lcSel = m.lcSel + HTWrap( ; 
+        HTLink(StuffUrl(this.cUrlC, "pnlsel", Pnl_PK), m.lcItem) + m.lcArt, ;
+        'div', , m.lcClass)
 
     endscan
     lcRet = HTWrap(m.lcSel, 'div', , 'panel-select')
