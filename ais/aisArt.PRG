@@ -1731,7 +1731,7 @@ define class aisRegisterForm AS aisArtistForms
         .cControlSource = "V_artist.Art_Last_Name"
         .lRequired = .t.
         .cLabel = "Last Name"
-        .cInstructions = "Required. Enter NLN if not providing your last name."
+        .cInstructions = "Enter NLN if no last name"
         .cCssStyle = "width: 30%;"
       endwith
       .AddObject("chkRelease_Name", "AisRadioCheckbox")
@@ -1760,7 +1760,7 @@ define class aisRegisterForm AS aisArtistForms
         .cFieldType = "C"
         .cControlSource = "V_artist.Art_Email"
         .cLabel = "Email"
-        .cInstructions = "Not required, but very helpful for KtB to communicate with you."
+        .cInstructions = "Not required, but eases KtB communications with you."
         .cCssStyle = "width: 30%;"
         .nSize = 40
       endwith
@@ -1770,7 +1770,7 @@ define class aisRegisterForm AS aisArtistForms
         .cFieldType = "C"
         .cControlSource = "V_artist.Art_Phone"
         .cLabel = "Phone"
-        .cInstructions = "Optional, but if not providing email, very helpful for KtB to communicate with you."
+        .cInstructions = "Optional, but if no email, enables KtB communication"
         .cCssStyle = "width: 30%;"
       endwith
 
@@ -1788,16 +1788,17 @@ define class aisRegisterForm AS aisArtistForms
         .nRowSourceType = L7_ROWSOURCETYPE_VALUE
         .cRowSource = THISAPP_AGE_RANGES
       endwith
-      if !this.lCustom_Contributing 
-        * on Registration form, allow full address to be entered
-        .AddObject("edtAddress", "L7Textarea")
-        with .edtAddress
-          .cGroupID  ="demo"
-          .cControlSource = "V_artist.Art_Address"
-          .nRows = 2
-          .cLabel = "Neighborhood or Township"
-        endwith
-      else
+
+      *!*        if !this.lCustom_Contributing 
+      *!*          * on Registration form, allow full address to be entered
+      *!*          .AddObject("edtAddress", "L7Textarea")
+      *!*          with .edtAddress
+      *!*            .cGroupID  ="demo"
+      *!*            .cControlSource = "V_artist.Art_Address"
+      *!*            .nRows = 2
+      *!*            .cLabel = "Neighborhood or Township"
+      *!*          endwith
+      *!*        else
         .AddObject("txtNeighborhood", "L7Textbox")
         with .txtNeighborhood
           .cGroupID  ="demo"
@@ -1808,8 +1809,8 @@ define class aisRegisterForm AS aisArtistForms
             .setValue(page.oArt.Art_Neighborhood)
           endif
         endwith
-      endif 
-      
+      *!*        endif 
+        
       if this.lCustom_Participation
         .addTrainingControls()
         .addParticipationControls()
