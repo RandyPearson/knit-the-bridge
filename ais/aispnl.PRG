@@ -919,7 +919,7 @@ define class ais_PnlHome as aisPnlPage
       loCol = .AddCursorColumn('Pce_Dim_1', 'Dim 1')
       loCol = .AddCursorColumn('Pce_Dim_2', 'Dim 2')
       loCol = .addCursorColumn("Pce_Comments", "Comments")
-      loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
+      *!*        loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
       loCol = .AddCursorColumn('Pce_Received', 'Received')
 
       if poContext.lAdmin

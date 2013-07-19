@@ -1209,7 +1209,7 @@ define class ais_ArtHome as aisArtPage
         loCol = .AddCursorColumn('Pce_Dim_1', 'Dim 1')
         loCol = .AddCursorColumn('Pce_Dim_2', 'Dim 2')
         loCol = .addCursorColumn("Pce_Comments", "Comments")
-        loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
+        *!*          loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
         loCol = .AddCursorColumn('Pce_Received', 'Received')
 
         loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;  

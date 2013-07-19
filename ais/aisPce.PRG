@@ -295,7 +295,7 @@ define class ais_PceList as aisPcePage
       loCol = .addCursorColumn("Pce_Comments", "Comments")
 
       if isnull(loQry.lOrphans) or loQry.lOrphans
-        loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
+        *!*          loCol = .AddCursorColumn('Pce_Shipped', 'Shipped')
         loCol = .AddCursorColumn('Pce_Received', 'Received')
 
         *!*          loCol = .addCursorColumn("Fac_Name", "Current Storage Facility", ;
@@ -441,8 +441,8 @@ define class ais_PceHome as aisPcePage
       endif
 
       .AddHeading('Logistical Information')
-      .AddRow("Shipped/Delivered?", loData.Pce_Shipped)
-      .AddRow("Ship/Delivery Date", loData.Pce_Ship_Date)
+      *!*        .AddRow("Shipped/Delivered?", loData.Pce_Shipped)
+      *!*        .AddRow("Ship/Delivery Date", loData.Pce_Ship_Date)
       .AddRow("Received?", loData.Pce_RECEIVED)
       .AddRow("Acknowledged?", loData.Pce_Acknowledged)
       .AddRow("Current Storage Facility", iif(m.llPanel, "(panel) " + AisFacilityName(this.oPnl.Pnl_Fac_FK), AisFacilityName(loData.Pce_Fac_FK)))
@@ -778,21 +778,21 @@ define class aisPieceForm as AisForm
         .cCssClass = "FormControlPrivate"
       endwith
 
-      .AddObject("chkShipped", "L7Checkbox")
-      with .chkShipped
-        *.cGroupID = "STATUS"
-        .cControlSource = "V_piece.Pce_Shipped"
-        .cLabel = "Shipped/Delivered?"
-      endwith 
+    *!*        .AddObject("chkShipped", "L7Checkbox")
+    *!*        with .chkShipped
+    *!*          *.cGroupID = "STATUS"
+    *!*          .cControlSource = "V_piece.Pce_Shipped"
+    *!*          .cLabel = "Shipped/Delivered?"
+    *!*        endwith 
 
-      .AddObject("txtShip_Date", "L7Textbox")
-      with .txtShip_Date
-        *.cGroupID = "STATUS"
-        .cFieldType = "D"
-        .cControlSource = "V_Piece.Pce_Ship_Date"
-        .cLabel = "Ship/delivery date (expected or actual)"
-        .cInstructions = "MM/DD/YYYY"
-      endwith 
+    *!*        .AddObject("txtShip_Date", "L7Textbox")
+    *!*        with .txtShip_Date
+    *!*          *.cGroupID = "STATUS"
+    *!*          .cFieldType = "D"
+    *!*          .cControlSource = "V_Piece.Pce_Ship_Date"
+    *!*          .cLabel = "Ship/delivery date (expected or actual)"
+    *!*          .cInstructions = "MM/DD/YYYY"
+    *!*        endwith 
 
       .AddObject("chkReceived", "L7Checkbox")
       with .chkReceived
@@ -800,6 +800,9 @@ define class aisPieceForm as AisForm
         .cControlSource = "V_piece.Pce_Received"
         .cLabel = "Received?"
         .cCssClass = "FormControlPrivate"
+        if this.lNewRecord
+          .SetValue(.t.)
+        endif 
       endwith 
 
     endwith
