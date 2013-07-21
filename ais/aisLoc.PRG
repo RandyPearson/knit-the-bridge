@@ -292,7 +292,8 @@ define class ais_LocDisplay as aisLocPage
               lcCell = m.lcCell + '</td>' + crlf 
             endif 
           else
-            lcCell = '<td class="loc-link' + iif(loPlc.Pnl_Completed, '', ' incomplete') + '">' + ;
+            lcCell = '<td class="loc-link' + iif(loPlc.Pnl_Excluded, ' excluded', iif(loPlc.Pnl_Completed, '', ' incomplete')) + '">' + ;
+              iif(loPlc.Pnl_Excluded, '<span class="excluded">EXCLUDED</span><br>', '') + ;
               '<span class="id-field panel">' + HtLink(stuffUrl(urls.item("PnlHome"), "pnl", loPlc.Pnl_Id), AisFormatID(loPlc.Pnl_Id)) + '</span>' + ;
               '<br>(' + trim(loPlc.Pnl_Dim_1) + 'x' + trim(loPlc.Pnl_Dim_2) + ', ' + trim(loPlc.Pnl_Design_Category) + ')' + ;
               L7BR + HTLink(StuffUrl(urls.item("LocUnassign"), "plc", loPlc.Plc_PK), "Remove...", "Detach panel from location") + ;
@@ -411,7 +412,7 @@ define class ais_LocList as aisLocPage
         loCol = .addCursorColumn("Loc_PK", m.lcOrient + "<br>Panel", ;
           [iif(Loc_Skip, "skip", (] + ;
             [iif(seek(Loc_PK + "] + m.lcOrient + [", "PlcQuery_"),] + ;
-              [ HTLink(StuffUrl(Urls.item("PnlHome"), "pnl", PlcQuery_.Plc_Pnl_FK), AisFormatID(PlcQuery_.Pnl_ID), 'title="go to panel" id="' + PlcQuery_.Plc_Pnl_FK + '"', "id-field panel")] + [, ] + ;
+              [ HTLink(StuffUrl(Urls.item("PnlHome"), "pnl", PlcQuery_.Plc_Pnl_FK), AisFormatID(PlcQuery_.Pnl_ID), 'title="go to panel" id="' + PlcQuery_.Plc_Pnl_FK + '"', "id-field panel" + iif(PlcQuery_.Pnl_Excluded, " excluded", ""))] + [, ] + ;
               [ HTLink(StuffUrl(Urls.item("LocAssign"), "loc", Loc_PK, "orient", "] + m.lcOrient + ["), "unassigned", "assign panel...")] + ;
             [)))])
       next 
@@ -616,7 +617,7 @@ define class ais_LocAssign as aisLocPage
     endtext 
     select (loQ.cAlias)
     scan
-      lcClass = iif(Pnl_Completed, "", "incomplete")
+      lcClass = iif(Pnl_Excluded, "excluded", iif(Pnl_Completed, "", "incomplete"))
       lcArt = iif(empty(Pnl_Stitcher_Art_FK), "multi-artist", HtWrap(AisArtistName(Pnl_Stitcher_Art_FK), 'strong'))
       lcItem = textmerge(m.lcTmp)
       lcLinks = HTLink(StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", Pnl_PK), "[Panel...]")
@@ -857,7 +858,7 @@ define class AisPlcQuery as L7Query
         dimension .aJoins[.nJoins, 3]
         .aJoins[.nJoins, 1] = "Panel"
         .aJoins[.nJoins, 2] = "Plc_Pnl_FK = Pnl_PK"
-        .AddFields("Pnl_ID, Pnl_Stitcher_Art_FK, Pnl_Single_Piece, Pnl_Dim_1, Pnl_Dim_2, Pnl_Design_Category, Pnl_Completed")
+        .AddFields("Pnl_ID, Pnl_Stitcher_Art_FK, Pnl_Single_Piece, Pnl_Dim_1, Pnl_Dim_2, Pnl_Design_Category, Pnl_Completed, Pnl_Excluded")
       endif 
 
       if !isnull(.cSide)
