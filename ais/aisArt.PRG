@@ -1805,8 +1805,8 @@ define class aisRegisterForm AS aisArtistForms
           .cFieldType = "C"
           .cControlSource = "V_artist.Art_Neighborhood"
           .cLabel = "Neighborhood"
-          if this.lNewRecord
-            .setValue(page.oArt.Art_Neighborhood)
+          if this.lNewRecord and this.lCustom_Contributing 
+            .setValue(page.oArt.Art_Neighborhood) && default to same as main artist 
           endif
         endwith
       *!*        endif 
