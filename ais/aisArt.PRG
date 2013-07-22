@@ -9,7 +9,7 @@ function AisArtQueryFlags()
     '{"root": "core", "prompt": "Core Team"}' + ;
     ',{"root": "admin", "menu": false}' + ;
     ',{"root": "artist", "prompt": "All Artists"}' + ;
-    ',{"root": "release", "field": "Art_Release_Name", "prompt": "Release Name"}' + ;
+    ',{"root": "releaseinner", "field": "Art_Release_Name", "prompt": "Release Name"}' + ;
     ',{"root": "panelsignup", "combine": false, "prompt": "Panel Sign-Up"}' + ;
     ',{"root": "panelssubmitted", "combine": false, "prompt": "Submitted Panels"}' + ;
     ',{"root": "bitsorpanelssubmitted", "combine": false, "prompt": "Submitted Bits/Panels"}' + ;
@@ -2431,6 +2431,7 @@ define class AisArtQuery AS L7Query
   lInactiveInner = null 
   lArtist = null
   lRelease = null 
+  lReleaseInner = null 
   lStarred = null
   lInstall = null
   lDeinstall = null
@@ -2524,6 +2525,10 @@ define class AisArtQuery AS L7Query
         lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + [Art_Inactive = ] + iif(.lInactiveInner, [.t.], [.f.])
       endif 
       
+      if !isnull(.lRelease) 
+        .cWhereClause = [WHERE Art_Release_Name = ] + IIF(.lRelease, [.T.], [.F.])
+      endif 
+
       if !isnull(.cID)
         .cWhereClause = .cWhereClause + [ and Art_Id = '] + .cId + [']
       endif

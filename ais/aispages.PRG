@@ -1171,6 +1171,9 @@ define class ais_LocateByArtistSearch as aisPage
       endscan
       .Write('</ol>' + crlf)
       .WriteTag(HTLink(this.cCancelUrl, "Try Another Search..."), 'p')
+      if poContext.lDeveloper
+        Response.Write(HTWrap(loQry.cSqlStatement, 'div,p', 'admin,debug'))
+      endif
     endwith 
     return 
   endfunc 
