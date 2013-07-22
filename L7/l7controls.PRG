@@ -648,6 +648,7 @@ DEFINE CLASS L7Textbox AS L7_CONTROL_CLASS
   cControlCssClass      = "FormTextbox"
   lPassword      = .F.
   lAutoComplete  = .T.
+  add object InputModes as collection 
   nSize          = 0
   nMinLength     = 0
   nMaxLength     = 0
@@ -673,8 +674,19 @@ DEFINE CLASS L7Textbox AS L7_CONTROL_CLASS
   cStripChars     = "<>" && take these characters out of textboxes entirely--DON'T CONSIDER INVALID
   cValidChars = L7_FIELD_CHARACTERS  && if non-empty, input is INVALID unless all characters are from this set (e.g., '0123456789')
   cInvalidChars = ""   && if non-empty, input is INVALID if any of these characters appears (e.g., '{}[]<>')
+
+  cInputMode = ""  && see _ASSIGN method 
   * ------------------------------------------------------------------- *
-  FUNCTION SetValue(lvValue, lvNewValue)
+  function cInputMode_ASSIGN(lcVal)
+    if m.lcVal = "+"  && append to list
+      this.cInputMode = iif(empty(this.cInputMode), "", this.cInputMode + " ") + alltrim(substr(m.lcVal, 2))
+    else
+      this.cInputMode = m.lcVal
+    endif
+    return 
+  endfunc 
+  * ------------------------------------------------------------------- *
+  function SetValue(lvValue, lvNewValue)
     * L7Textbox::SetValue
     * Call basic control default behavior:
     DODEFAULT( m.lvValue, m.lvNewValue )
@@ -949,58 +961,56 @@ DEFINE CLASS L7Textbox AS L7_CONTROL_CLASS
     RETURN ( THIS.nInvalidCount = 0 )
   ENDFUNC  && Valid
   * ------------------------------------------------------------------- *
-  FUNCTION GetOutput
-    THIS.lOutputCreated = .T.
-    THIS.SetValueIfNeeded()
-    
-    *[[? Should the next 2 parts be reversed? (ie, if a control is both hidden and disabled)
-    IF THIS.lDisabled
-      RETURN [<span] + ;
-        IIF( EMPTY( THIS.cReadOnlyDataCssClass), [], ;
-          [ class="] + THIS.cReadOnlyDataCssClass + ["]) + ;
-        [>] + ;
-        ALLTRIM( TRANSFORM( THIS.vNewValue )) + [</span>]
-    ENDIF
-    IF THIS.lHidden
-      RETURN THIS.GetHiddenOutput()
-    ENDIF
-    IF THIS.nSize = 0
-      IF VARTYPE( THIS.vNewValue ) # "C" OR LEN( THIS.vNewValue) = 0
-        THIS.nSize = 10
-      ELSE
-        THIS.nSize = LEN( THIS.vNewValue )
-      ENDIF
-    ENDIF
-    LOCAL lcText
-    lcText = ""
+  function GetOutput
+    local lcText
 
-    lcText = m.lcText + [<input type="] + ;
-      IIF( THIS.lPassword, "password", ;
-        IIF( THIS.lFileUpload, "file", "text" ) ) + ["] + ;
-      [ name="] + THIS.cHtmlName + ["] + ;
-      [ id="] + THIS.GetID() + ["] + ;
-      [ value="] + THIS.cDisplayValue + ["] + ;  && [[ still need protection against double-quotes in data!
-      IIF(THIS.lAutoComplete, [], [ autocomplete="off"]) + ;
-      IIF( EMPTY( THIS.cControlCssClass), [], [ class="] + THIS.cControlCssClass + ["]) + ;
-      IIF( EMPTY( THIS.cControlCssStyle), [], [ style="] + THIS.cControlCssStyle + ["])
+    with this
+      .lOutputCreated = .T.
+      .SetValueIfNeeded()
       
-    *!*      lcText = m.lcText + ;
-    *!*        [ name="] + THIS.cHtmlName + ["] + ;
-    *!*        [ id="] + THIS.GetID() + ["] + ;
-    *!*        [ value="] + THIS.cDisplayValue + ["] 
-      
-    IF NOT EMPTY(THIS.cExtraTags)
-      lcText = m.lcText + [ ] + THIS.cExtraTags
-    ENDIF
+      *[[? Should the next 2 parts be reversed? (ie, if a control is both hidden and disabled)
+      if .lDisabled
+        return [<span] + ;
+          iif(empty(.cReadOnlyDataCssClass), [], ;
+            [ class="] + .cReadOnlyDataCssClass + ["]) + ;
+          [>] + ;
+          alltrim(transform(.vNewValue )) + [</span>]
+      endif 
+      if .lHidden
+        return this.GetHiddenOutput()
+      endif 
+      if .nSize = 0
+        if vartype(.vNewValue ) # "C" OR len(.vNewValue) = 0
+          .nSize = 10
+        else 
+          .nSize = len(.vNewValue)
+        endif 
+      endif 
+      lcText = ""
 
-    lcText = m.lcText + [ size="] + LTRIM( STR( THIS.nSize)) + ["] + ;
-      IIF( THIS.nMaxLength > 0, ;
-        [ maxlength="] + LTRIM( STR( THIS.nMaxLength)) + ["], [])
-    lcText = m.lcText + THIS.GetEventAttributes()
-    lcText = m.lcText + [ />]
+      lcText = m.lcText + [<input type="] + ;
+        iif(.lPassword, "password", ;
+          iif(.lFileUpload, "file", "text" ) ) + ["] + ;
+        [ name="] + .cHtmlName + ["] + ;
+        [ id="] + .GetID() + ["] + ;
+        [ value="] + .cDisplayValue + ["] + ;  && [[ still need protection against double-quotes in data!
+        iif(.lAutoComplete, [], [ autocomplete="off"]) + ;
+        iif(empty(.cControlCssClass), [], [ class="] + .cControlCssClass + ["]) + ;
+        iif(empty(.cControlCssStyle), [], [ style="] + .cControlCssStyle + ["]) + ;
+        iif(empty(.cInputMode), [], [ inputmode="] + .cInputMode + ["])
+        
+      if !empty(.cExtraTags) && poor name, really extraAttributes 
+        lcText = m.lcText + [ ] + .cExtraTags
+      endif 
 
-    RETURN m.lcText 
-  ENDFUNC  && GetOutput
+      lcText = m.lcText + [ size="] + ltrim(str(.nSize)) + ["] + ;
+        iif(.nMaxLength > 0, ;
+          [ maxlength="] + ltrim(str(.nMaxLength)) + ["], [])
+      lcText = m.lcText + .GetEventAttributes()
+      lcText = m.lcText + [ />]
+    endwith 
+    return m.lcText 
+  endfunc  && GetOutput
   * ------------------------------------------------------------------- *
   FUNCTION GetEventAttributes()
     LOCAL lcAttr
