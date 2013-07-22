@@ -1574,6 +1574,8 @@ define class aisArtistForms AS AisForm
         .cControlSource = "V_artist.Art_Panel_Count"
         .nSize = 3
         .cLabel = "# of Whole Panels"
+        .cType = "number"
+        .cExtraTags = [min="0" max="3" step="1"]
         .cInstructions = "(estimate only, if n/a, enter 0)"
       endwith
 
@@ -1590,6 +1592,8 @@ define class aisArtistForms AS AisForm
         .cControlSource = "V_artist.Art_Railing_1_Count"
         .nSize = 3
         .cLabel = "# of 9x105 Railing pieces"
+        .cType = "number"
+        .cExtraTags = [min="0" max="3" step="1"]
         .cInstructions = "(if none, enter 0)"
       endwith
 
@@ -1598,21 +1602,12 @@ define class aisArtistForms AS AisForm
         .cFieldType = "I"
         .cControlSource = "V_artist.Art_Railing_2_Count"
         .nSize = 3
+        .cType = "number"
+        .cExtraTags = [min="0" max="3" step="1"]
         .cLabel = "# of 15x80 Railing pieces"
         .cInstructions = "(if none, enter 0)"
       endwith
 
-      #IF THISAPP_TYPE_3_RAILINGS
-      .colArt.AddObjectToParent("txtRailing_3_Count", "L7Textbox")
-      with .txtRailing_3_Count
-        .cFieldType = "I"
-        .cControlSource = "V_artist.Art_Railing_3_Count"
-        .nSize = 3
-        .cLabel = "# of 9x80 Railing pieces"
-        .cInstructions = "(if none, enter 0)"
-      endwith
-      #ENDIF
-      
       .AddObject("colPart", "L7CollectionControl")  && L7CheckboxCollection
       with .colPart
         .cGroupId = "part"
@@ -1774,6 +1769,7 @@ define class aisRegisterForm AS aisArtistForms
         .cFieldType = "C"
         .cControlSource = "V_artist.Art_Email"
         .cLabel = "Email"
+        .cType = "email"
         .cInputMode = "EmailAddress" 
         .cInstructions = "Not required, but eases KtB communications with you."
         .cCssStyle = "width: 30%;"
@@ -1785,6 +1781,7 @@ define class aisRegisterForm AS aisArtistForms
         .cFieldType = "C"
         .cControlSource = "V_artist.Art_Phone"
         .cLabel = "Phone"
+        * .cType = "tel" && didn't allow spaces on iPhone 
         .cInputMode = "PhoneNumber" 
         .cInstructions = "Optional, but if no email, enables KtB communication"
         .cCssStyle = "width: 30%;"
@@ -1973,6 +1970,7 @@ define class aisArtistForm AS aisArtistForms
         .cFieldType = "C"
         .cControlSource = "V_artist.Art_Email"
         .cLabel = "Email"
+        .cType = "email"
         .cCssStyle = "width: 60%;"
         .nSize = 60
       endwith
