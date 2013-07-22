@@ -415,6 +415,14 @@ define class ais_LocList as aisLocPage
               [ HTLink(StuffUrl(Urls.item("PnlHome"), "pnl", PlcQuery_.Plc_Pnl_FK), AisFormatID(PlcQuery_.Pnl_ID), 'title="go to panel" id="' + PlcQuery_.Plc_Pnl_FK + '"', "id-field panel" + iif(PlcQuery_.Pnl_Excluded, " excluded", ""))] + [, ] + ;
               [ HTLink(StuffUrl(Urls.item("LocAssign"), "loc", Loc_PK, "orient", "] + m.lcOrient + ["), "unassigned", "assign panel...")] + ;
             [)))])
+
+        loCol = .addCursorColumn("Loc_PK", m.lcOrient + "<br>Panel", ;
+          [iif(Loc_Skip, "", (] + ;
+            [iif(seek(Loc_PK + "] + m.lcOrient + [", "PlcQuery_"),] + ;
+              [ HTLink(StuffUrl(Urls.item("PnlHome"), "pnl", PlcQuery_.Plc_Pnl_FK), AisPanelImage(PlcQuery_.Pnl_ID, "_h25"))] + [, ] + ;
+              [""] + ;
+            [)))])
+
       next 
 
       loCol = .addCursorColumn("Loc_Marker", "Marker")
