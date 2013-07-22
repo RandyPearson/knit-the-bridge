@@ -160,6 +160,17 @@ define class aisArtQueryCollection as L7CheckboxCollection
         .setValue("null")
       endwith
     next 
+
+    if poContext.lDeveloper
+      this.addObjectToParent("edtExtraWhere", "L7Textarea")
+      with this.parent.edtExtraWhere
+        .cHtmlName = "edtExtraWhere"
+        .cIDPrefix = ""
+        .nRows = 2
+        .cLabel = "Additional Condition"
+      endwith 
+    endif
+    
     lcName = "combine_operator"
     this.addObjectToParent(m.lcName, "L7RadioButton")
     with this.parent.&lcName
@@ -2454,6 +2465,8 @@ define class AisArtQuery AS L7Query
   cPrivateSearchFields = "Art_Last_Name + Art_First_Name + Art_Full_Name + Art_ID + Art_Neighborhood + Art_Email + Art_Comments + Art_Notes + Art_Help_Other"
   cPublicSearchFields  = "Art_Last_Name + Art_First_Name + Art_Full_Name + Art_ID + Art_Neighborhood"
   lPublicSearch = .f. && controls which of above is used 
+  
+  cExtraWhere = ""
 
   nOrderBy = 1
   DIMENSION aOrderBy[ 1, 2]
@@ -2491,6 +2504,12 @@ define class AisArtQuery AS L7Query
             iif(pemstatus(m.loFlag, "prompt", 5), loFlag.prompt, proper(loFlag.root)))
         endif 
       next
+      if poContext.lDeveloper
+        lcVal = request.form("edtExtraWhere")
+        if !empty(m.lcVal)
+          this.cExtraWhere = m.lcVal 
+        endif
+      endif
 
       lcCombOp = request.form("combine_operator")
       if upper(m.lcCombOp) = "AND"
@@ -2648,6 +2667,10 @@ define class AisArtQuery AS L7Query
           lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + iif(m.lvVal, [], [!]) + m.lcField + [ = .T.]
         endif
       next 
+      
+      if !empty(.cExtraWhere)
+        lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + .cExtraWhere 
+      endif
       
       * Combine inner-WHERE with WHERE clauses:
       if !empty( m.lcInnerWhere) 
