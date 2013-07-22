@@ -675,7 +675,8 @@ DEFINE CLASS L7Textbox AS L7_CONTROL_CLASS
   cValidChars = L7_FIELD_CHARACTERS  && if non-empty, input is INVALID unless all characters are from this set (e.g., '0123456789')
   cInvalidChars = ""   && if non-empty, input is INVALID if any of these characters appears (e.g., '{}[]<>')
 
-  cInputMode = ""  && see _ASSIGN method 
+  cInputMode = ""     && see _ASSIGN method 
+  cType      = "text" && HTML5 has new types 
   * ------------------------------------------------------------------- *
   function cInputMode_ASSIGN(lcVal)
     if m.lcVal = "+"  && append to list
@@ -989,8 +990,8 @@ DEFINE CLASS L7Textbox AS L7_CONTROL_CLASS
       lcText = ""
 
       lcText = m.lcText + [<input type="] + ;
-        iif(.lPassword, "password", ;
-          iif(.lFileUpload, "file", "text" ) ) + ["] + ;
+        iif(.lPassword, [password], ;
+          iif(.lFileUpload, [file], .cType)) + ["] + ;
         [ name="] + .cHtmlName + ["] + ;
         [ id="] + .GetID() + ["] + ;
         [ value="] + .cDisplayValue + ["] + ;  && [[ still need protection against double-quotes in data!

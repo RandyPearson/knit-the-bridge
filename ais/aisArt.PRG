@@ -1733,6 +1733,7 @@ define class aisRegisterForm AS aisArtistForms
         .cFieldType = "C"
         .cControlSource = "V_artist.Art_First_Name"
         .cLabel = "First Name"
+        .cInputMode = "startUpper" 
         .cCssStyle = "width: 30%;"
       endwith
       .AddObject("txtLast_Name", "L7Textbox")
@@ -1742,6 +1743,7 @@ define class aisRegisterForm AS aisArtistForms
         .cControlSource = "V_artist.Art_Last_Name"
         .lRequired = .t.
         .cLabel = "Last Name"
+        .cInputMode = "titleCase" 
         .cInstructions = "Enter NLN if no last name"
         .cCssStyle = "width: 30%;"
       endwith
@@ -1761,6 +1763,7 @@ define class aisRegisterForm AS aisArtistForms
           .cFieldType = "C"
           .cControlSource = "V_artist.Art_Full_Name"
           .cLabel = "Alternative Full Name"
+          .cInputMode = "titleCase" 
           .cInstructions = "(leave blank unless this entry needs to override First/Last name in listings)"
         endwith
       endif 
@@ -1771,6 +1774,7 @@ define class aisRegisterForm AS aisArtistForms
         .cFieldType = "C"
         .cControlSource = "V_artist.Art_Email"
         .cLabel = "Email"
+        .cInputMode = "EmailAddress" 
         .cInstructions = "Not required, but eases KtB communications with you."
         .cCssStyle = "width: 30%;"
         .nSize = 40
@@ -1781,6 +1785,7 @@ define class aisRegisterForm AS aisArtistForms
         .cFieldType = "C"
         .cControlSource = "V_artist.Art_Phone"
         .cLabel = "Phone"
+        .cInputMode = "PhoneNumber" 
         .cInstructions = "Optional, but if no email, enables KtB communication"
         .cCssStyle = "width: 30%;"
       endwith
