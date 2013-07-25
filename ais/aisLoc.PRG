@@ -177,6 +177,38 @@ define class aisLocPage as aisPage
 enddefine && AisLocPage
 
 *** ========================================================= ***
+define class ais_InstalledPanels as aisPage 
+  nMinLoginLevel = L7_NONE  
+
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    local loQry, loTbl, loCol, loGrp
+       
+    loQry = createobject("AisPlcQuery")
+    with loQry
+      .AddOrderBy("Loc_Side",, .f.)
+      .AddOrderBy("Loc_No",, .t.)
+      .AddOrderBy("Plc_Orientation",, .t.)
+
+      .lJoinPanel = .t.
+      .lJoinLocation = .t.
+
+      .ClearFields()
+      .AddFields("Loc_Side, Loc_No, left(Loc_Side, 1) + padr(transform(Loc_No),3) as Loc_ID, Plc_Orientation as Orientation, Pnl_Id")
+      .BuildFieldList() && prevents more columns being added
+      .execute()
+    endwith 
+
+    if this.cResponseType = "json"
+      this.oJsonContents = createobject("Empty")
+      addproperty(this.oJsonContents, "installed_panel_set", L7CursorToJsonArray(loQry.cAlias))
+    else
+    endif
+    return 
+  endfunc 
+enddefine 
+
+*** ========================================================= ***
 define class ais_LocDisplay as aisLocPage 
   lLocRequired = .f.
   cSubTitle = "Panels Displayed by Locations"
