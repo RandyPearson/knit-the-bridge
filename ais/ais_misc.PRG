@@ -2,13 +2,18 @@ open database ktbais
 
 * cdow(trn_date) as DOW, cmonth(trn_date) as Month, day(trn_date) as Day, trn_start_time as time, 
 select trn_date as date, ;
-    art_last_name as Last, art_first_name as First, art_email as email, art_phone as phone ;
+    padr(trim(art_first_name) + " " + trim(art_last_name), 44) as Name, ;
+    iif(art_release_name, 'Yes', '   ') as Rel, ; 
+    art_email as email, ;
+    art_phone as phone, ;
+    art_neighborhood as Neighborhood, ;
+    art_id ;
   from training join artist on trn_pk = art_installation_trn_fk ;
   where !trn_inactive and !art_inactive and art_help_install ;
   order by trn_date, art_last_name ;
   into cursor Training_Roster_ 
 
-copy to .\Files\Ktb_Training_Roster.xls type xl5 
+copy to .\Files\Ktb_Training_Roster_r2a.xls type xl5 
 
 
 
