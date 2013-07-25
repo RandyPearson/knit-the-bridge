@@ -843,6 +843,7 @@ enddefine  && Ais_ArtBrowse
 define class ais_NeighborhoodSumList as aisArtPage 
   lArtRequired = .f.
   cSubTitle = "Neighborhood Summary Report"
+  nMinLoginLevel = L7_NONE  
   * ----------------------------------------------------- *  
   function ProcessRequest
     local loQry, loTbl, loCol, loGrp
@@ -878,6 +879,7 @@ enddefine && ais_NeighborhoodSumList
 define class ais_AgeSumList as aisArtPage 
   lArtRequired = .f.
   cSubTitle = "Age Demographics Report"
+  nMinLoginLevel = L7_NONE  
   * ----------------------------------------------------- *  
   function ProcessRequest
     local loQry, loTbl, loCol, loGrp
@@ -889,22 +891,27 @@ define class ais_AgeSumList as aisArtPage
       .AddOrderBy("Art_Age_Range",, .f.)
       .nGrouping = 1
       .ClearFields()
-      .AddFields("Art_Age_Range, count(*) as Count_")
+      .AddFields("Art_Age_Range as Age_Range, count(*) as Count")
       .execute()
     endwith 
+
+    if this.cResponseType = "json"
+      this.oJsonContents = createobject("Empty")
+      addproperty(this.oJsonContents, "age_range_set", L7CursorToJsonArray(loQry.cAlias))
     
-    loTbl = createobject("AisTable")
-    with loTbl
-      .cTableCaption = this.cSubTitle 
-      .cGrandRowClass      = "GrandRow sortbottom"  
-      
-      loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
-      loCol = .addCursorColumn("Art_Age_Range", "Age Range")
-      loCol = .addCursorColumn("Count_", "Count")
-      loCol.nCalcType = L7_CALCTYPE_SUM
-      
-      response.write(.render())
-    endwith 
+    else
+      loTbl = createobject("AisTable")
+      with loTbl
+        .cTableCaption = this.cSubTitle 
+        .cGrandRowClass      = "GrandRow sortbottom"  
+        
+        loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
+        loCol = .addCursorColumn("Age_Range", "Age Range")
+        loCol = .addCursorColumn("Count", "Count")
+        loCol.nCalcType = L7_CALCTYPE_SUM
+        response.write(.render())
+      endwith 
+    endif 
     return 
   endfunc 
 enddefine && ais_AgeSumList 

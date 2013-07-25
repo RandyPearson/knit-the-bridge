@@ -23,6 +23,7 @@ define class aisPage as L7Page
 
   cTopPage      = "Home"
   cCancelPage   = "Home"
+  cResponseType = NULL  && NULL = determine from URL extension, see SetResponseType()
   
   cFavicon = "http://knitthebridge.com/favicon.ico"
 
@@ -382,10 +383,27 @@ define class aisPage as L7Page
   function AfterDetermineBrowser
     * Framework hook. Set CSS here, etc.
     *!* this.lStatelessUser = this.oApp.lAllowStateless AND Browser.lCrawler
+    this.SetResponseType()
     this.SetCss()
     this.SetJs()
     return
   endfunc && AfterDetermineBrowser
+  * --------------------------------------------------------- *
+  function SetResponseType
+    * Set ResponseType early, so advanced hooks get proper behavior:
+    if isnull(this.cResponseType)  && not specified in page, derive from url
+      this.cResponseType = lower(justext(Request.cLogicalPath))  && "json", "ktb"
+    endif 
+    * [[To Do: refactor into SetResponseObject, so can be re-called during page process]
+    do case 
+    case isnull(this.cResponseType)   && possible?
+    case this.cResponseType = "json"
+      this.oApp.cActiveResponse = "JsonResponse"
+    case this.cResponseType = "ktb"
+      this.oApp.cActiveResponse = "StandardResponse"
+    endcase 
+    return
+  endfunc 
   * --------------------------------------------------------- *
   function RenderBodyTag
     this.alterBodyProperties()
