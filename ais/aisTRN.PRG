@@ -177,16 +177,25 @@ define class ais_TrnHome as aisTrnPage
     endwith 
     
     urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
+    urls.add(StuffUrl(this.cUrlA, 2, "ArtForm", "return", this.cUrlC), "ArtForm")
 
     loTbl = createobject("AisTable")
     with loTbl
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), aisArtistName(THISRECORD))], 'artist')
-      loCol = .addCursorColumn("Art_Phone", "Phone")
       loCol = .addCursorColumn("Art_Email", "Email")
-      loCol = .addCursorColumn("Art_Waiver_Signed", "Signed Waiver")
-      loCol = .addCursorColumn("Art_Training_Signed", "Acknowldged Training")
+      loCol = .addCursorColumn("Art_Phone", "Phone")
+      loCol = .addCursorColumn("Art_Neighborhood", "Neighborhood")
+      loCol = .addCursorColumn("Art_Waiver_Signed", "Acc<br>Waiver")
+      loCol = .addCursorColumn("Art_Training_Signed", "Training<br>Waiver")
+
+      if poContext.lAdmin
+        loCol = .addCursorColumn("Art_PK", "Edit Artist", ;
+          'HTLink(StuffUrl(urls.item("ArtForm"), "art", Art_PK), "[Edit...]")', 'no-print')
+        loCol.cHeadingClass = "nosort no-print" 
+      endif 
+
       return .render()
     endwith 
     

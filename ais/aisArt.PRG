@@ -840,8 +840,7 @@ define class Ais_ArtBrowse as aisMultiArtPage
 enddefine  && Ais_ArtBrowse 
 
 *** ========================================================= ***
-define class ais_NeighborhoodSumList as aisArtPage 
-  lArtRequired = .f.
+define class ais_NeighborhoodSumList as aisPage 
   cSubTitle = "Neighborhood Summary Report"
   nMinLoginLevel = L7_NONE  
   * ----------------------------------------------------- *  
@@ -876,8 +875,7 @@ define class ais_NeighborhoodSumList as aisArtPage
 enddefine && ais_NeighborhoodSumList 
 
 *** ========================================================= ***
-define class ais_AgeSumList as aisArtPage 
-  lArtRequired = .f.
+define class ais_AgeSumList as aisPage 
   cSubTitle = "Age Demographics Report"
   nMinLoginLevel = L7_NONE  
   * ----------------------------------------------------- *  
@@ -1358,7 +1356,14 @@ define class ais_ArtForm as aisArtPage
   lAdding = .f.
   lAdminRequired = .t.
   cPage_FormClass = "aisArtistForm"
+  cPage_Return = ""
   cSubTitle = "Edit Artist Record"
+  * --------------------------------------------------------- *
+  function BeforeProcessRequest
+    this.cPage_Return = this.ReadQueryString("return", .t., .t., .f.,  L7_QS_CHARACTERS + L7_URL_PUNCTUATION_CHARACTERS)
+    dodefault()  && required bubble-up
+    return    
+  endfunc  
   * ----------------------------------------------------- *  
   function page_setAdditionalFields(toForm)
   endfunc 
@@ -1366,8 +1371,9 @@ define class ais_ArtForm as aisArtPage
   function ProcessRequest
 
     this.Assert(poContext.lAdmin)
-    this.cCancelUrl = iif(this.lAdding, StuffURL(THIS.cUrlA, 2, "ArtList"), ;
-      StuffURL(THIS.cUrlB, 2, "ArtHome"))
+    this.cCancelUrl = iif(!empty(this.cPage_Return), this.cPage_Return, ;
+      iif(this.lAdding, StuffURL(THIS.cUrlA, 2, "ArtList"), ;
+      StuffURL(THIS.cUrlB, 2, "ArtHome")))
 
     local loForm, vp_cArt_PK, lcStub
     vp_cArt_PK = IIF(THIS.lAdding, space(32), THIS.cArt)
@@ -1375,7 +1381,7 @@ define class ais_ArtForm as aisArtPage
     this.assert(!V_Artist.Art_Developer or poContext.lDeveloper, "Cannot edit developer record.")
     
     cursorsetprop("Buffering", 5, "V_Artist")
-    loForm = this.createForm(this.cPage_FormClass)
+    loForm = this.createForm(this.cPage_FormClass, this.cUrlC)
     with loForm
       .lNewRecord = THIS.lAdding
       .cTitle = iif(this.lAdding, "Entering New Artist", "Editing " + AisArtistName(this.oArt))
@@ -1526,24 +1532,25 @@ define class aisArtistForms AS AisForm
         .cValueExpression = [Trn_PK]
         .cLabelExpression = [cdow(Trn_Date) + ", " + dtoc(Trn_Date) + " " + stuff(Trn_Start_Time, 3, 0, ":")  + " to " + stuff(Trn_End_Time, 3, 0, ":")]
         .vFirstItemValue = space(32) && 0 for integer keys
-        .cFirstItemLabel = "[ select from choices below ]"
+        .cFirstItemLabel = "[ no session selected ]"
       endwith 
-
-      .AddObject("chkTraining_Signed", "L7Checkbox")
-      with .chkTraining_Signed
-        .cGroupId = "train"
-        .cControlSource = "V_artist.Art_Training_Signed"
-        .cCaption = "Signed as Reading Training"
-        .cLabel = "Training"
-      endwith
 
       .AddObject("chkWaiver_Signed", "L7Checkbox")
       with .chkWaiver_Signed
         .cGroupId = "train"
         .cControlSource = "V_artist.Art_Waiver_Signed"
-        .cCaption = "Signed Waiver"
+        .cCaption = "Signed Accident Waiver"
         .cLabel = "Waiver"
       endwith
+
+      .AddObject("chkTraining_Signed", "L7Checkbox")
+      with .chkTraining_Signed
+        .cGroupId = "train"
+        .cControlSource = "V_artist.Art_Training_Signed"
+        .cCaption = "Signed Training Waiver"
+        .cLabel = "Training"
+      endwith
+
     endwith 
     return
   endfunc  && addTrainingControls 

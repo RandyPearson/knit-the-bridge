@@ -194,7 +194,7 @@ define class ais_InstalledPanels as aisPage
       .lJoinLocation = .t.
 
       .ClearFields()
-      .AddFields("Loc_Side, Loc_No, left(Loc_Side, 1) + padr(transform(Loc_No),3) as Loc_ID, Plc_Orientation as Orientation, Pnl_Id")
+      .AddFields("Loc_Side, Loc_No, left(Loc_Side, 1) + padr(transform(Loc_No),3) as Loc_ID, Plc_Orientation as Orientation, Pnl_Id, Pnl_PK")
       .BuildFieldList() && prevents more columns being added
       .execute()
     endwith 
