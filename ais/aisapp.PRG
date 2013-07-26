@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     31
+#DEFINE THISAPP_DATABASE_REVISION     32
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -558,6 +558,12 @@ define class AisApp AS KtbApp
       endscan 
       use 
 
+    case m.lnRev = 32
+      do CreateTable with "Shift", this.cDataPath, this.cDataBase
+      use in select("Shift")
+      do CreateTable with "ArtistShift", this.cDataPath, this.cDataBase
+      use in select("ArtistShift")
+
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
@@ -602,6 +608,7 @@ function CreateEmptyDatabase( lcPath)
   #IF .F.
     * Table Prefixes:
 
+    ARS = ArtistShift
     ART = Artist
     ASM = Assembly
     DON = Donation 
@@ -613,6 +620,7 @@ function CreateEmptyDatabase( lcPath)
     PNL = Panel
     RCP = Recipient
     RLG = [Reserved for Railing sub-type of Piece table]
+    SFT = Shift
     TRN = Training
      
     SYS = System
@@ -639,6 +647,9 @@ function CreateEmptyDatabase( lcPath)
   do CreatePanelLocationTable
   do CreateDonationTable
   do CreateTrainingTable
+
+  do CreateArtistShiftTable
+  do CreateShiftTable
 
   *!* do CreateRecipientTable
 
@@ -1119,6 +1130,78 @@ function CreateTrainingTable  && Rev 30
   dbsetprop("Training", "Table", "Comment", ;
     [One record per Training.] )
 endfunc  && CreateTrainingTable
+
+* --------------------------------------------------------- *
+function CreateShiftTable  && Rev 32
+  * Don't declare this PRIVATE. This command allows this procedure
+  * to be run by itself, as in DO <thisproc> IN <thisfile>.PRG:
+  poEnv = GetEnvObject()
+
+  create table ("Shift") name Shift ;
+    ( ;
+      Sft_PK C(32) primary key default GetGuid32(), ;
+      Sft_Inactive L default .F., ;
+      Sft_Date D, ;
+      Sft_Start_Time C(4), ;
+      Sft_End_Time C(4), ;
+      Sft_Installation L, ;
+      Sft_DeInstallation L, ;
+      Sft_Comments M, ;
+      Sft_Notes M, ;
+      Sft_Orig_Art_FK C(32), ;
+      Sft_Orig_Time T, ;
+      Sft_Rev_Art_FK C(32), ;
+      Sft_Rev_Time T, ;
+      Sft_Revision I NOT NULL DEFAULT 0 ;
+    )
+
+  * Standard 2 Indexes:
+  index on deleted() tag Deleted
+  index on Sft_Inactive tag Inactive
+  * Foreign Keys:
+  * Other Keys:
+  index on Sft_Date tag Sft_date
+  index on Sft_Start_Time tag Start_Time
+     
+  * Comment:
+  dbsetprop("Shift", "Table", "Comment", ;
+    [One record per Shift.] )
+endfunc  && CreateShiftTable
+
+* --------------------------------------------------------- *
+function CreateArtistShiftTable  && TABLE added in Rev 32
+  * Don't declare this PRIVATE. This command allows this procedure
+  * to be run by itself, as in DO <thisproc> IN <thisfile>.PRG:
+  poEnv = GetEnvObject()
+
+  create table ("ArtistShift") name ArtistShift ;
+    ( ;
+      Ars_PK C(32) primary key default GetGuid32(), ;
+      Ars_Inactive L default .F., ;
+      Ars_Art_FK C(32), ;
+      Ars_Sft_FK C(32), ;
+      Ars_Role C(12), ;
+      Ars_Notes M, ;
+      Ars_Orig_Art_FK C(32), ;
+      Ars_Orig_Time T, ;
+      Ars_Rev_Art_FK C(32), ;
+      Ars_Rev_Time T, ;
+      Ars_Revision I NOT NULL DEFAULT 0 ;
+    )
+
+  * Standard 2 Indexes:
+  index on deleted() tag Deleted
+  index on Ars_Inactive tag Inactive
+  * Foreign Keys:
+  index on Ars_Art_FK tag Art
+  index on Ars_Sft_FK tag Sft
+  * Other Keys:
+  index on Ars_Role tag Role
+  * Comment:
+  dbsetprop("ArtistShift", "Table", "Comment", ;
+    [One record per Artist Shift.] )
+endfunc  && CreateArtistShiftTable
+
 * ---------------------------------------------------------- *
 function CreateFilesTable
   * Don't declare this PRIVATE. This command allows this procedure
@@ -1442,6 +1525,7 @@ FUNCTION CreateViews(lcOneTable, lcDataPath, lcDataBase)
     do CreateAllRecordsView WITH "V_All_Locations",  "Location", "Loc_PK", [!Loc_Inactive], [Loc_Side, Loc_No]
     do CreateAllRecordsView WITH "V_All_Facilities", "Facility", "Fac_PK", [!Fac_Inactive], [Fac_Name]
     do CreateAllRecordsView WITH "V_All_Training", "Training", "Trn_PK", [!Trn_Inactive], [Trn_Date, Trn_Start_Time]
+    do CreateAllRecordsView WITH "V_All_Shift", "Shift", "Sft_PK", [!Sft_Inactive], [Sft_Date, Sft_Start_Time]
     do CreateAllRecordsView WITH "V_Active_Panel_Set",  "Panel", "Pnl_PK", [!Pnl_Inactive and !Pnl_Excluded], [Pnl_ID]
 
   endif 
