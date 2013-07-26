@@ -209,11 +209,6 @@ enddefine && FacHome
 *** ===================================================== ***
 define class Ais_TrnBrowse as AisTrnPage
   lTrnRequired = .f.
-enddefine 
-
-*** ===================================================== ***
-define class Ais_TrnBrowse as AisTrnPage
-  lTrnRequired = .f.
   * --------------------------------------------------------- *
   function ProcessRequest
     this.cCancelUrl = StuffUrl(this.cUrlA, 2, "TrnList")
