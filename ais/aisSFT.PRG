@@ -289,6 +289,18 @@ define class aisArsForm as AisForm
         .vFirstItemValue = space(32) && 0 for integer keys
         .cFirstItemLabel = "[ select shift ]"
       endwith 
+
+      .AddObject("cboRole", "L7RadioButton")
+      with .cboRole
+        .cControlSource = "V_ArtistShift.Ars_Role"
+        .lRequired = .t.
+        .cFieldType = "C"
+        .cLabel = "Role"
+        .nStyle = L7_MULTISTYLE_VERTICAL
+        .nRowSourceType = L7_ROWSOURCETYPE_VALUE
+        .cRowSource = THISAPP_ROLE_ENUM
+      endwith 
+
     endwith
     return 
   endfunc 

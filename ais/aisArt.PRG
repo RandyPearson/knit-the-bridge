@@ -1209,9 +1209,10 @@ define class ais_ArtHome as aisArtPage
       
       loCol = .addCursorColumn("Sft_PK", "Shift", ;
         [HTLink(StuffUrl(urls.item("SftHome"), "sft", Sft_PK), AisShiftName(Sft_PK))])
-      loCol = .addCursorColumn("Sft_Date", "Shift Date")
-      loCol = .addCursorColumn("Sft_Start_Time", "Start Time")
-      loCol = .addCursorColumn("Sft_End_Time", "End Time")
+      *!*        loCol = .addCursorColumn("Sft_Date", "Shift Date")
+      *!*        loCol = .addCursorColumn("Sft_Start_Time", "Start Time")
+      *!*        loCol = .addCursorColumn("Sft_End_Time", "End Time")
+      loCol = .addCursorColumn("Ars_Role", "Role")
       loCol = .addCursorColumn("Sft_Installation", "Installation", ;
         [iif(Sft_Installation, "Installation", "") + iif(Sft_DeInstallation, "De-Installation", "")] )
       lcRet = .render()
