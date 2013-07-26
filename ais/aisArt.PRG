@@ -1049,6 +1049,7 @@ define class ais_ArtHome as aisArtPage
     endif 
     if poContext.lAdmin 
       this.addMenuItem("main\This", "Add Donation from Artist...", StuffUrl(this.cUrlA, 2, "DonNew", "art", this.cArt))
+      this.addMenuItem("main\This", "Add Artist to Shift...", StuffUrl(this.cUrlA, 2, "ArsNew", "art", this.cArt))
     endif 
 
     dodefault()

@@ -557,6 +557,7 @@ define class ais_PnlSetLoc as aisPnlPage
       endif 
     endwith 
     response.write(loForm.render())
+    return 
   endfunc 
 enddefine 
 

@@ -212,6 +212,89 @@ define class ais_SftHome as aisSftPage
 enddefine && SftHome
 
 *** ===================================================== ***
+define class Ais_ArsNew as AisArtPage
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    this.cCancelUrl = StuffURL(THIS.cUrlB, 2, "ArtHome")
+    this.Assert(poContext.lAdmin)
+    this.cSubTitle = "Add Shift for " + AisArtistName(this.oArt)
+
+    local loForm, vp_cArs_PK, loQ, lcAlias
+    loQ = createobject("AisSftQuery")
+    with loQ
+      .cAlias = "Available_Shifts_"
+      .Execute()
+    endwith 
+    this.assert(loQ.nTally > 0, "No shifts.")
+
+    lcAlias = "V_ArtistShift"
+    vp_cArs_PK = space(32)
+    use (m.lcAlias) in select(m.lcAlias)
+    cursorsetprop("Buffering", 5, m.lcAlias)
+    loForm = this.createForm('aisArsForm', this.cUrlC)
+    with loForm
+      .AddControls()
+      .DoEvents() 
+
+      if .Valid()
+        select (m.lcAlias)
+        append blank
+        replace Ars_Art_FK with this.cArt
+
+        .UpdateControlSources()
+        select (m.lcAlias) && UpdateControlSources can alter work area
+        StampRec( CurrentUser, THIS.tNow )
+        scatter memo name loNewRec 
+        
+        * Now save the record using a transaction:
+        local loTrans, loExc, lcMailMessage, lcExcMessage, llSendEmail
+        llSendEmail = .f.  
+        loTrans = THIS.CreateTransaction()
+        loTrans.AddCursor(m.lcAlias)
+
+        if loTrans.Save()  
+          Response.Redirect(this.cCancelUrl)
+          return 
+        else 
+          this.ErrorMsg( "Database Failure Saving Record!", ;
+            "Error " + TRANSFORM( loTrans.aFailures[1, 1]) + [ :] + ;
+            loTrans.aFailures[1, 2] )
+          ** this.ServerError(textmerge('Database Failure Saving Record. Error <<loTrans.aFailures[1, 1]>>: <<loTrans.aFailures[1, 2]>>'))
+          return  
+        endif  && Save()
+        
+      endif 
+    endwith 
+    response.write(loForm.render())
+    return 
+  endfunc 
+enddefine && ArsNew 
+
+*** ========================================================= ***
+define class aisArsForm as AisForm
+  cTitle = "Assign Shift Form"
+  * --------------------------------------------------------- *
+  function AddControls
+    with this
+      .AddObject("cboSft_FK", "L7Popup")
+      with .cboSft_FK
+        .cControlSource = "V_ArtistShift.Ars_Sft_FK"
+        .lRequired = .t.
+        .cLabel = "Shift"
+        .lAutoRender = .T.
+        .nRowSourceType = L7_ROWSOURCETYPE_ALIAS
+        .cRowSource = "Available_Shifts_"
+        .cValueExpression = [Sft_PK]
+        .cLabelExpression = [Sft_Start_Time]
+        .vFirstItemValue = space(32) && 0 for integer keys
+        .cFirstItemLabel = "[ select shift ]"
+      endwith 
+    endwith
+    return 
+  endfunc 
+enddefine 
+
+*** ===================================================== ***
 define class Ais_SftBrowse as AisSftPage
   lSftRequired = .f.
   * --------------------------------------------------------- *
