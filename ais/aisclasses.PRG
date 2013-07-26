@@ -21,6 +21,7 @@ set procedure to AisLoc     additive  && Location pages
 set procedure to AisFil     additive  && FILE pages  
 set procedure to AisDon     additive  && Donation pages  
 set procedure to AisTrn     additive  && Training pages  
+set procedure to AisSft     additive  && Shift pages  
 
 return 
 

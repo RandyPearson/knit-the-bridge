@@ -62,6 +62,18 @@ define class AisTrnData AS AisViewData
   cPrefix = "TRN"
 enddefine    
 
+*** ============================================== ***
+define class AisSftData AS AisViewData 
+  cTable = "Shift"
+  cPrefix = "SFT"
+enddefine    
+
+*** ============================================== ***
+define class AisArsData AS AisViewData 
+  cTable = "ArtistShift"
+  cPrefix = "ARS"
+enddefine    
+
 *** ===================================================== ***
 define class AisQuery AS L7Query
   * Abstract application-wide subclass that includes some 
