@@ -174,6 +174,9 @@ define class ais_SftHome as aisSftPage
       .cSft = this.cSft
       .addShiftFields()
       .addTrainingFields()
+
+      .AddOrderBy("Ars_Role")
+      .AddOrderBy("Art_ID", , .T.)
       .execute()
       if .nTally = 0
         return "(none)"
@@ -474,6 +477,51 @@ define class AisSftQuery as L7Query
     return  
   endfunc   && BuildWhereClause
 enddefine  && AisSftQuery
+
+*** ===================================================== ***
+define class AisArsQuery as L7Query
+  cBaseTable = "ArtistShift"
+  
+  cDefaultFieldList = "Ars_PK, Ars_Role"
+
+  lJoinArt = .f. 
+  lJoinSft = .f. 
+  
+  cSft = null
+  cArt = null
+
+  * --------------------------------------------------------- *
+  function BuildWhereClause
+    local lcStr
+
+    with this 
+      .lWhereBuilt = .t.
+      .cWhereClause = [WHERE Ars_Inactive = .F.] 
+
+      if .lJoinArt
+        .nJoins = .nJoins + 1
+        dimension .aJoins[.nJoins, 3]
+        .aJoins[.nJoins, 1] = "Artist"
+        .aJoins[.nJoins, 2] = "Ars_Art_FK = Art_PK"
+        .AddFields("Art_ID")
+      endif 
+
+      if .lJoinSft
+        .nJoins = .nJoins + 1
+        dimension .aJoins[.nJoins, 3]
+        .aJoins[.nJoins, 1] = "Shift"
+        .aJoins[.nJoins, 2] = "Ars_Sft_FK = Sft_PK"
+        .AddFields("Sft_PK, Sft_Date, Sft_Start_Time, Sft_End_Time, Sft_Installation, Sft_DeInstallation, Sft_Notes")
+      endif 
+
+      if !isnull(.cArt)
+        .cWhereClause = .cWhereClause + [ and Ars_Art_FK = '] + .cArt + ['] 
+      endif 
+
+    endwith   
+    return  
+  endfunc   && BuildWhereClause
+enddefine  && AisArsQuery
 
 * end: Sft
 

@@ -1195,28 +1195,34 @@ define class ais_ArtHome as aisArtPage
     local lcRet, loQry, loTbl, loCol, loGrp
        
     * Main query:
-    loQry = createobject("AisSftQuery")
+    loQry = createobject("AisArsQuery")
     with loQry
-      .lJoinArs = .t. 
+      .AddOrderBy("Sft_Date")
+      .AddOrderBy("Sft_Start_Time", , .T.)
+      .lJoinSft = .t. 
       .cArt = this.cArt
       .execute()
     endwith 
     
-    urls.add(StuffUrl(this.cUrlA, 2, "SftHome"), "SftHome")
+    if loQry.nTally = 0
+      lcRet = ""
+    else
+      urls.add(StuffUrl(this.cUrlA, 2, "SftHome"), "SftHome")
 
-    loTbl = createobject("AisTable")
-    with loTbl
-      
-      loCol = .addCursorColumn("Sft_PK", "Shift", ;
-        [HTLink(StuffUrl(urls.item("SftHome"), "sft", Sft_PK), AisShiftName(Sft_PK))])
-      *!*        loCol = .addCursorColumn("Sft_Date", "Shift Date")
-      *!*        loCol = .addCursorColumn("Sft_Start_Time", "Start Time")
-      *!*        loCol = .addCursorColumn("Sft_End_Time", "End Time")
-      loCol = .addCursorColumn("Ars_Role", "Role")
-      loCol = .addCursorColumn("Sft_Installation", "Installation", ;
-        [iif(Sft_Installation, "Installation", "") + iif(Sft_DeInstallation, "De-Installation", "")] )
-      lcRet = .render()
-    endwith 
+      loTbl = createobject("AisTable")
+      with loTbl
+        loCol = .addCursorColumn("Sft_PK", "Shift", ;
+          [HTLink(StuffUrl(urls.item("SftHome"), "sft", Sft_PK), AisShiftName(Sft_PK))])
+        loCol = .addCursorColumn("Ars_Role", "Role")
+        loCol = .addCursorColumn("Sft_Installation", "Installation", ;
+          [iif(Sft_Installation, "Installation", "") + iif(Sft_DeInstallation, "De-Installation", "")] )
+        lcRet = .render()
+      endwith 
+    endif
+    if poContext.lDeveloper
+      lcRet = m.lcRet + HTWrap(loQry.cSqlStatement, 'div,p', 'admin,debug')
+    endif
+    
     return m.lcRet  
   endfunc 
   * ----------------------------------------------------- *  
