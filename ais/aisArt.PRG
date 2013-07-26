@@ -2429,6 +2429,8 @@ define class AisArtQuery AS L7Query
 
   cID = null 
   cTrn = null 
+  cSft = null
+  lJoinArs = .f.  
   
   * Account-based params:
   lInactive = .f.  && whole record deleted
@@ -2504,6 +2506,11 @@ define class AisArtQuery AS L7Query
     return 
   endfunc
   * --------------------------------------------------------- *
+  function addShiftFields
+    this.addFields("Ars_Role")
+    return 
+  endfunc
+  * --------------------------------------------------------- *
   function executeFromFlagPost
     local loFlags, lnFlag, loFlag, lcName, lcVal, llVal, lcCombOp, lcProp, loCapts, lnCapt
     loCapts = createobject("Collection")
@@ -2551,6 +2558,15 @@ define class AisArtQuery AS L7Query
       store "" to lcInnerWhere
       lcTypeCombine = iif(.lOrTypes, [ or ], [ and ])
   
+      if .lJoinArs
+        .nJoins = .nJoins + 1
+        dimension .aJoins[.nJoins, 3]
+        .aJoins[.nJoins, 1] = "ArtistShift"
+        .aJoins[.nJoins, 2] = "Art_PK = Ars_Art_FK"
+        .aJoins[.nJoins, 3] = "INNER"
+        .AddFields("Ars_Role")
+      endif 
+
       .lWhereBuilt = .T.
       if isnull(.lInactive) or !isnull(this.lInactiveInner) && if inner version used, avoid an outer condition
         .cWhereClause = [WHERE .t.]
@@ -2571,6 +2587,15 @@ define class AisArtQuery AS L7Query
 
       if !isnull(.cTrn)
         .cWhereClause = .cWhereClause + [ and Art_Installation_Trn_FK = '] + .cTrn + [']
+      endif
+
+      if !isnull(.cSft)
+        if .lJoinArs
+          .cWhereClause = .cWhereClause + [ and Ars_Sft_FK = '] + .cSft + [']
+        else
+          .cWhereClause = .cWhereClause + [ and Art_PK in ] + ;
+            [(select Ars_Art_FK from ArtistShift where !Ars_inactive and Ars_Sft_FK = '] + .cSft + [')]
+        endif 
       endif
       
       * NOTE: next few use double quotes on purpose to allow searching stuff like "O'Brien"

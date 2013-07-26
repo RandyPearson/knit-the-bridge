@@ -204,7 +204,7 @@ define class ais_TrnHome as aisTrnPage
     
     return 
   endfunc && page_getPanelInfo
-enddefine && FacHome
+enddefine && TrnHome
 
 *** ===================================================== ***
 define class Ais_TrnBrowse as AisTrnPage

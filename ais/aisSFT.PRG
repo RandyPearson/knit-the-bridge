@@ -115,6 +115,102 @@ define class ais_SftList as aisSftPage
   endfunc 
 enddefine && SftList
 
+*** ========================================================= ***
+define class ais_SftHome as aisSftPage 
+  * ----------------------------------------------------- *  
+  function AddDefaultMenu
+    this.AddSubMenu("This", "This Shift")
+    dodefault()
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    this.cSubTitle = "Shift: " + AisShiftName(this.oSft)
+    response.write(this.page_getMainRecord())
+    response.write(this.module_listShifts())
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_getMainRecord()
+    local loElem, loRow, lcRet, loData
+    lcRet = ""
+    loData = this.oSft
+    loElem = createobject("aisRecordElement")
+    with loElem
+      loRow = .getRowObject()
+      .cCaption = this.cSubTitle
+      .AddHeading('Key Information')
+      
+      .AddRow("Date", loData.Sft_Date)
+      .AddRow("Installation?", loData.Sft_Installation)
+      .AddRow("De-Installation?", loData.Sft_DeInstallation)
+
+      .AddHeading('People Signed Up for This Shift')
+      .AddRow(null, this.page_getRoleInfo())
+
+      if poContext.lCore
+        .AddRow("Notes", L7ParseOnView(loData.Sft_Notes), .F., "private")
+      endif
+
+      if poContext.lAdmin
+        .AddHeading('Administrative Information')
+        .AddRow("Pk", TRIM(loData.Sft_PK), .F., "private")
+        .AddRow("Deleted", loData.Sft_INACTIVE, .F., "private")
+        .AddRow("Created", TRANSFORM(loData.Sft_ORIG_TIME) + [ by ] + AisArtistName(loData.Sft_Orig_Art_FK), .F., "private")
+        .AddRow("Last Modified", TRANSFORM(loData.Sft_REV_TIME) + [ by ] + AisArtistName(loData.Sft_Rev_Art_FK), .F., "private")
+      endif
+
+      lcRet = m.lcRet + .Render()
+    endwith 
+    return m.lcRet
+  endfunc && page_getMainRecord
+  * ----------------------------------------------------- *  
+  function page_getRoleInfo
+    local loQry, loTbl, loCol, loGrp
+       
+    loQry = createobject("AisArtQuery")
+    with loQry
+      .lJoinArs = .t. 
+      .cSft = this.cSft
+      .addShiftFields()
+      .addTrainingFields()
+      .execute()
+      if .nTally = 0
+        return "(none)"
+      endif 
+    endwith 
+    
+    urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
+    urls.add(StuffUrl(this.cUrlA, 2, "ArtForm", "return", this.cUrlC), "ArtForm")
+
+    loTbl = createobject("AisTable")
+    with loTbl
+      loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
+      loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), aisArtistName(THISRECORD))], 'artist')
+      loCol = .addCursorColumn("Ars_Role", "Role")
+      loCol = .addCursorColumn("Art_Email", "Email")
+      loCol = .addCursorColumn("Art_Phone", "Phone")
+      loCol = .addCursorColumn("Art_Neighborhood", "Neighborhood")
+      loCol = .addCursorColumn("Art_Waiver_Signed", "Acc<br>Waiver")
+      loCol.cDisplayExpression = [iif(Art_Waiver_Signed, "Yes", "--")]
+      
+      loCol = .addCursorColumn("Art_Training_Signed", "Training<br>Waiver")
+      loCol.cDisplayExpression = [iif(Art_Training_Signed, "Yes", "--")]
+
+      if poContext.lAdmin
+        loCol = .addCursorColumn("Art_PK", "Edit Artist", ;
+          'HTLink(StuffUrl(urls.item("ArtForm"), "art", Art_PK), Art_ID + "...")', 'no-print')
+        loCol.cHeadingClass = "nosort no-print" 
+      endif 
+
+      return .render()
+    endwith 
+    
+    return 
+  endfunc && page_getPanelInfo
+enddefine && SftHome
+
 *** ===================================================== ***
 define class Ais_SftBrowse as AisSftPage
   lSftRequired = .f.
