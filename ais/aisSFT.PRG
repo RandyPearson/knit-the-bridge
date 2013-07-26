@@ -285,7 +285,7 @@ define class aisArsForm as AisForm
         .nRowSourceType = L7_ROWSOURCETYPE_ALIAS
         .cRowSource = "Available_Shifts_"
         .cValueExpression = [Sft_PK]
-        .cLabelExpression = [Sft_Start_Time]
+        .cLabelExpression = [dtoc(Sft_Date) + ", " + Sft_Start_Time + "-" + Sft_End_Time]
         .vFirstItemValue = space(32) && 0 for integer keys
         .cFirstItemLabel = "[ select shift ]"
       endwith 
@@ -423,15 +423,34 @@ define class AisSftQuery as L7Query
       + ", Sft_Notes"
 
   lInstallation = null 
-  lDeInstallation = null 
+  lDeInstallation = null
+  
+  lJoinArs = .f.
+  
+  cArt = null 
   * --------------------------------------------------------- *
   function BuildWhereClause
     local lcStr
 
     with this 
+
+      if .lJoinArs
+        .nJoins = .nJoins + 1
+        dimension .aJoins[.nJoins, 3]
+        .aJoins[.nJoins, 1] = "ArtistShift"
+        .aJoins[.nJoins, 2] = "Sft_PK = Ars_Sft_FK"
+        .aJoins[.nJoins, 3] = "INNER"
+        .AddFields("Ars_Role")
+      endif 
+
       .lWhereBuilt = .t.
       .cWhereClause = [WHERE Sft_Inactive = .F.] 
 
+      if !isnull(.cArt)
+        .cWhereClause = .cWhereClause + [ and Sft_PK in ] + ;
+          [(select Ars_Sft_FK from ArtistShift where !Ars_inactive and Ars_Art_FK = '] + .cArt + [')]
+      endif 
+      
       if !isnull(.lInstallation)
         .cWhereClause = .cWhereClause + [ and Sft_Installation = ] + iif(.lInstallation, [.t.], [.f.])
       endif 

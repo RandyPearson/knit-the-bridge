@@ -1130,6 +1130,12 @@ define class ais_ArtHome as aisArtPage
       
       .AddRow("Participation (from blog)", L7ParseOnView(loData.ART_PARTICIPATION), .t., "private")
 
+      lcStr = this.page_getShifts()
+      if !empty(m.lcStr)
+        .AddHeading('Shifts')
+        .AddRow(null, m.lcStr)
+      endif   
+
       lcStr = this.page_getDonations()
       if !empty(m.lcStr)
         .AddHeading('Donations')
@@ -1184,6 +1190,34 @@ define class ais_ArtHome as aisArtPage
     return m.lcRet
   endfunc && page_getMainRecord
 
+  * ----------------------------------------------------- *  
+  function page_getShifts()
+    local lcRet, loQry, loTbl, loCol, loGrp
+       
+    * Main query:
+    loQry = createobject("AisSftQuery")
+    with loQry
+      .lJoinArs = .t. 
+      .cArt = this.cArt
+      .execute()
+    endwith 
+    
+    urls.add(StuffUrl(this.cUrlA, 2, "SftHome"), "SftHome")
+
+    loTbl = createobject("AisTable")
+    with loTbl
+      
+      loCol = .addCursorColumn("Sft_PK", "Shift", ;
+        [HTLink(StuffUrl(urls.item("SftHome"), "sft", Sft_PK), AisShiftName(Sft_PK))])
+      loCol = .addCursorColumn("Sft_Date", "Shift Date")
+      loCol = .addCursorColumn("Sft_Start_Time", "Start Time")
+      loCol = .addCursorColumn("Sft_End_Time", "End Time")
+      loCol = .addCursorColumn("Sft_Installation", "Installation", ;
+        [iif(Sft_Installation, "Installation", "") + iif(Sft_DeInstallation, "De-Installation", "")] )
+      lcRet = .render()
+    endwith 
+    return m.lcRet  
+  endfunc 
   * ----------------------------------------------------- *  
   function page_getPieceInfo()
     local lcRet, loQ, loTbl, loCol
