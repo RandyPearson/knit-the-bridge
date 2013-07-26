@@ -188,7 +188,10 @@ define class ais_TrnHome as aisTrnPage
       loCol = .addCursorColumn("Art_Phone", "Phone")
       loCol = .addCursorColumn("Art_Neighborhood", "Neighborhood")
       loCol = .addCursorColumn("Art_Waiver_Signed", "Acc<br>Waiver")
+      loCol.cDisplayExpression = [iif(Art_Waiver_Signed, "Yes", "--")]
+      
       loCol = .addCursorColumn("Art_Training_Signed", "Training<br>Waiver")
+      loCol.cDisplayExpression = [iif(Art_Training_Signed, "Yes", "--")]
 
       if poContext.lAdmin
         loCol = .addCursorColumn("Art_PK", "Edit Artist", ;
