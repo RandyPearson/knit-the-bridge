@@ -195,7 +195,7 @@ define class ais_TrnHome as aisTrnPage
 
       if poContext.lAdmin
         loCol = .addCursorColumn("Art_PK", "Edit Artist", ;
-          'HTLink(StuffUrl(urls.item("ArtForm"), "art", Art_PK), "[Edit...]")', 'no-print')
+          'HTLink(StuffUrl(urls.item("ArtForm"), "art", Art_PK), Art_ID + "...")', 'no-print')
         loCol.cHeadingClass = "nosort no-print" 
       endif 
 
