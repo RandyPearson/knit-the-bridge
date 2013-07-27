@@ -2549,7 +2549,7 @@ define class AisArtQuery AS L7Query
   endfunc
   * --------------------------------------------------------- *
   function addShiftFields
-    this.addFields("Ars_Role")
+    this.addFields("Ars_PK, Ars_Role")
     return 
   endfunc
   * --------------------------------------------------------- *

@@ -184,14 +184,21 @@ define class ais_SftHome as aisSftPage
     endwith 
     
     urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
+    urls.add(StuffUrl(this.cUrlA, 2, "ArsForm"), "ArsForm")
     urls.add(StuffUrl(this.cUrlA, 2, "ArtForm", "return", this.cUrlC), "ArtForm")
 
     loTbl = createobject("AisTable")
     with loTbl
+      loGrp = .addGroup('ars_role', 'Role', .t.)
+      
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
+
       loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), aisArtistName(THISRECORD))], 'artist')
-      loCol = .addCursorColumn("Ars_Role", "Role")
+
+      loCol = .addCursorColumn("Ars_Role", "Role", ;
+        [HTLink(StuffUrl(urls.item("ArsForm"), "ars", Ars_PK), Ars_Role)])
+
       loCol = .addCursorColumn("Art_Email", "Email")
       loCol = .addCursorColumn("Art_Phone", "Phone")
       loCol = .addCursorColumn("Art_Neighborhood", "Neighborhood")
@@ -214,13 +221,62 @@ define class ais_SftHome as aisSftPage
   endfunc && page_getPanelInfo
 enddefine && SftHome
 
+*** ========================================================= ***
+define class aisArsPage as aisPage
+  cArs = ""
+  oArs = null
+  lArsRequired = .t.
+  * --------------------------------------------------------- *
+  function BeforeProcessRequest
+    if this.lArsRequired
+      this.cArs = evl(this.cArs, this.StripUrl("Ars", .f., .t.))
+      if empty(this.cArs)  && Item required, but not found in URL.
+        this.NotFound()
+      else 
+        this.VerifyArtistShift()
+        if !isnull(this.oArs)
+          * derived parent properties set here
+          this.cArt = this.oArs.Ars_Art_FK
+          this.verifyArtist()
+        endif
+      endif 
+    endif 
+    dodefault()  && required bubble-up
+    return    
+  endfunc  
+  * --------------------------------------------------------- *
+  function VerifyArtistShift(tcKey)
+    local loData
+    lcKey = evl(m.tcKey, this.cArs)
+    loData = createobject("AisArsData")
+    if loData.FindRecord(m.lcKey)
+      if m.lcKey = this.cArs
+        this.oArs = loData.GetRecord()
+      endif 
+    else 
+      this.NotFound()
+    endif 
+    return  
+  endfunc  
+enddefine && ArsPage  
+
 *** ===================================================== ***
-define class Ais_ArsNew as AisArtPage
+define class Ais_ArsNew as Ais_ArsForm
+  lAdding = .t.
+  lArtRequired = .t.
+  lArsRequired = .f. 
+enddefine 
+
+*** ===================================================== ***
+define class Ais_ArsForm as AisArsPage
   * ----------------------------------------------------- *  
   function ProcessRequest
-    this.cCancelUrl = StuffURL(THIS.cUrlB, 2, "ArtHome")
+    this.cCancelUrl = iif(this.lAdding, ;
+      StuffURL(THIS.cUrlB, 2, "ArtHome", "art", this.cArt), ;
+      StuffURL(THIS.cUrlB, 2, "SftHome", "sft", this.oArs.Ars_Sft_FK))
+      
     this.Assert(poContext.lAdmin)
-    this.cSubTitle = "Add Shift for " + AisArtistName(this.oArt)
+    this.cSubTitle = "Shift for " + AisArtistName(this.oArt)
 
     local loForm, vp_cArs_PK, loQ, lcAlias
     loQ = createobject("AisSftQuery")
@@ -231,18 +287,22 @@ define class Ais_ArsNew as AisArtPage
     this.assert(loQ.nTally > 0, "No shifts.")
 
     lcAlias = "V_ArtistShift"
-    vp_cArs_PK = space(32)
+    vp_cArs_PK = iif(this.lAdding, space(32), this.cArs)
+    
     use (m.lcAlias) in select(m.lcAlias)
     cursorsetprop("Buffering", 5, m.lcAlias)
     loForm = this.createForm('aisArsForm', this.cUrlC)
     with loForm
+      .lNewRecord = this.lAdding
       .AddControls()
       .DoEvents() 
 
       if .Valid()
         select (m.lcAlias)
-        append blank
-        replace Ars_Art_FK with this.cArt
+        if this.lAdding
+          append blank
+          replace Ars_Art_FK with this.cArt
+        endif
 
         .UpdateControlSources()
         select (m.lcAlias) && UpdateControlSources can alter work area
@@ -302,6 +362,9 @@ define class aisArsForm as AisForm
         .nStyle = L7_MULTISTYLE_VERTICAL
         .nRowSourceType = L7_ROWSOURCETYPE_VALUE
         .cRowSource = THISAPP_ROLE_ENUM
+        if this.lNewRecord
+          .setValue("Worker Bee")
+        endif
       endwith 
 
     endwith
