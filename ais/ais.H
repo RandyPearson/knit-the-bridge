@@ -31,7 +31,7 @@
 ; #DEFINE THISAPP_PIECE_TYPES       "Knit    ,Crochet ,Both    ,Other   "
 
 #DEFINE THISAPP_ROLE_LEN   12
-#DEFINE THISAPP_ROLE_ENUM  "Worker Bee  ,Captain     ,Towers      ,Check-In    ,Medical     ,Runner     ,Core Team   "
+#DEFINE THISAPP_ROLE_ENUM  "Worker Bee  ,Captain     ,Runner     ,Towers      ,Check-In    ,Medical     ,Security    ,Core Team   "
 
 #DEFINE THISAPP_HOW_DONATED_LEN   12
 #DEFINE THISAPP_HOW_DONATED_ENUM  "Indiegogo   ,PayPal      ,Directly    ,Other       "

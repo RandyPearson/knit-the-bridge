@@ -1208,12 +1208,16 @@ define class ais_ArtHome as aisArtPage
       lcRet = ""
     else
       urls.add(StuffUrl(this.cUrlA, 2, "SftHome"), "SftHome")
+      urls.add(StuffUrl(this.cUrlA, 2, "ArsForm"), "ArsForm")
 
       loTbl = createobject("AisTable")
       with loTbl
         loCol = .addCursorColumn("Sft_PK", "Shift", ;
           [HTLink(StuffUrl(urls.item("SftHome"), "sft", Sft_PK), AisShiftName(Sft_PK))])
-        loCol = .addCursorColumn("Ars_Role", "Role")
+
+        loCol = .addCursorColumn("Ars_Role", "Role", ;
+          [HTLink(StuffUrl(urls.item("ArsForm"), "ars", Ars_PK), Ars_Role)])
+
         loCol = .addCursorColumn("Sft_Installation", "Installation", ;
           [iif(Sft_Installation, "Installation", "") + iif(Sft_DeInstallation, "De-Installation", "")] )
         lcRet = .render()
