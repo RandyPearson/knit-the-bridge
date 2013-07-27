@@ -2637,7 +2637,7 @@ define class AisArtQuery AS L7Query
 
       if !isnull(.cSft)
         if .lJoinArs
-          .cWhereClause = .cWhereClause + [ and Ars_Sft_FK = '] + .cSft + [']
+          .cWhereClause = .cWhereClause + [ and !Ars_Inactive and Ars_Sft_FK = '] + .cSft + [']
         else
           .cWhereClause = .cWhereClause + [ and Art_PK in ] + ;
             [(select Ars_Art_FK from ArtistShift where !Ars_inactive and Ars_Sft_FK = '] + .cSft + [')]

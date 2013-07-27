@@ -367,6 +367,17 @@ define class aisArsForm as AisForm
         endif
       endwith 
 
+      if !this.lNewRecord
+        .AddObject("chkInactive", "L7Checkbox")
+        with .chkInactive
+          .cControlSource = "V_ArtistShift.Ars_Inactive"
+          .cLabel = "Delete?"
+          .cCaption = "Remove this artist shift"
+          .lDisabled = !m.poContext.lAdmin
+          .cCssClass = "FormControlPrivate"
+        endwith
+      endif
+
     endwith
     return 
   endfunc 
