@@ -90,6 +90,7 @@ define class aisTrnPage as aisPage
     with loTbl
       .cTableCaption = "All Training Sessions" 
       
+      loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
       loCol = .addCursorColumn("Trn_PK", "Training", ;
         [HTLink(StuffUrl(urls.item("TrnHome"), "trn", Trn_PK), AisTrainingName(Trn_PK))])
       loCol = .addCursorColumn("Trn_Date", "Training Date")

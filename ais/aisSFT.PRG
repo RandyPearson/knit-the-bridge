@@ -89,7 +89,10 @@ define class aisSftPage as aisPage
     loTbl = createobject("AisTable")
     with loTbl
       .cTableCaption = "All Shifts" 
+      loGrp = .addGroup("Sft_Date", "Date", .t.)
       
+      loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
+
       loCol = .addCursorColumn("Sft_PK", "Shift", ;
         [HTLink(StuffUrl(urls.item("SftHome"), "sft", Sft_PK), AisShiftName(Sft_PK))])
       loCol = .addCursorColumn("Sft_Date", "Shift Date")
