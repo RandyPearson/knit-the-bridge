@@ -1213,6 +1213,7 @@ enddefine
 *** ========================================================= ***
 define class AisLocateByPanelIDForm as AisLocateByForm
   cTitle = "Locate a Panel"
+  cSubmitCaption = "Locate Panel"
   * ----------------------------------------------------- *  
   function AddControls
     with this
@@ -1220,6 +1221,7 @@ define class AisLocateByPanelIDForm as AisLocateByForm
       with .txtPnl_ID
         .cLabel = "Panel ID to Locate"
         .nSize = 20
+        .cInstructions = "Enter a panel ID. Only the numeric portion is needed. "
       endwith 
     endwith
     return 
@@ -1228,7 +1230,8 @@ enddefine
 
 *** ========================================================= ***
 define class AisPublicArtistSearchForm as AisLocateByForm
-  cTitle = "Locate an Artist"
+  cTitle = "Find an Artist"
+  cSubmitCaption = "Find Artist"
   * ----------------------------------------------------- *  
   function AddControls
     with this
@@ -1236,7 +1239,7 @@ define class AisPublicArtistSearchForm as AisLocateByForm
       with .txtSearch
         .cLabel = "Artist's Name to Locate"
         .nSize = 20
-        .cInstructions = "Enter only one word or portion of word"
+        .cInstructions = "Enter only one word or portion of word. "
       endwith 
     endwith
     return 
