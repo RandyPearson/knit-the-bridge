@@ -1223,9 +1223,9 @@ define class ais_ArtHome as aisArtPage
         lcRet = .render()
       endwith 
     endif
-    if poContext.lDeveloper
-      lcRet = m.lcRet + HTWrap(loQry.cSqlStatement, 'div,p', 'admin,debug')
-    endif
+    *!*      if poContext.lDeveloper
+    *!*        lcRet = m.lcRet + HTWrap(loQry.cSqlStatement, 'div,p', 'admin,debug')
+    *!*      endif
     
     return m.lcRet  
   endfunc 
