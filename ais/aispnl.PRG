@@ -724,6 +724,39 @@ define class AisPnlBrowseForm AS AisForm
   endfunc  && AddControls
 enddefine && PnlBrowseForm 
 
+*** ========================================================= ***
+define class ais_PanelInfo as ais_PnlHome
+  nMinLoginLevel = L7_NONE  && PUBLIC 
+  * ----------------------------------------------------- *  
+  function AddDefaultMenu
+    if poContext.lCore
+      this.addMenuItem("main\This,page", "Panel Page", StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", this.cPnl), , "PnlHome")
+    endif
+    dodefault()
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    local loOut
+    this.oJsonContents = createobject("Empty")
+    loOut = this.oJsonContents
+    addproperty(loOut, "location_info", "")
+    do case
+    case this.oPnl.Pnl_Excluded
+      loOut.location_info = HtWrap([Panel was not able to be installed on the bridge.], 'p')
+    case isnull(this.oPage_Location)
+      loOut.location_info = HtWrap([Panel does not yet have a location on the bridge.], 'p')
+    otherwise      
+      loOut.location_info = AisDescribeLocation(this.oPage_Location)
+    endcase 
+
+    if this.cResponseType = "json"
+    else
+      response.write(L7ShowObject(m.loOut))
+    endif
+    return 
+  endfunc 
+enddefine && ais_PanelInfo 
 
 *** ========================================================= ***
 define class ais_PnlHome as aisPnlPage 

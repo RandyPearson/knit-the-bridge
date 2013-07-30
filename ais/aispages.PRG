@@ -1040,7 +1040,7 @@ define class ais_Locate as aisPage
     endwith 
   endfunc 
   * ----------------------------------------------------- *  
-enddefine 
+enddefine  && Locate
 
 *** ========================================================= ***
 define class ais_LocateByPanelID as aisPage 
@@ -1135,7 +1135,7 @@ define class ais_LocateByPanelID as aisPage
     return 
   endfunc 
   * ----------------------------------------------------- *  
-enddefine 
+enddefine  && LocateByPanelID
 
 *** ========================================================= ***
 define class ais_LocateByArtistSearch as aisPage 
@@ -1180,7 +1180,7 @@ define class ais_LocateByArtistSearch as aisPage
     endwith 
     with response
       .WriteTag(;
-          [The following matched were found from people that submitted panels ] ;
+          [The following matches were found from people that submitted panels ] ;
           + [and released their names to the public. ] ; 
           + [Select a name to see their bridge location(s). ] ;
         , 'p')
@@ -1200,7 +1200,7 @@ define class ais_LocateByArtistSearch as aisPage
     return 
   endfunc 
   * ----------------------------------------------------- *  
-enddefine 
+enddefine  && LocateByArtistSearch 
 
 *** ========================================================= ***
 define class AisLocateByForm as AisForm
