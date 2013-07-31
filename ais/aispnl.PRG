@@ -709,7 +709,6 @@ define class AisPnlBrowseForm AS AisForm
           .cColumnHeaderCssClass = "sort" 
         endwith 
 
-
         *!*          .AddObject("chkExcl", "L7Checkbox")
         *!*          with .chkExcl
         *!*            .cControlSource = this.cAlias + ".Pnl_Excluded"
@@ -740,15 +739,18 @@ define class ais_PanelInfo as ais_PnlHome
     local loOut
     this.oJsonContents = createobject("Empty")
     loOut = this.oJsonContents
-    addproperty(loOut, "location_info", "")
+    addproperty(loOut, "single_piece", this.oPnl.Pnl_Single_Piece)
+    addproperty(loOut, "loc_id", AisFormatPanelLocation(this.oPage_Location))
+    addproperty(loOut, "loc_info", "")
     do case
     case this.oPnl.Pnl_Excluded
-      loOut.location_info = HtWrap([Panel was not able to be installed on the bridge.], 'p')
+      loOut.loc_info = HtWrap([Panel was not able to be installed on the bridge.], 'p')
     case isnull(this.oPage_Location)
-      loOut.location_info = HtWrap([Panel does not yet have a location on the bridge.], 'p')
+      loOut.loc_info = HtWrap([Panel does not yet have a location on the bridge.], 'p')
     otherwise      
-      loOut.location_info = AisDescribeLocation(this.oPage_Location)
+      loOut.loc_info = AisDescribeLocation(this.oPage_Location)
     endcase 
+    addproperty(loOut, "created_by", this.page_getCreatedBy())
 
     if this.cResponseType = "json"
     else
@@ -756,6 +758,37 @@ define class ais_PanelInfo as ais_PnlHome
     endif
     return 
   endfunc 
+  * ----------------------------------------------------- *  
+  function page_getCreatedBy
+    local loQ, lcRet, loPnl, loArt, lcName
+    loPnl = this.oPnl
+    lcRet = ""
+    loQ = createobject("AisPceQuery")
+    with loQ
+      .lJoinArtist = .t.
+      .cPnl = this.cPnl
+      .execute()
+    endwith
+    
+    select (loQ.cAlias)
+    scan
+      if Art_Release_Name
+        scatter memo name loArt
+        lcName = HtWrap(AisArtistName(m.loArt), 'strong')
+      else
+        lcName = "Anonymous"
+      endif 
+      if loPnl.Pnl_Single_Piece
+        lcRet = m.lcRet + HtWrap("Panel created by: " + m.lcName, "p")
+      else
+        lcRet = m.lcRet + HtWrap(m.lcName, "li")
+      endif
+    endscan
+    if !loPnl.Pnl_Single_Piece
+      lcRet = HTWrap("Pieces created by:", "p") + HTWrap(m.lcRet, "ul")
+    endif
+    return m.lcRet
+  endfunc && page_getCreatedBy
 enddefine && ais_PanelInfo 
 
 *** ========================================================= ***
