@@ -380,6 +380,7 @@ ENDDEFINE
 DEFINE CLASS L7JsonResponse AS L7Response
   lCanReportError = .T.
   lErrorAsPlainText = .T.  && vs trying to send json _about_ the error
+  lSecureWrap = .t. 
   cSecurePrefix = '/*-secure-' + CHR(13) + CHR(10)  && compat w/ evalJson in Prototype
   cSecureSuffix = CHR(13) + CHR(10) + '*/'          && ditto
   * --------------------------------------------------------- *
@@ -393,7 +394,7 @@ DEFINE CLASS L7JsonResponse AS L7Response
   FUNCTION AfterRender(tcText, toHeader)  
     if toHeader.cContentType = L7ExtensionToContentType("json")
       * checks that an error or whatever hasn't removed us from json space
-      if not empty(this.cSecurePrefix + this.cSecureSuffix)
+      if this.lSecureWrap and !empty(this.cSecurePrefix + this.cSecureSuffix)
         tcText = this.cSecurePrefix + m.tcText + this.cSecureSuffix
       endif 
     endif

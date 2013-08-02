@@ -59,6 +59,12 @@ define class AisApp AS KtbApp
     dodefault()
     return .T.
   endfunc  && AfterSetup
+  * --------------------------------------------------------- *
+  function SetupResponseManager
+    dodefault()
+    this.oResponseManager.item('JsonResponse').lSecureWrap = .f. && recipient can't cope 
+    return 
+  endfunc 
   * -------------------------------------------------- *
   function OpenLookupTable(lcCode)
     local lcAlias, lcSql, lcIndexCommands, lnSelect
