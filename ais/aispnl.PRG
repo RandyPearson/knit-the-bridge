@@ -739,6 +739,8 @@ define class ais_PanelInfo as ais_PnlHome
     local loOut
     this.oJsonContents = createobject("Empty")
     loOut = this.oJsonContents
+    addproperty(loOut, "pnl_id", this.oPnl.Pnl_ID)
+    addproperty(loOut, "pnl_pk", this.oPnl.Pnl_PK)
     addproperty(loOut, "single_piece", this.oPnl.Pnl_Single_Piece)
     addproperty(loOut, "loc_id", AisFormatPanelLocation(this.oPage_Location))
     addproperty(loOut, "loc_info", "")
