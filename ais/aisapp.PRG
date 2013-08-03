@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     32
+#DEFINE THISAPP_DATABASE_REVISION     33
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -570,6 +570,12 @@ define class AisApp AS KtbApp
       do CreateTable with "ArtistShift", this.cDataPath, this.cDataBase
       use in select("ArtistShift")
 
+    case m.lnRev = 33
+      alter table Panel add column Pnl_Story M
+      alter table Panel add column Pnl_URL M
+      use in select("Panel")
+
+
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
@@ -907,6 +913,8 @@ function CreatePanelTable
       Pnl_Dim_2 C(12), ;
       Pnl_Special_Size L, ; && Rev 24
       Pnl_Design_Category C(5), ;  && Rev 29
+      Pnl_Story M, ;  && Rev 33
+      Pnl_URL M, ;    && Rev 33
       Pnl_Comments M, ;
       Pnl_History M, ;  && Rev 28
       Pnl_Notes M, ;

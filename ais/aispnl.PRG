@@ -905,8 +905,9 @@ define class ais_PnlHome as aisPnlPage
       .AddRow("Completed?", loData.Pnl_Completed)
       .AddRow("Artist Name", ;
         HTLink(StuffUrl(this.cUrlA, 2, "ArtHome", "art", loData.Pnl_Stitcher_Art_FK), aisArtistName(loData.Pnl_Stitcher_Art_FK)))
-      .AddRow("Current Storage Facility", ;
-        HTLink(StuffUrl(this.cUrlA, 2, "FacHome", "fac", loData.Pnl_Fac_FK), aisFacilityName(loData.Pnl_Fac_FK)),,'facility')
+
+      .AddRow("Artist's Story", L7ParseOnView(loData.Pnl_Story), .t.)
+      .AddRow("URL", L7ParseOnView(loData.Pnl_Url), .t.)
             
       .AddHeading("Bridge Location")
       loRow.clear()
@@ -945,6 +946,8 @@ define class ais_PnlHome as aisPnlPage
         .AddHeading('Administrative Information')
         .AddRow("Pk", TRIM(loData.Pnl_PK), .F., "private")
         .AddRow("Deleted", loData.Pnl_INACTIVE, .t., "private")
+        .AddRow("Current Storage Facility", ;
+          HTLink(StuffUrl(this.cUrlA, 2, "FacHome", "fac", loData.Pnl_Fac_FK), aisFacilityName(loData.Pnl_Fac_FK)),,'facility')
         .AddRow("History", L7ParseOnView(loData.Pnl_History))
         .AddRow("Created", TRANSFORM(loData.Pnl_ORIG_TIME) + [ by ] + AisArtistName(loData.Pnl_Orig_Art_FK), .F., "private")
         .AddRow("Last Modified", TRANSFORM(loData.Pnl_REV_TIME) + [ by ] + AisArtistName(loData.Pnl_Rev_Art_FK), .F., "private")
@@ -1196,6 +1199,23 @@ define class aisPanelForm as AisForm
         .nRows = 3
         .cCssClass = "FormControlPrivate"
       endwith
+
+      .AddObject("edtStory", "L7Textarea")
+      with .edtStory
+        .cGroupID = "STORY"
+        .cControlSource = "V_Panel.Pnl_Story"
+        .cLabel = "Artist's Story"
+        .nRows = 3
+      endwith 
+
+      .AddObject("edtURL", "L7Textarea")
+      with .edtURL
+        .cGroupID = "STORY"
+        .cControlSource = "V_Panel.Pnl_URL"
+        .cLabel = "URL"
+        .cInstructions = "e.g., a YouTube post"
+        .nRows = 2
+      endwith 
 
       .AddObject("chkCompleted", "AisRadioCheckbox")
       with .chkCompleted
