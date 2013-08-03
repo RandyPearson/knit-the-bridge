@@ -774,7 +774,8 @@ define class ais_PanelInfo as ais_PnlHome
     otherwise      
       loOut.loc_info = AisDescribeLocation(this.oPage_Location)
     endcase 
-    addproperty(loOut, "created_by", this.page_getCreatedBy())
+    *!* addproperty(loOut, "created_by", this.page_getCreatedBy())
+    addproperty(loOut, "artist_set", AisGetPanelArtists(this.oPnl.pnl_pk))
     if !empty(this.oPnl.Pnl_Story)
       addproperty(loOut, "story", this.oPnl.Pnl_Story)
     endif
@@ -787,7 +788,7 @@ define class ais_PanelInfo as ais_PnlHome
       response.write(L7ShowObject(m.loOut))
     endif
     return 
-  endfunc 
+  endfunc && ProcessRequest
   * ----------------------------------------------------- *  
   function page_getCreatedBy
     local loQ, lcRet, loPnl, loArt, lcName
