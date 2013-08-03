@@ -37,23 +37,31 @@ endfunc
 * --------------------------------------------------------- *
 function aisArtistName(tvArt, tlNoAlt)
   local loData, loPreserve
-  if vartype(m.tvArt) = "O"
-    loData = m.tvArt
-  else  && PK
-    if isnull(m.tvArt) or empty(m.tvArt)
-      return "--"
+  if vartype(m.tvArt) = 'L' && nothing passed--assume current record
+    if empty(alias()) or !type('Art_Full_Name') = "C"
+      error 'Nothing passed/available to aisArtistName()'
+    else
+      scatter memo name loData
     endif
-    loPreserve = createobject("L7PreserveSelect")
-    select * from KtbAis!Artist ;
-      where Art_PK = m.tvArt ;
-      into cursor aisArtistName_
-    if _tally < 1
-      error "Artist " + m.tvArt + " was not found!"
-    endif
-    scatter memo name loData
-    loPreserve = null 
+  else
+    if vartype(m.tvArt) = "O"
+      loData = m.tvArt
+    else  && PK
+      if isnull(m.tvArt) or empty(m.tvArt)
+        return "--"
+      endif
+      loPreserve = createobject("L7PreserveSelect")
+      select * from KtbAis!Artist ;
+        where Art_PK = m.tvArt ;
+        into cursor aisArtistName_
+      if _tally < 1
+        error "Artist " + m.tvArt + " was not found!"
+      endif
+      scatter memo name loData
+      loPreserve = null 
+    endif 
   endif 
-    
+      
   if !m.tlNoAlt and !empty(loData.Art_Full_Name) && alt. name provided
     return trim(loData.Art_Full_Name)
   else

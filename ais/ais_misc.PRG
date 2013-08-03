@@ -1,3 +1,12 @@
+
+scan
+  loArt = createobject('empty')
+  addproperty(loArt, 'name', iif(art_release_name, AisArtistName(), 'Anonymous'))
+  pnl.artist_set.add(loArt)
+endscan
+
+
+#if .f.
 open database ktbais
 
 * cdow(trn_date) as DOW, cmonth(trn_date) as Month, day(trn_date) as Day, trn_start_time as time, 
@@ -14,7 +23,7 @@ select trn_date as date, ;
   into cursor Training_Roster_ 
 
 copy to .\Files\Ktb_Training_Roster_r2a.xls type xl5 
-
+#endif 
 
 
 
