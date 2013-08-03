@@ -182,7 +182,7 @@ define class ais_InstalledPanels as aisPage
 
   * ----------------------------------------------------- *  
   function ProcessRequest
-    local loQry, loTbl, loCol, loGrp
+    local loQry, loTbl, loCol, loGrp, loPnl, loOut
        
     loQry = createobject("AisPlcQuery")
     with loQry
@@ -198,11 +198,20 @@ define class ais_InstalledPanels as aisPage
       .BuildFieldList() && prevents more columns being added
       .execute()
     endwith 
-
+    
+    select (loQry.cAlias)
     if this.cResponseType = "json"
-      this.oJsonContents = createobject("Empty")
-      addproperty(this.oJsonContents, "installed_panel_set", L7CursorToJsonArray(loQry.cAlias))
+      loOut = createobject("Empty")
+      addproperty(loOut, "installed_panel_set", createobject("JsonArray"))
+      scan
+        scatter memo name loPnl
+        addproperty(m.loPnl, "artist_set", AisGetPanelArtists(loPnl.Pnl_PK))
+        loOut.installed_panel_set.add(m.loPnl)
+      endscan
+      
+      this.oJsonContents = m.loOut
     else
+      response.write(L7Table())
     endif
     return 
   endfunc 
