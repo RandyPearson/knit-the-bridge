@@ -1,9 +1,23 @@
+open database ktbais
 
-scan
-  loArt = createobject('empty')
-  addproperty(loArt, 'name', iif(art_release_name, AisArtistName(), 'Anonymous'))
-  pnl.artist_set.add(loArt)
-endscan
+select art_pk, padr(iif(!art_release_name, "Anonymous", evl(art_full_name, trim(art_first_name) + ' ' + trim(art_last_name))), 60) as Name_, ;
+    art_id ;
+  from artist ;
+  where !Art_Inactive and (Art_Group_Art_FK in (select pce_art_fk from Piece where !pce_inactive and pce_pnl_fk=[BE0B3ED997054C47981C686D78F19848]) ;
+    or art_pk in (select pce_art_fk from Piece where !pce_inactive and pce_pnl_fk=[BE0B3ED997054C47981C686D78F19848])) ;
+  into cursor Temp_
+
+select Name_, count(*) ;
+  from Temp_ ;
+  group by 1
+
+
+
+*!*  scan
+*!*    loArt = createobject('empty')
+*!*    addproperty(loArt, 'name', iif(art_release_name, AisArtistName(), 'Anonymous'))
+*!*    pnl.artist_set.add(loArt)
+*!*  endscan
 
 
 #if .f.
