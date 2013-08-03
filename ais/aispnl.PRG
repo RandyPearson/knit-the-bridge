@@ -98,6 +98,28 @@ function aisFormatPanelLocation(tvPnl) && object or key
   return m.lcRet
 endfunc 
 
+* --------------------------------------------------------- *
+function aisGetPanelArtists(tvPnl) && object or key or currect record
+  local lcPnl, loSel, loRet
+  lcPnl = iif(vartype(m.tvPnl) = "L", Pnl_PK, ;
+    iif(vartype(m.tvPnl) = "C", m.tvPnl, m.tvPnl.Pnl_PK))
+  loSelect = createobject("L7PreserveSelect")
+  
+  select art_pk, padr(iif(!art_release_name, "Anonymous", evl(art_full_name, trim(art_first_name) + ' ' + trim(art_last_name))), 60) as Name ;
+    from artist ;
+    where !Art_Inactive and (Art_Group_Art_FK in (select pce_art_fk from Piece where !pce_inactive and pce_pnl_fk = m.lcPnl) ;
+      or art_pk in (select pce_art_fk from Piece where !pce_inactive and pce_pnl_fk = m.lcPnl)) ;
+    into cursor Temp_
+
+  select Name, count(*) as count ;
+    from Temp_ ;
+    group by 1 ;
+    into cursor PanelArtists_
+  
+  loRet = L7CursorToJsonArray("PanelArtists_")
+  return m.loRet
+endfunc 
+
 *** ========================================================= ***
 define class aisPnlPage as aisPage 
   cPnl = ""
@@ -949,6 +971,9 @@ define class ais_PnlHome as aisPnlPage
       
       .AddHeading('Pieces Comprising Panel')
       .AddRow(null, this.page_getPieceInfo())
+      if poContext.lDeveloper
+        .AddRow("Public Artist Info", L7JsonSerialize(AisGetPanelArtists(loData.Pnl_PK))) 
+      endif
 
       if poContext.lCore
         .AddHeading('Administrative Information')
@@ -1263,7 +1288,7 @@ define class AisPnlQuery as L7Query
   cDefaultFieldList = ;
     "Pnl_PK, Pnl_ID, Pnl_Inactive, Pnl_Stitcher_Art_FK, Pnl_Asm_FK, Pnl_Fac_FK, Pnl_Single_Piece" + ;  
     ", Pnl_Dim_1, Pnl_Dim_2, Pnl_Special_Size, Pnl_Design_Category, Pnl_Completed, Pnl_Excluded" + ;
-    ", Pnl_Comments, Pnl_Notes, Pnl_Story_Pnl_URL" 
+    ", Pnl_Comments, Pnl_Notes, Pnl_Story, Pnl_URL" 
 
   nOrderBy = 1
   dimension aOrderBy[ 1, 2]
