@@ -753,6 +753,12 @@ define class ais_PanelInfo as ais_PnlHome
       loOut.loc_info = AisDescribeLocation(this.oPage_Location)
     endcase 
     addproperty(loOut, "created_by", this.page_getCreatedBy())
+    if !empty(this.oPnl.Pnl_Story)
+      addproperty(loOut, "story", this.oPnl.Pnl_Story)
+    endif
+    if !empty(this.oPnl.Pnl_URL)
+      addproperty(loOut, "url", this.oPnl.Pnl_URL)
+    endif
 
     if this.cResponseType = "json"
     else
@@ -832,6 +838,8 @@ define class ais_PnlHome as aisPnlPage
         StuffUrl(.cUrlA, 2, "LocateByPanelID", "pnl_id", .oPnl.Pnl_ID))
 
       if poContext.lAdmin
+        .addMenuItem("main\This,page", "PanelInfo.json (public)", ;
+          StuffUrl(.cUrlB, 1, "json", 2, "PanelInfo"))
         .addMenuItem("main\This,page", "Upload Panel File...", StuffUrl(.cUrlA, 2, "PnlFilNew", "pnl", .cPnl))
 
         if .oPnl.Pnl_Single_Piece = .f. and !.oPnl.Pnl_Completed 
@@ -1254,7 +1262,8 @@ define class AisPnlQuery as L7Query
   cBaseTable = "Panel"
   cDefaultFieldList = ;
     "Pnl_PK, Pnl_ID, Pnl_Inactive, Pnl_Stitcher_Art_FK, Pnl_Asm_FK, Pnl_Fac_FK, Pnl_Single_Piece" + ;  
-    ", Pnl_Dim_1, Pnl_Dim_2, Pnl_Special_Size, Pnl_Design_Category, Pnl_Completed, Pnl_Excluded, Pnl_Comments, Pnl_Notes" 
+    ", Pnl_Dim_1, Pnl_Dim_2, Pnl_Special_Size, Pnl_Design_Category, Pnl_Completed, Pnl_Excluded" + ;
+    ", Pnl_Comments, Pnl_Notes, Pnl_Story_Pnl_URL" 
 
   nOrderBy = 1
   dimension aOrderBy[ 1, 2]
