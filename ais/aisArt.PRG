@@ -707,6 +707,7 @@ define class ais_ArtList as aisMultiArtPage
       
       if this.oPage_Fields.getkey("contact") > 0
         loCol = .addCursorColumn("Art_Email", "Email/Phone", [aisFormatContactInfo(THISRECORD)])
+        loCol = .addCursorColumn("Art_Emergency_Contact", "Emergency")
       endif 
 
       if this.oPage_Fields.getkey("location") > 0 or this.oPage_Fields.getkey("contact") > 0
@@ -1107,6 +1108,8 @@ define class ais_ArtHome as aisArtPage
 
       .AddRow("Email", HTEmailLink(TRIM(loData.ART_EMAIL) + iif(loData.Art_Undeliverable, " (UNDELIVERABLE)", ""), .f., .f., .f., .t.))
       .AddRow("Phone", TRIM(loData.ART_PHONE), .t.)
+      .AddRow("Emergency Contact", loData.Art_Emergency_Contact)
+
       .AddRow("Original Contact (from blog)", loData.ART_CONTACT_ORIG, .t., "private")
       .AddRow("Address (from blog)", L7ParseOnView(loData.ART_ADDRESS), .t., "private")
       
@@ -2055,6 +2058,13 @@ define class aisArtistForm AS aisArtistForms
         .cLabel = "Phone"
         .cCssStyle = "width: 40%;"
       endwith
+      .AddObject("edtEmergency_Contact", "L7Textarea")
+      with .edtEmergency_Contact
+        .cGroupID = "cont2"
+        .cControlSource = "V_Artist.Art_Emergency_Contact"
+        .cLabel = "Emergency Contact"
+        .nRows = 2
+      endwith
 
       .AddObject("divDemo", "L7Divider")
       with .divDemo
@@ -2475,7 +2485,7 @@ define class AisArtQuery AS L7Query
   cDefaultFieldList = ;
     "Art_PK, Art_ID, Art_Inactive, Art_Access_Token, Art_Approved, Art_Group_Art_FK, Art_No_Count, Art_Starred, Art_Artist, Art_Anonymous, Art_Unknown, Art_Hidden" + ;
     ", Art_Full_Name, Art_Last_Name, Art_First_Name, Art_Title, Art_Release_Name, Art_Name_Orig" + ; 
-    ", Art_Email, Art_Undeliverable, Art_Phone, Art_Neighborhood, Art_Age_Range" + ;
+    ", Art_Email, Art_Undeliverable, Art_Phone, Art_Emergency_Contact, Art_Neighborhood, Art_Age_Range" + ;
     ", Art_Register_Time, Art_KTB_Response" 
 
   cID = null 

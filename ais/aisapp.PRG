@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     33
+#DEFINE THISAPP_DATABASE_REVISION     34
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -578,6 +578,9 @@ define class AisApp AS KtbApp
       alter table Panel add column Pnl_URL M
       use in select("Panel")
 
+    case m.lnRev = 34
+      alter table Artist add column Art_Emergency_Contact M
+      use in select("Artist")
 
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
@@ -765,6 +768,7 @@ function CreateArtistTable
       Art_Email C(THISAPP_USER_EMAIL_LEN), ;  && 80
       Art_Undeliverable L, ; && Rev 24
       Art_Phone C(24), ;
+      Art_Emergency_Contact M, ;  && Rev 34
       Art_Contact_Orig M, ; 
       Art_Address M, ;
       Art_Neighborhood C(50), ;
