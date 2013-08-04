@@ -56,6 +56,9 @@ define class AisApp AS KtbApp
     loRE = createobject(L7_REGEXP_CLASS)
     loRE.pattern = '([A-Z]*?[A-Z])(0+)([1-9][0-9]*)'  && finds 0-padding chars
     this.helpers.add(m.loRE, "RegEx-Zero-Padding")
+
+    this.helpers.add(createobject("L7CacheManager"), "CacheManager") && manages cached response strings 
+
     dodefault()
     return .T.
   endfunc  && AfterSetup

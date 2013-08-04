@@ -179,43 +179,93 @@ enddefine && AisLocPage
 *** ========================================================= ***
 define class ais_InstalledPanels as aisPage 
   nMinLoginLevel = L7_NONE  
-
-  * ----------------------------------------------------- *  
-  function ProcessRequest
-    local loQry, loTbl, loCol, loGrp, loPnl, loOut
-       
-    this.page_runQueries()
-    
-    loQry = createobject("AisPlcQuery")
-    with loQry
-      .AddOrderBy("Loc_Side",, .f.)
-      .AddOrderBy("Loc_No",, .t.)
-      .AddOrderBy("Plc_Orientation",, .t.)
-
-      .lJoinPanel = .t.
-      .lJoinLocation = .t.
-
-      .ClearFields()
-      .AddFields("Loc_Side, Loc_No, left(Loc_Side, 1) + padr(transform(Loc_No),3) as Loc_ID, Plc_Orientation as Orientation, Pnl_Id, Pnl_PK")
-      .BuildFieldList() && prevents more columns being added
-      .execute()
-    endwith 
-    
-    select (loQry.cAlias)
-    if this.cResponseType = "json"
-      loOut = createobject("Empty")
-      addproperty(loOut, "installed_panel_set", createobject("JsonArray"))
-      scan
-        scatter memo name loPnl
-        * addproperty(m.loPnl, "artist_set", AisGetPanelArtists(loPnl.Pnl_PK))
-        addproperty(m.loPnl, "artist_set", this.page_GetPanelArtists(loPnl.Pnl_PK))
-        loOut.installed_panel_set.add(m.loPnl)
-      endscan
-      
-      this.oJsonContents = m.loOut
-    else
-      response.write(L7Table())
+  lPage_Cacheable = .t.
+  * --------------------------------------------------------- *
+  function beforeProcessRequest
+    local loState
+    loState = Environ.item("page.processState") 
+    addproperty(m.loState, "output", "")
+    addproperty(m.loState, 'cache_hit', .f.)
+    if this.lPage_Cacheable
+      addproperty(m.loState, 'refresh_cache', this.readQueryString('refresh', .t., .t.) = "1")
+    endif 
+    dodefault()
+    return 
+  endfunc && before..
+  * --------------------------------------------------------- *
+  function page_checkCache(loState)
+    local loObj, loMgr
+    addproperty(m.loState, 'cache_time', 60 * 30) && 30 min--change this to customized...
+    addproperty(m.loState, 'cache_id', null)
+    loObj = createobject('empty')
+    addproperty(m.loObj, "class_name", this.class) && use as part of key
+    addproperty(m.loObj, "response_type", this.cResponseType) 
+    * ... more distinguishing props here if needed (e.g., QS param vals)
+    loState.cache_id = L7JsonSerialize(m.loObj)
+    if !loState.refresh_cache
+      loMgr = goL7App.helpers.item("CacheManager")
+      loState.output = loMgr.GetCachedString(loState.cache_id, loState.cache_time)
+      loState.cache_hit = !empty(m.loState.output)
     endif
+    return 
+  endfunc 
+  * --------------------------------------------------------- *
+  function ProcessRequest
+    local loQry, loTbl, loCol, loGrp, loPnl, loOut, loState
+    loState = Environ.item("page.processState") 
+    
+    if this.lPage_Cacheable 
+      this.page_checkCache(m.loState)
+    endif
+    if !loState.cache_hit
+
+      this.page_runQueries()
+      loQry = createobject("AisPlcQuery")
+      with loQry
+        .AddOrderBy("Loc_Side",, .f.)
+        .AddOrderBy("Loc_No",, .t.)
+        .AddOrderBy("Plc_Orientation",, .t.)
+
+        .lJoinPanel = .t.
+        .lJoinLocation = .t.
+
+        .ClearFields()
+        .AddFields("Loc_Side, Loc_No, left(Loc_Side, 1) + padr(transform(Loc_No),3) as Loc_ID, Plc_Orientation as Orientation, Pnl_Id, Pnl_PK")
+        .BuildFieldList() && prevents more columns being added
+        .execute()
+      endwith 
+    
+      select (loQry.cAlias)
+      if this.cResponseType = "json"
+        loOut = createobject("Empty")
+        addproperty(loOut, "generate_time", datetime())
+        addproperty(loOut, "installed_panel_set", createobject("JsonArray"))
+        scan
+          scatter memo name loPnl
+          * addproperty(m.loPnl, "artist_set", AisGetPanelArtists(loPnl.Pnl_PK))
+          addproperty(m.loPnl, "artist_set", this.page_GetPanelArtists(loPnl.Pnl_PK))
+          loOut.installed_panel_set.add(m.loPnl)
+        endscan
+        loState.output = L7JsonSerialize(m.loOut) && serialize now, so it can also be cached
+      else
+        loState.output = L7Table()
+      endif
+    endif   
+
+    if this.cResponseType = "json"
+      this.oJsonContents = loState.Output
+    else
+      response.write(loState.Output)
+    endif
+
+    if m.loState.cache_hit
+      goL7App.app_log(L7_SEVERITY_DEBUG, "Hit serviced from cache")
+    else
+      if this.lPage_Cacheable
+        goL7App.helpers.item("CacheManager").SetCachedString(loState.Output, loState.Cache_ID, loState.Cache_Time)
+        goL7App.app_log(L7_SEVERITY_DEBUG, "Output cached")
+      endif
+    endif  
     return 
   endfunc 
   * ----------------------------------------------------- *  
