@@ -1,5 +1,32 @@
 open database ktbais
 
+select ;
+    padr(iif(!art_release_name, "Anonymous", evl(art_full_name, trim(art_first_name) + ' ' + iif(art_last_name = 'NLN', '', trim(art_last_name)))), 60) as Name_, ;
+    pnl_pk, art_pk ;
+  from piece ;
+    join panel on pce_pnl_fk = pnl_pk ;
+    join artist on pce_art_fk = art_pk ;
+  where !pce_inactive and !pnl_inactive and !art_inactive ;
+union ;
+select ;
+    padr(iif(!Art2.art_release_name, "Anonymous", evl(Art2.art_full_name, trim(Art2.art_first_name) + ' ' + iif(art2.art_last_name = 'NLN', '', trim(art2.art_last_name)))), 60) as Name_, ;
+    pnl_pk, art2.art_pk ;
+  from piece ;
+    join panel on pce_pnl_fk = pnl_pk ;
+    join artist Art1 on pce_art_fk = art_pk ;
+    join artist Art2 on art1.Art_pk = Art2.Art_group_art_fk ;
+  where !pce_inactive and !pnl_inactive and !Art1.art_inactive and !Art2.Art_Inactive ;
+into cursor temp_
+
+select Name_, count(*) ;
+  from Temp_ ;
+  where pnl_pk=[BE0B3ED997054C47981C686D78F19848] ;
+  group by 1
+
+  
+
+
+#if .f.
 select art_pk, padr(iif(!art_release_name, "Anonymous", evl(art_full_name, trim(art_first_name) + ' ' + trim(art_last_name))), 60) as Name_, ;
     art_id ;
   from artist ;
@@ -9,9 +36,10 @@ select art_pk, padr(iif(!art_release_name, "Anonymous", evl(art_full_name, trim(
 
 select Name_, count(*) ;
   from Temp_ ;
+  where pnl_pk=[BE0B3ED997054C47981C686D78F19848];
   group by 1
 
-
+#endif 
 
 *!*  scan
 *!*    loArt = createobject('empty')

@@ -105,7 +105,7 @@ function aisGetPanelArtists(tvPnl) && object or key or currect record
     iif(vartype(m.tvPnl) = "C", m.tvPnl, m.tvPnl.Pnl_PK))
   loSelect = createobject("L7PreserveSelect")
   
-  select art_pk, padr(iif(!art_release_name, "Anonymous", evl(art_full_name, trim(art_first_name) + ' ' + trim(art_last_name))), 60) as Name ;
+  select art_pk, padr(iif(!art_release_name, "Anonymous", evl(art_full_name, trim(art_first_name) + ' ' + iif(art_last_name = 'NLN', '', trim(art_last_name)))), 60) as Name ;
     from artist ;
     where !Art_Inactive and (Art_Group_Art_FK in (select pce_art_fk from Piece where !pce_inactive and pce_pnl_fk = m.lcPnl) ;
       or art_pk in (select pce_art_fk from Piece where !pce_inactive and pce_pnl_fk = m.lcPnl)) ;
