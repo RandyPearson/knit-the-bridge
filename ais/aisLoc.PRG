@@ -301,9 +301,107 @@ define class ais_InstalledPanels as aisPage
         join artist Art2 on art1.Art_pk = Art2.Art_group_art_fk ;
       where &lcWhere and !Art1.art_inactive ;
     into cursor Raw_
-
+    
+    return
   endfunc 
 enddefine 
+
+*** ========================================================= ***
+define class ais_Tour as aisLocPage 
+  lLocRequired = .f.
+  cSubTitle = "Panel Walking Tour"
+  cPage_Side = null
+  cPage_Orient = null
+  cPage_Dir = null
+  * ----------------------------------------------------- *  
+  function BeforeProcessRequest
+    this.cPage_Side   = this.readQueryString("side",   .t., .t.)
+    this.cPage_Orient = this.readQueryString("orient", .t., .t.)
+    this.cPage_Dir    = this.readQueryString("dir",    .t., .t.)
+    dodefault()
+  endfunc 
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    local loState
+    loState = Environ.item("page.processState") 
+    addproperty(loState, 'page_config', this.page_getConfig())
+    if !empty(this.cPage_Dir)
+      if !this.page_validateOptions(loState)
+        this.badRequest("invalid option")
+        return
+      endif 
+      response.write(this.page_showSegment(m.loState))
+    endif
+    response.write(this.page_getSegmentOptions(m.loState))
+    return 
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_showSegment(loState)
+    local lcRet, loLocQ
+    lcRet = ""
+    loLocQ = createobject("AisLocQuery")
+    with loLocQ
+      .cSide = this.cPage_Side
+      .addOrderBy('Loc_No', this.cPage_Dir = "back")
+      .execute()
+    endwith
+    scan
+      lcRet = m.lcRet + htWrap(textmerge([<<trim(Loc_Side)>>-<<Loc_No>>]), 'div')
+    endscan
+    return m.lcRet
+  endfunc && page_showSegment
+  * ----------------------------------------------------- *  
+  function page_getSegmentOptions(loState)
+    local lcRet, lcTemp, loConfig, loDir, lnDir, loSeg, lnSeg, lcUrl
+    loConfig = loState.page_config
+    lcRet = ""
+    lcRet = m.lcRet + HTWrap("Choose Your Next Crossing", 'h2')
+    for lnDir = 1 to loConfig.direction_set.count
+      loDir = loConfig.direction_set.item[m.lnDir]
+      lcRet = m.lcRet + HTWrap(loDir.desc, 'h3')
+
+      lcTemp = ""
+      lcUrl = stuffUrl(this.cUrlB, "dir", loDir.direction)
+      for lnSeg = 1 to loConfig.segment_set.count
+        loSeg = loConfig.segment_set.item[m.lnSeg]
+        lcTemp = m.lcTemp + HTWrap(;
+          HTLink(StuffUrl(m.lcUrl, "orient", loSeg.orientation, "side", loSeg.side), loSeg.desc), ;
+          'li')        
+      next 
+      lcRet = m.lcRet + HtWrap(m.lcTemp, 'ol')
+    next
+    if poContext.lDeveloper
+      * lcRet = m.lcRet + HtWrap(L7JsonSerialize(loState.page_config), 'pre')
+    endif 
+    return m.lcRet
+  endfunc && page_getSegmentOptions
+  
+  * ----------------------------------------------------- *  
+  function page_validateOptions(loState)
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_getConfig()
+    local lcConf, loRet
+    text to lcConf noshow pretext 7
+      {
+        "direction_set":
+        [
+          {"direction": "out", "desc": "Crossing from Downtown to North Side"},
+          {"direction": "back", "desc": "Crossing from North Side to Downtown"}
+        ],
+        "segment_set": 
+        [
+          {"side": "Down", "orientation": "Outer", "desc": "Clemente (6th Street) Bridge"},
+          {"side": "Down", "orientation": "Inner", "desc": "Warhol (7th Street) Bridge, Down-River Side"},
+          {"side": "Up", "orientation": "Inner", "desc": "Warhol (7th Street) Bridge, Up-River Side"},
+          {"side": "Up", "orientation": "Outer", "desc": "Rachel Carson (9th Street) Bridge"}
+        ]
+      }
+    endtext 
+    loRet = L7JsonParse(m.lcConf) 
+    return m.loRet
+  endfunc 
+enddefine
 
 *** ========================================================= ***
 define class ais_LocDisplay as aisLocPage 
