@@ -337,17 +337,41 @@ define class ais_Tour as aisLocPage
   endfunc 
   * ----------------------------------------------------- *  
   function page_showSegment(loState)
-    local lcRet, loLocQ
+    local lcItem, lcRet, loLocQry, loPlcQry, loLoc, loPlc
     lcRet = ""
-    loLocQ = createobject("AisLocQuery")
-    with loLocQ
+    lcRet = m.lcRet + '<div class="clear"></div>' + crlf && prep for floats 
+
+    loLocQry = createobject("AisLocQuery")
+    with loLocQry
       .cSide = this.cPage_Side
       .addOrderBy('Loc_No', this.cPage_Dir = "back")
       .execute()
     endwith
+
+    * Secondary query of Panel Assignments: 
+    loPlcQry = createobject("AisPlcQuery")
+    with loPlcQry
+      .cAlias = "PlcQuery_"
+      .lJoinPanel = .t.
+      .lJoinLocation = .t.
+      .execute()
+    endwith 
+
+    select (loLocQry.cAlias)
     scan
-      lcRet = m.lcRet + htWrap(textmerge([<<trim(Loc_Side)>>-<<Loc_No>>]), 'div')
+      scatter memo name loLoc
+      
+      select (loPlcQry.cAlias)
+      locate for Plc_Loc_FK = m.loLoc.Loc_PK and Plc_Orientation = this.cPage_Orient
+      if found()
+        scatter memo name loPlc
+        lcItem = AisPanelImage(loPlc.Pnl_Id, "_h50")
+      else  
+        lcItem = textmerge([<<trim(loLoc.Loc_Side)>>-<<loLoc.Loc_No>>])
+      endif 
+      lcRet = m.lcRet + htWrap(m.lcItem, 'div', , 'tour-panel') + crlf 
     endscan
+    lcRet = m.lcRet + '<div class="clear"></div>' + crlf && prep for floats 
     return m.lcRet
   endfunc && page_showSegment
   * ----------------------------------------------------- *  

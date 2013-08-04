@@ -98,6 +98,9 @@ p.break { margin-bottom: 5em }
 .excluded {background-color: #fcc;}
 span.excluded {color: brown; font-weight: bold;}
 
+.tour-panel {float: left; height: 60px; }
+.tour-panel img{border-width: 6px !important; border-color: black !important;}
+
 .gallery-item {width: 150px; height: 75px; float: left; border: 1px solid #999; padding: 2px; }
 .gallery-item a {text-align: center;}
 .gallery-item-info {font-weight: normal; text-align: center;}
