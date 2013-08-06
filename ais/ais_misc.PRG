@@ -1,3 +1,24 @@
+
+open database ktbais
+
+select Ars_Art_FK, count(*) ;
+  from ArtistShift join Shift on Ars_Sft_FK = Sft_PK  ;
+  where Ars_Inactive = .f. and Sft_Installation ;  && and Ars_Role = "Captain" 
+  group by 1 ;
+  having count(*) >= 2 ;
+  into cursor _Multi_Captain_
+        
+select Art_ID, padr(trim(Art_First_Name) + " " + trim(Art_Last_Name), 40), Ars_Role, cdow(Sft_Date), Sft_Start_Time ;
+  from Artist A1 ; 
+    join ArtistShift on A1.Art_PK = Ars_Art_FK ;
+    join Shift on Ars_Sft_FK = Sft_PK ;
+  where A1.Art_Inactive = .f. and Ars_Inactive = .f. and Sft_Inactive = .f. ;
+    and Sft_Installation ;
+    and Ars_Art_FK in ;
+    ( select Ars_Art_FK from _Multi_Captain_ ) ;
+  order by Art_ID, Sft_Date, Sft_Start_Time
+
+#if .f.
 open database ktbais
 
 select ;
@@ -23,6 +44,7 @@ select Name_, count(*) ;
   where pnl_pk=[BE0B3ED997054C47981C686D78F19848] ;
   group by 1
 
+#endif
   
 
 
