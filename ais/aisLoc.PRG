@@ -243,7 +243,7 @@ define class ais_InstalledPanels as aisPage
         scan
           scatter memo name loPnl
           * addproperty(m.loPnl, "artist_set", AisGetPanelArtists(loPnl.Pnl_PK))
-          addproperty(m.loPnl, "artist_set", this.page_GetPanelArtists(loPnl.Pnl_PK))
+          addproperty(m.loPnl, "artist_set", this.app_GetPanelArtists(loPnl.Pnl_PK))
           loOut.installed_panel_set.add(m.loPnl)
         endscan
         loState.output = L7JsonSerialize(m.loOut) && serialize now, so it can also be cached
@@ -268,18 +268,6 @@ define class ais_InstalledPanels as aisPage
     endif  
     return 
   endfunc 
-  * ----------------------------------------------------- *  
-  function page_GetPanelArtists(tcPK)
-    local loRet
-    select Name, count(*) as count ;
-      from PiecePanelArtist_ ;
-      where Pnl_PK = m.tcPK ;
-      group by 1 ;
-      into cursor GetPanelArtists_
-    
-    loRet = L7CursorToJsonArray("GetPanelArtists_")
-    return m.loRet
-  endfunc      
 enddefine && ais_InstalledPanels 
 
 *** ========================================================= ***

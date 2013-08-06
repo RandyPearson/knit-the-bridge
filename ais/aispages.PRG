@@ -594,7 +594,24 @@ define class aisPage as L7Page
     into cursor PiecePanelArtist_
     
     return
-  endfunc 
+  endfunc && app_runPiecePanelArtistQuery
+  * ----------------------------------------------------- *  
+  function app_GetPanelArtists(tcPK)
+    if !used("PiecePanelArtist_")
+      this.App_Log(L7_SEVERITY_WARNING, "app_GetPanelArtists() called without prerequisite having been run")
+      this.app_runPiecePanelArtistQuery()
+    endif
+    local loRet, loSelect
+    loSelect = createobject("L7PreserveSelect")
+    select Name, count(*) as count ;
+      from PiecePanelArtist_ ;
+      where Pnl_PK = m.tcPK ;
+      group by 1 ;
+      into cursor GetPanelArtists_
+    
+    loRet = L7CursorToJsonArray("GetPanelArtists_")
+    return m.loRet
+  endfunc && app_GetPanelArtists     
   * --------------------------------------------------------- *
 enddefine && AisPage
 
