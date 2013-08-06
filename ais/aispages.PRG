@@ -508,6 +508,7 @@ define class aisPage as L7Page
       this.addMenuItem(m.lcMenu, 'People - Core List', StuffUrl(this.cUrlA, 2, "ArtList", "core", "1", "fields", "contact"))
       this.addMenuItem(m.lcMenu, 'Neighborhood Summary Report', StuffUrl(this.cUrlA, 2, "NeighborhoodSumList"))
 
+      lcMenu = "main\Search"
       lcLpInfo = THIS.GetBaseHiddenFormvars() && sustains license plate, etc. for GET form
       
       lcForm = [<form style="margin:0;" method="get" action="] + StuffUrl(THIS.cUrlA, 2, "ArtList") + ;
@@ -516,7 +517,9 @@ define class aisPage as L7Page
         [<br><input style="margin: 1px 0px 0px 0px;" name="btn" type="submit" value="Search People">] + ;
         [<input name="fields" type="hidden" value="contact,part">] + ;
         [</form>]
-      this.AddMenuItem("main\Search", m.lcForm, .t.)
+      this.AddMenuItem(m.lcMenu, m.lcForm, .t.)
+      this.addMenuItem(m.lcMenu, 'Walking Tour', StuffUrl(this.cUrlA, 2, "Tour"))
+      this.addMenuItem(m.lcMenu, 'Find A Panel', StuffUrl(this.cUrlA, 2, "Locate"))
 
       this.addMenuItem(m.lcMenu, 'Pieces (Available)', StuffUrl(this.cUrlA, 2, "PceList", "type", "Panels", "orphans", "1"))
       this.addMenuItem(m.lcMenu, 'Railing Summary',    StuffUrl(this.cUrlA, 2, "PceList", "type", "Railings", "order", "size"))
@@ -537,8 +540,10 @@ define class aisPage as L7Page
       this.addMenuItem(m.lcMenu, 'Management Report', StuffUrl(this.cUrlA, 2, "Home"))
     endif       
 
-    lcMenu = "main\Links"
+    lcMenu = "main\Search"
+    this.addMenuItem(m.lcMenu, 'Walking Tour', StuffUrl(this.cUrlA, 2, "Tour"))
     this.addMenuItem(m.lcMenu, 'Find A Panel', StuffUrl(this.cUrlA, 2, "Locate"))
+    lcMenu = "main\Links"
     this.addMenuItem(m.lcMenu, 'KtB Webpage', "/")
     this.addMenuItem(m.lcMenu, 'KtB Blog', "http://knitthebridge.wordpress.com/")
 

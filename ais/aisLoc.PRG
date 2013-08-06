@@ -303,6 +303,7 @@ define class ais_Tour as aisPage
         this.badRequest("invalid option")
         return
       endif 
+      this.cSubTitle = this.cSubTitle + ": " + this.page_getOptionDescription(m.loState)
       this.page_loadSegment(m.loState)
       response.write(m.loState.segment_output)
     endif
@@ -312,7 +313,7 @@ define class ais_Tour as aisPage
   * ----------------------------------------------------- *  
   function page_loadSegment(loState)
     
-    local lcItem, lcRet, loLocQry, loPlcQry, loLoc, loPlc, loArts, lnArt, loArt, lcArt
+    local lcItem, lcRet, loLocQry, loPlcQry, loLoc, loPlc, loArts, lnArt, loArt, lcArt, lcLoc, lcImg
 
     if this.lPage_Cacheable 
       this.page_checkSegmentCache(m.loState)
@@ -340,12 +341,13 @@ define class ais_Tour as aisPage
       select (loLocQry.cAlias)
       scan
         scatter memo name loLoc
+        lcLoc = textmerge([<<left(loLoc.Loc_Side, 1)>>-<<loLoc.Loc_No>>])
         
         select (loPlcQry.cAlias)
         locate for Plc_Loc_FK = m.loLoc.Loc_PK and Plc_Orientation = this.cPage_Orient
         if found()
           scatter memo name loPlc
-          lcItem = AisPanelImage(loPlc.Pnl_Id, "_h50")
+          lcImg = AisPanelImage(loPlc.Pnl_Id, "_h50")
           
           loArts = this.app_GetPanelArtists(loPlc.Plc_Pnl_FK)
           lcArt = ""
@@ -353,10 +355,10 @@ define class ais_Tour as aisPage
             loArt = loArts.item[m.lnArt]
             lcArt = lcArt + ", " + trim(loArt.name)
           next
-          lcArt = HtWrap(loPlc.Pnl_Id, "strong") + " by " + substr(m.lcArt, len(", ") + 1)
-          lcItem = HtWrap(m.lcItem, 'div',,'tour-image') + HtWrap(m.lcArt, 'p', , 'tour-info')
+          lcArt = HtWrap(m.lcLoc, "strong") + ", " + HtWrap(loPlc.Pnl_Id, "strong") + " by " + substr(m.lcArt, len(", ") + 1)
+          lcItem = HtWrap(m.lcImg, 'div',,'tour-image') + HtWrap(m.lcArt, 'p', , 'tour-info')
         else  
-          lcItem = htWrap(textmerge([<<trim(loLoc.Loc_Side)>>-<<loLoc.Loc_No>>]), 'p')
+          lcItem = htWrap(m.lcLoc, 'p')
           lcArt = ""
         endif 
         lcRet = m.lcRet + htWrap(m.lcItem, 'div', , 'tour-panel') + crlf 
@@ -425,6 +427,12 @@ define class ais_Tour as aisPage
     return inlist(lower(this.cPage_Side), "down", "up") ;
       and inlist(lower(this.cPage_Orient), "outer", "inner") ;
       and inlist(lower(this.cPage_Dir), "out", "back")
+  endfunc 
+  * ----------------------------------------------------- *  
+  function page_getOptionDescription(m.loState)
+    return proper(this.cPage_Side) + "-River" + ;
+      ", " + proper(this.cPage_Orient) + " Panels" + ; 
+      ", " + iif(lower(this.cPage_Dir) = "out", "from Downtown to North Side", "from North Side to Downtown")
   endfunc 
   * ----------------------------------------------------- *  
   function page_getConfig()
