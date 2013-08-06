@@ -569,6 +569,32 @@ define class aisPage as L7Page
     Page.oHead.addJavaScript(m.lcTemp) 
     return 
   endfunc
+  * ----------------------------------------------------- *  
+  function app_runPiecePanelArtistQuery()
+
+    local lcFlds, lcWhere, loSelect
+    loSelect = createobject("L7PreserveSelect")
+
+    lcFlds = [padr(iif(!Art2.art_release_name, "Anonymous", evl(Art2.art_full_name, trim(Art2.art_first_name) + ' ' + iif(art2.art_last_name = 'NLN', '', trim(art2.art_last_name)))), 60) as Name] + ;
+      [, pnl_pk, art2.art_pk]
+    lcWhere = [!pce_inactive and !pnl_inactive and !Art2.art_inactive]
+
+    select &lcFlds ;
+      from piece ;
+        join panel on pce_pnl_fk = pnl_pk ;
+        join artist Art2 on pce_art_fk = Art2.art_pk ;
+      where &lcWhere ;
+    union ;
+    select &lcFlds ;
+      from piece ;
+        join panel on pce_pnl_fk = pnl_pk ;
+        join artist Art1 on pce_art_fk = art_pk ;
+        join artist Art2 on art1.Art_pk = Art2.Art_group_art_fk ;
+      where &lcWhere and !Art1.art_inactive ;
+    into cursor PiecePanelArtist_
+    
+    return
+  endfunc 
   * --------------------------------------------------------- *
 enddefine && AisPage
 

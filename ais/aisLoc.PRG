@@ -219,7 +219,7 @@ define class ais_InstalledPanels as aisPage
     endif
     if !loState.cache_hit
 
-      this.page_runQueries()
+      this.app_runPiecePanelArtistQuery()
       loQry = createobject("AisPlcQuery")
       with loQry
         .AddOrderBy("Loc_Side",, .f.)
@@ -272,7 +272,7 @@ define class ais_InstalledPanels as aisPage
   function page_GetPanelArtists(tcPK)
     local loRet
     select Name, count(*) as count ;
-      from Raw_ ;
+      from PiecePanelArtist_ ;
       where Pnl_PK = m.tcPK ;
       group by 1 ;
       into cursor GetPanelArtists_
@@ -280,30 +280,6 @@ define class ais_InstalledPanels as aisPage
     loRet = L7CursorToJsonArray("GetPanelArtists_")
     return m.loRet
   endfunc      
-  * ----------------------------------------------------- *  
-  function page_runQueries
-
-    local lcFlds, lcWhere
-    lcFlds = [padr(iif(!Art2.art_release_name, "Anonymous", evl(Art2.art_full_name, trim(Art2.art_first_name) + ' ' + iif(art2.art_last_name = 'NLN', '', trim(art2.art_last_name)))), 60) as Name] + ;
-      [, pnl_pk, art2.art_pk]
-    lcWhere = [!pce_inactive and !pnl_inactive and !Art2.art_inactive]
-
-    select &lcFlds ;
-      from piece ;
-        join panel on pce_pnl_fk = pnl_pk ;
-        join artist Art2 on pce_art_fk = Art2.art_pk ;
-      where &lcWhere ;
-    union ;
-    select &lcFlds ;
-      from piece ;
-        join panel on pce_pnl_fk = pnl_pk ;
-        join artist Art1 on pce_art_fk = art_pk ;
-        join artist Art2 on art1.Art_pk = Art2.Art_group_art_fk ;
-      where &lcWhere and !Art1.art_inactive ;
-    into cursor Raw_
-    
-    return
-  endfunc 
 enddefine && ais_InstalledPanels 
 
 *** ========================================================= ***
