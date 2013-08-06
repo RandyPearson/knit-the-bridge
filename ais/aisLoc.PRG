@@ -313,13 +313,16 @@ define class ais_Tour as aisPage
   * ----------------------------------------------------- *  
   function page_loadSegment(loState)
     
-    local lcItem, lcRet, loLocQry, loPlcQry, loLoc, loPlc, loArts, lnArt, loArt, lcArt, lcLoc, lcImg
+    local lcItem, lcRet, loLocQry, loPlcQry, loLoc, loPlc, loArts, lnArt, loArt, lcArt, lcLoc, lcImg, lcPnlUrl
 
     if this.lPage_Cacheable 
       this.page_checkSegmentCache(m.loState)
     endif
     if !m.loState.cache_hit
+      this.app_runPiecePanelArtistQuery()
+
       lcRet = ""
+      lcPnlUrl = StuffUrl(this.cUrlA, 2, "LocateByPanelId")
       lcRet = m.lcRet + '<div class="clear"></div>' + crlf && prep for floats 
 
       loLocQry = createobject("AisLocQuery")
@@ -355,7 +358,8 @@ define class ais_Tour as aisPage
             loArt = loArts.item[m.lnArt]
             lcArt = lcArt + ", " + trim(loArt.name)
           next
-          lcArt = HtWrap(m.lcLoc, "strong") + ", " + HtWrap(loPlc.Pnl_Id, "strong") + " by " + substr(m.lcArt, len(", ") + 1)
+          lcArt = HtWrap(m.lcLoc, "strong") + ". Panel " + ;
+            HtLink(stuffUrl(m.lcPnlUrl, "pnl_id", loPlc.Pnl_Id), loPlc.Pnl_Id) + " by " + substr(m.lcArt, len(", ") + 1)
           lcItem = HtWrap(m.lcImg, 'div',,'tour-image') + HtWrap(m.lcArt, 'p', , 'tour-info')
         else  
           lcItem = htWrap(m.lcLoc, 'p')
