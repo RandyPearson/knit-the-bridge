@@ -200,6 +200,7 @@ define class ais_InstalledPanels as aisPage
     loObj = createobject('empty')
     addproperty(m.loObj, "class_name", this.class) && use as part of key
     addproperty(m.loObj, "response_type", this.cResponseType) 
+    addproperty(m.loObj, "version", 2) && increment w/ design change to force cache clear
     * ... more distinguishing props here if needed (e.g., QS param vals)
     loState.cache_id = L7JsonSerialize(m.loObj)
     if !loState.refresh_cache
