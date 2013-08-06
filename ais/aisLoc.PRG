@@ -200,7 +200,7 @@ define class ais_InstalledPanels as aisPage
     loObj = createobject('empty')
     addproperty(m.loObj, "class_name", this.class) && use as part of key
     addproperty(m.loObj, "response_type", this.cResponseType) 
-    addproperty(m.loObj, "version", 2) && increment w/ design change to force cache clear
+    addproperty(m.loObj, "version", 4) && increment w/ design change to force cache clear
     * ... more distinguishing props here if needed (e.g., QS param vals)
     loState.cache_id = L7JsonSerialize(m.loObj)
     if !loState.refresh_cache
@@ -356,7 +356,7 @@ define class ais_Tour as aisPage
           lcArt = ""
           for lnArt = 1 to loArts.count
             loArt = loArts.item[m.lnArt]
-            lcArt = lcArt + ", " + trim(loArt.name)
+            lcArt = lcArt + ", " + trim(loArt.name) + iif(loArt.count = 1, [], [ (] + transform(loArt.count) + [)])
           next
           lcArt = HtWrap(m.lcLoc, "strong") + ". Panel " + ;
             HtLink(stuffUrl(m.lcPnlUrl, "pnl_id", loPlc.Pnl_Id), loPlc.Pnl_Id) + " by " + substr(m.lcArt, len(", ") + 1)
@@ -415,7 +415,7 @@ define class ais_Tour as aisPage
     addproperty(m.loObj, "side", this.cPage_Side) 
     addproperty(m.loObj, "orient", this.cPage_Orient) 
     addproperty(m.loObj, "dir", this.cPage_Dir) 
-    addproperty(m.loObj, "version", 5) && increment w/ design change to force cache clear
+    addproperty(m.loObj, "version", 8) && increment w/ design change to force cache clear
     addproperty(m.loObj, "response_type", this.cResponseType) 
     
     loState.cache_id = L7JsonSerialize(m.loObj)

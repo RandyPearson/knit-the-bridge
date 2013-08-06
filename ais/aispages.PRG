@@ -575,14 +575,15 @@ define class aisPage as L7Page
     return 
   endfunc
   * ----------------------------------------------------- *  
-  function app_runPiecePanelArtistQuery()
+  function app_runPiecePanelArtistQuery(tcPnlPK)
 
     local lcFlds, lcWhere, loSelect
     loSelect = createobject("L7PreserveSelect")
 
     lcFlds = [padr(iif(!Art2.art_release_name, "Anonymous", evl(Art2.art_full_name, trim(Art2.art_first_name) + ' ' + iif(art2.art_last_name = 'NLN', '', trim(art2.art_last_name)))), 60) as Name] + ;
-      [, pnl_pk, art2.art_pk]
-    lcWhere = [!pce_inactive and !pnl_inactive and !Art2.art_inactive]
+      [, pnl_pk, art2.art_pk, iif(empty(art2.art_group_art_fk),1,2) as Main]
+    lcWhere = [!pce_inactive and !pnl_inactive and !Art2.art_inactive] + ;
+      iif(empty(m.tcPnlPK), [], [ and pce_pnl_fk = '] + m.tcPnlPK + ['])
 
     select &lcFlds ;
       from piece ;
@@ -601,17 +602,18 @@ define class aisPage as L7Page
     return
   endfunc && app_runPiecePanelArtistQuery
   * ----------------------------------------------------- *  
-  function app_GetPanelArtists(tcPK)
+  function app_GetPanelArtists(tcPK, tlContOnly)
     if !used("PiecePanelArtist_")
       this.App_Log(L7_SEVERITY_WARNING, "app_GetPanelArtists() called without prerequisite having been run")
       this.app_runPiecePanelArtistQuery()
     endif
-    local loRet, loSelect
+    local loRet, loSelect, lcWhere
+    lcWhere = [Pnl_PK = '] + m.tcPK + ['] + iif(m.tlContOnly, [ and Main = 2], [])
     loSelect = createobject("L7PreserveSelect")
-    select Name, count(*) as count ;
+    select Main, Name, count(*) as count ;
       from PiecePanelArtist_ ;
-      where Pnl_PK = m.tcPK ;
-      group by 1 ;
+      where &lcWhere ;
+      group by Main, Name ;
       into cursor GetPanelArtists_
     
     loRet = L7CursorToJsonArray("GetPanelArtists_")
@@ -1106,7 +1108,7 @@ define class ais_LocateByPanelID as aisPage
   * ----------------------------------------------------- *  
   function ProcessRequest
     this.cCancelUrl = StuffUrl(this.cUrlA, 2, "Locate")
-    local loForm, loQry, loLoc, loPceQry, loPnl, loArt, lcName
+    local loForm, loQry, loLoc, loPceQry, loPnl, loArt, lcName, loConts, loCont, lnCont
     if request.cMethod = "POST"
       loForm = this.createForm("AisLocateByPanelIDForm")
       with loForm
@@ -1131,6 +1133,7 @@ define class ais_LocateByPanelID as aisPage
         return 
       endif 
       scatter memo name loPnl
+      this.app_runPiecePanelArtistQuery(loPnl.Pnl_PK)
     endwith 
     
     this.cSubTitle = "Found " + this.cPage_ID
@@ -1165,6 +1168,16 @@ define class ais_LocateByPanelID as aisPage
         endif
       endscan
       if !loPnl.Pnl_Single_Piece
+        .Write("</ul>")
+      endif
+      
+      loConts = this.app_GetPanelArtists(loPnl.Pnl_PK, .t.)
+      if m.loConts.count > 0
+        .Write("<p>Contributing artists:</p><ul>")
+        for lnCont = 1 to loConts.count
+          loCont = loConts.item[m.lnCont]
+          .WriteTag(loCont.name + iif(m.loCont.count > 1, " (" + transform(m.loCont.count) + ")", ""), "li")
+        next
         .Write("</ul>")
       endif
 
