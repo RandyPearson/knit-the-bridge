@@ -187,6 +187,32 @@ define class aisBrowserDevice as aisDevice
   endfunc 
 enddefine
 
+*** ========================================================= ***
+define class aisVirtualPolicy as Custom
+  cTitle = "default" 
+  nSessionTimeout = null  && null === use app default
+  lAuthRequired = .f. && for info only--IIS must be configured for this
+  lLogins = .t.
+  lPublicFacing = .f.
+  cCssClass = "ktb-ais"
+enddefine
+
+*** ========================================================= ***
+define class aisKtbAisVirtualPolicy as aisVirtualPolicy 
+  cTitle = "AIS" 
+  lAuthRequired = .f.  && for info only--IIS must be configured for this
+  cCssClass = "ktb-ais"
+enddefine
+
+*** ========================================================= ***
+define class aisKtbPubVirtualPolicy as aisVirtualPolicy 
+  cTitle = "PUB" 
+  lAuthRequired = .f.  && for info only--IIS must be configured for this
+  lLogins = .f.
+  lPublicFacing = .t.
+  cCssClass = "ktb-pub"
+enddefine
+
 *** ===================================================== ***
 define class aisLogRequest as L7LogRequest 
   cStructureAugment = [User_PK C(32), User_ID C(32), Emulate_PK C(32), Emulate_ID C(32)] + ;

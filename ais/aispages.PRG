@@ -420,6 +420,10 @@ define class aisPage as L7Page
     loObj = dodefault()
     loObj.setClass("+" + lower(this.class))
     loObj.setClass("+" + config.cServerRole)
+    
+    loPol = Environ.item('app.virtual_policy')
+    loObj.setClass("+" + loPol.cCssClass)
+    
     return m.loObj
   endfunc 
 
@@ -486,6 +490,9 @@ define class aisPage as L7Page
   endfunc 
   * ----------------------------------------------------- *  
   function AddMenuHeadings
+    local loPol
+    loPol = Environ.item('app.virtual_policy')
+
     this.AddSubMenu("This", "THIS PAGE")
     this.AddSubMenu("Reports", "Listings")
     this.AddSubMenu("Navigate", "Navigate AIS")
@@ -499,11 +506,16 @@ define class aisPage as L7Page
   endfunc 
   * ----------------------------------------------------- *  
   function AddDefaultMenu
-    local lcMenu, lcLpInfo, lcForm, llPublic
+    local lcMenu, lcLpInfo, lcForm, llPublic, loPol
+    loPol = Environ.item('app.virtual_policy')
     llPublic = poContext.lAnonymous
     lcMenu = "main\Navigate"
 
-    if !m.llPublic
+    if loPol.lPublicFacing and !m.llPublic
+      this.addMenuItem(m.lcMenu, 'AIS - Internal', "../ktb-ais/")
+    endif
+
+    if !loPol.lPublicFacing and !m.llPublic
       this.addMenuItem(m.lcMenu, 'People - Query Form', StuffUrl(this.cUrlA, 2, "ArtQuery"))
       this.addMenuItem(m.lcMenu, 'People - Core List', StuffUrl(this.cUrlA, 2, "ArtList", "core", "1", "fields", "contact"))
       this.addMenuItem(m.lcMenu, 'Neighborhood Summary Report', StuffUrl(this.cUrlA, 2, "NeighborhoodSumList"))
@@ -518,9 +530,8 @@ define class aisPage as L7Page
         [<input name="fields" type="hidden" value="contact,part">] + ;
         [</form>]
       this.AddMenuItem(m.lcMenu, m.lcForm, .t.)
-      this.addMenuItem(m.lcMenu, 'Walking Tour', StuffUrl(this.cUrlA, 2, "Tour"))
-      this.addMenuItem(m.lcMenu, 'Find A Panel', StuffUrl(this.cUrlA, 2, "Locate"))
 
+      lcMenu = "main\Navigate"
       this.addMenuItem(m.lcMenu, 'Pieces (Available)', StuffUrl(this.cUrlA, 2, "PceList", "type", "Panels", "orphans", "1"))
       this.addMenuItem(m.lcMenu, 'Railing Summary',    StuffUrl(this.cUrlA, 2, "PceList", "type", "Railings", "order", "size"))
       this.addMenuItem(m.lcMenu, 'Panel Summary', StuffUrl(this.cUrlA, 2, "PnlSummary"))
@@ -544,8 +555,8 @@ define class aisPage as L7Page
     this.addMenuItem(m.lcMenu, 'Walking Tour', StuffUrl(this.cUrlA, 2, "Tour"))
     this.addMenuItem(m.lcMenu, 'Find A Panel', StuffUrl(this.cUrlA, 2, "Locate"))
     lcMenu = "main\Links"
-    this.addMenuItem(m.lcMenu, 'KtB Webpage', "/")
-    this.addMenuItem(m.lcMenu, 'KtB Blog', "http://knitthebridge.wordpress.com/")
+    this.addMenuItem(m.lcMenu, 'KtB Webpage', "http://knitthebridge.org/")
+    this.addMenuItem(m.lcMenu, 'KtB Blog',    "http://knitthebridge.wordpress.com/")
 
     if !m.llPublic
       this.addMenuItem('main\User', 'My Account', StuffUrl(this.cUrlA, 2, 'ArtHome', 'art', CurrentUser.getUserKey()))

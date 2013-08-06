@@ -119,7 +119,12 @@ define class AisApp AS KtbApp
   * --------------------------------------------------------- *
   function determineBrowser()
 
-    local loDevice
+    local lcStr, loFolders, lcVirtual, loDevice
+
+    loFolders = Request.getFolders()
+    lcVirtual = lower(loFolders.item(this.oConfig.nVirtualLevel)) && "ktb-ais, ktb-pub"
+    Environ.Set('app.virtual_folder', m.lcVirtual) && this is just one level, not same as request.cVirtualPath
+
     loDevice = createobject("aisBrowserDevice")
     Environ.Set('app.client_device', m.loDevice)
 
@@ -150,6 +155,43 @@ define class AisApp AS KtbApp
     set nulldisplay to "--"
     return .T.
   endfunc  && OnFirstPostMaintenanceHit
+  * --------------------------------------------------------- *
+  function BeforeProcessPage  && blocking hook
+    * determineBrowser has been run, and Environ is available here, but little else
+    local llOk, lcReason, lcResponse, loHTTP, lcUsrID, lnSev, lcMsg
+    lcReason = ""
+    lnSev = L7_SEVERITY_INFO 
+    llOK = .T.
+    llOK = m.llOK and this.app_loadVirtualPolicy(@lcReason, @lnSev)
+
+    if !m.llOK        
+      this.forbidden(evl(m.lcReason, "Forbidden for unspecified reason"))
+      lcUsrId = request.form('LoginForm_TXTUSERID')
+      if !empty(m.lcUsrId)
+        lcMsg = "Login attempt under ID of " + m.lcUsrId + " rejected by server app: " + m.lcReason
+      else
+        lcMsg = "Request rejected by server app: " + m.lcReason
+      endif 
+      this.App_Log(m.lnSev, m.lcMsg) 
+    endif
+    return m.llOK and dodefault() && false prevents further processing 
+  endfunc && BeforeProcessPage  
+  * --------------------------------------------------------- *
+  function app_loadVirtualPolicy(tcReason, tnSev)
+    local loPol, lcVirtual, loExc, llRet
+    llRet = .t.
+    try
+      lcVirtual = Environ.item('app.virtual_folder')
+      loPol = createobject("ais" + chrtran(m.lcVirtual, "-", "") + "VirtualPolicy")  && see aisClasses.prg
+      Environ.set('app.virtual_policy', m.loPol)
+      this.app_log(L7_SEVERITY_DEBUG, loPol.cTitle + " policy loaded.")
+    catch to loExc
+      llRet = .f.
+      tcReason = loExc.message 
+      tnSev = L7_SEVERITY_WARNING 
+    endtry 
+    return m.llRet 
+  endfunc  && app_loadVirtualPolicy
   * --------------------------------------------------------- *
   function DeployContent()
     * CAUTION: New files added here must be explicitly added to PJX (built into EXE)! 
