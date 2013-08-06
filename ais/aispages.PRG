@@ -552,8 +552,13 @@ define class aisPage as L7Page
     endif       
 
     lcMenu = "main\Search"
-    this.addMenuItem(m.lcMenu, 'Walking Tour', StuffUrl(this.cUrlA, 2, "Tour"))
-    this.addMenuItem(m.lcMenu, 'Find A Panel', StuffUrl(this.cUrlA, 2, "Locate"))
+    if !loPol.lPublicFacing && add some public links
+      this.addMenuItem(m.lcMenu, 'Walking Tour', "../ktb-pub/tour.ktb")
+      this.addMenuItem(m.lcMenu, 'Find-A-Panel', "../ktb-pub/locate.ktb")
+    else
+      this.addMenuItem(m.lcMenu, 'Walking Tour', StuffUrl(this.cUrlA, 2, "Tour"))
+      this.addMenuItem(m.lcMenu, 'Find-A-Panel', StuffUrl(this.cUrlA, 2, "Locate"))
+    endif
     lcMenu = "main\Links"
     this.addMenuItem(m.lcMenu, 'KtB Webpage', "http://knitthebridge.org/")
     this.addMenuItem(m.lcMenu, 'KtB Blog',    "http://knitthebridge.wordpress.com/")
