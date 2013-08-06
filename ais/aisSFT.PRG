@@ -197,13 +197,14 @@ define class ais_SftHome as aisSftPage
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
 
       loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
-        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), aisArtistName(THISRECORD))], 'artist')
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), aisArtistName(THISRECORD, .t.))], 'artist')
 
       loCol = .addCursorColumn("Ars_Role", "Role", ;
         [HTLink(StuffUrl(urls.item("ArsForm"), "ars", Ars_PK), Ars_Role)])
 
       loCol = .addCursorColumn("Art_Email", "Email")
       loCol = .addCursorColumn("Art_Phone", "Phone")
+      loCol = .addCursorColumn("Art_Emergency_Contact", "Emergency")
       loCol = .addCursorColumn("Art_Neighborhood", "Neighborhood")
       loCol = .addCursorColumn("Art_Waiver_Signed", "Acc<br>Waiver")
       loCol.cDisplayExpression = [iif(Art_Waiver_Signed, "Yes", "--")]
