@@ -308,6 +308,7 @@ enddefine && ais_InstalledPanels
 
 *** ========================================================= ***
 define class ais_Tour as aisLocPage 
+  nMinLoginLevel = L7_NONE  
   lLocRequired = .f.
   lPage_Cacheable = .t.
   cSubTitle = "Panel Walking Tour"
@@ -316,14 +317,21 @@ define class ais_Tour as aisLocPage
   cPage_Dir = null
   * ----------------------------------------------------- *  
   function BeforeProcessRequest
+    local loState
+    loState = Environ.item("page.processState") 
     this.cPage_Side   = this.readQueryString("side",   .t., .t.)
     this.cPage_Orient = this.readQueryString("orient", .t., .t.)
     this.cPage_Dir    = this.readQueryString("dir",    .t., .t.)
+    addproperty(m.loState, 'cache_hit', .f.)
+    addproperty(m.loState, 'segment_output', '')
+    if this.lPage_Cacheable
+      addproperty(m.loState, 'refresh_cache', this.readQueryString('refresh', .t., .t.) = "1")
+    endif 
     dodefault()
   endfunc 
   * ----------------------------------------------------- *  
   function ProcessRequest
-    local loState
+    local loState, lcSeg
     loState = Environ.item("page.processState") 
     addproperty(loState, 'page_config', this.page_getConfig())
     if !empty(this.cPage_Dir)
@@ -331,49 +339,68 @@ define class ais_Tour as aisLocPage
         this.badRequest("invalid option")
         return
       endif 
-      response.write(this.page_showSegment(m.loState))
+      this.page_loadSegment(m.loState)
+      response.write(m.loState.segment_output)
     endif
     response.write(this.page_getSegmentOptions(m.loState))
     return 
   endfunc 
   * ----------------------------------------------------- *  
-  function page_showSegment(loState)
+  function page_loadSegment(loState)
+    
     local lcItem, lcRet, loLocQry, loPlcQry, loLoc, loPlc
-    lcRet = ""
-    lcRet = m.lcRet + '<div class="clear"></div>' + crlf && prep for floats 
 
-    loLocQry = createobject("AisLocQuery")
-    with loLocQry
-      .cSide = this.cPage_Side
-      .addOrderBy('Loc_No', this.cPage_Dir = "back")
-      .execute()
-    endwith
+    if this.lPage_Cacheable 
+      this.page_checkSegmentCache(m.loState)
+    endif
+    if !m.loState.cache_hit
+      lcRet = ""
+      lcRet = m.lcRet + '<div class="clear"></div>' + crlf && prep for floats 
 
-    * Secondary query of Panel Assignments: 
-    loPlcQry = createobject("AisPlcQuery")
-    with loPlcQry
-      .cAlias = "PlcQuery_"
-      .lJoinPanel = .t.
-      .lJoinLocation = .t.
-      .execute()
-    endwith 
+      loLocQry = createobject("AisLocQuery")
+      with loLocQry
+        .cSide = this.cPage_Side
+        .addOrderBy('Loc_No', this.cPage_Dir = "back")
+        .execute()
+      endwith
 
-    select (loLocQry.cAlias)
-    scan
-      scatter memo name loLoc
-      
-      select (loPlcQry.cAlias)
-      locate for Plc_Loc_FK = m.loLoc.Loc_PK and Plc_Orientation = this.cPage_Orient
-      if found()
-        scatter memo name loPlc
-        lcItem = AisPanelImage(loPlc.Pnl_Id, "_h50")
-      else  
-        lcItem = textmerge([<<trim(loLoc.Loc_Side)>>-<<loLoc.Loc_No>>])
-      endif 
-      lcRet = m.lcRet + htWrap(m.lcItem, 'div', , 'tour-panel') + crlf 
-    endscan
-    lcRet = m.lcRet + '<div class="clear"></div>' + crlf && prep for floats 
-    return m.lcRet
+      * Secondary query of Panel Assignments: 
+      loPlcQry = createobject("AisPlcQuery")
+      with loPlcQry
+        .cAlias = "PlcQuery_"
+        .lJoinPanel = .t.
+        .lJoinLocation = .t.
+        .execute()
+      endwith 
+
+      select (loLocQry.cAlias)
+      scan
+        scatter memo name loLoc
+        
+        select (loPlcQry.cAlias)
+        locate for Plc_Loc_FK = m.loLoc.Loc_PK and Plc_Orientation = this.cPage_Orient
+        if found()
+          scatter memo name loPlc
+          lcItem = AisPanelImage(loPlc.Pnl_Id, "_h50")
+        else  
+          lcItem = textmerge([<<trim(loLoc.Loc_Side)>>-<<loLoc.Loc_No>>])
+        endif 
+        lcRet = m.lcRet + htWrap(m.lcItem, 'div', , 'tour-panel') + crlf 
+      endscan
+      lcRet = m.lcRet + '<div class="clear"></div>' + crlf && prep for floats 
+      loState.Segment_Output = m.lcRet
+    endif 
+
+    if m.loState.cache_hit
+      goL7App.app_log(L7_SEVERITY_DEBUG, "Hit serviced from cache")
+    else
+      if this.lPage_Cacheable
+        goL7App.helpers.item("CacheManager").SetCachedString(loState.Segment_Output, loState.Cache_ID, loState.Cache_Time)
+        goL7App.app_log(L7_SEVERITY_DEBUG, "Output cached")
+      endif
+    endif  
+    
+    return 
   endfunc && page_showSegment
   * ----------------------------------------------------- *  
   function page_getSegmentOptions(loState)
@@ -395,11 +422,30 @@ define class ais_Tour as aisLocPage
       next 
       lcRet = m.lcRet + HtWrap(m.lcTemp, 'ol')
     next
-    if poContext.lDeveloper
-      * lcRet = m.lcRet + HtWrap(L7JsonSerialize(loState.page_config), 'pre')
-    endif 
+    
     return m.lcRet
   endfunc && page_getSegmentOptions
+  * --------------------------------------------------------- *
+  function page_checkSegmentCache(loState)
+    local loObj, loMgr
+    addproperty(m.loState, 'cache_time', 60 * 30) && 30 min--change this to customized...
+    addproperty(m.loState, 'cache_id', null)
+    loObj = createobject('empty')
+    addproperty(m.loObj, "class_name", this.class) && use as part of key
+    addproperty(m.loObj, "side", this.cPage_Side) 
+    addproperty(m.loObj, "orient", this.cPage_Orient) 
+    addproperty(m.loObj, "dir", this.cPage_Dir) 
+    addproperty(m.loObj, "version", 2) && increment w/ design change to force cache clear
+    addproperty(m.loObj, "response_type", this.cResponseType) 
+    
+    loState.cache_id = L7JsonSerialize(m.loObj)
+    if !loState.refresh_cache
+      loMgr = goL7App.helpers.item("CacheManager")
+      loState.segment_output = loMgr.GetCachedString(loState.cache_id, loState.cache_time)
+      loState.cache_hit = !empty(m.loState.segment_output)
+    endif
+    return 
+  endfunc 
   * ----------------------------------------------------- *  
   function page_validateOptions(loState)
     return inlist(lower(this.cPage_Side), "down", "up") ;
