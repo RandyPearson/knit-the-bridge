@@ -304,11 +304,12 @@ define class ais_InstalledPanels as aisPage
     
     return
   endfunc 
-enddefine 
+enddefine && ais_InstalledPanels 
 
 *** ========================================================= ***
 define class ais_Tour as aisLocPage 
   lLocRequired = .f.
+  lPage_Cacheable = .t.
   cSubTitle = "Panel Walking Tour"
   cPage_Side = null
   cPage_Orient = null
@@ -399,9 +400,11 @@ define class ais_Tour as aisLocPage
     endif 
     return m.lcRet
   endfunc && page_getSegmentOptions
-  
   * ----------------------------------------------------- *  
   function page_validateOptions(loState)
+    return inlist(lower(this.cPage_Side), "down", "up") ;
+      and inlist(lower(this.cPage_Orient), "outer", "inner") ;
+      and inlist(lower(this.cPage_Dir), "out", "back")
   endfunc 
   * ----------------------------------------------------- *  
   function page_getConfig()
