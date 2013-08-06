@@ -11,7 +11,7 @@ function AisPanelImage(lcId, lcSuff, lcUrl, lcPK, llCanUpload)
   local lcFileName, lcRet
   lcFileName = forceext(m.lcId + m.lcSuff, "jpeg")
   if file(aisPanelFilePath(m.lcId) + m.lcFileName)
-    lcRet = HTImage(aisPanelWebFilePath(m.lcId) + m.lcFileName, "Panel " + m.lcId)
+    lcRet = HTImage(aisPanelWebFilePath(m.lcId) + m.lcFileName, "Panel " + m.lcId, , null) && 4th parm = no border
     if !empty(m.lcPK)
       lcRet = HTLink(StuffUrl(page.cUrlA, 2, "PnlHome", "pnl", m.lcPK), m.lcRet)
     endif 

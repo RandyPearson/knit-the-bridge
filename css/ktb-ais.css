@@ -98,8 +98,9 @@ p.break { margin-bottom: 5em }
 .excluded {background-color: #fcc;}
 span.excluded {color: brown; font-weight: bold;}
 
-.tour-panel {float: left; height: 60px; }
-.tour-panel img{border-width: 6px !important; border-color: black !important;}
+.tour-panel {float: left; width: 250px; height: 100px; border: 1px solid #ddd; overflow-y: scroll;}
+.tour-image {border-width: 6px; border-color: black; vertical-align: middle;}
+.tour-info {vertical-align: middle; margin: 0; padding: 2px;}
 
 .gallery-item {width: 150px; height: 75px; float: left; border: 1px solid #999; padding: 2px; }
 .gallery-item a {text-align: center;}

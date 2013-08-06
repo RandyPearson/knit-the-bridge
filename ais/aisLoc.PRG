@@ -272,9 +272,8 @@ define class ais_InstalledPanels as aisPage
 enddefine && ais_InstalledPanels 
 
 *** ========================================================= ***
-define class ais_Tour as aisLocPage 
+define class ais_Tour as aisPage 
   nMinLoginLevel = L7_NONE  
-  lLocRequired = .f.
   lPage_Cacheable = .t.
   cSubTitle = "Panel Walking Tour"
   cPage_Side = null
@@ -313,7 +312,7 @@ define class ais_Tour as aisLocPage
   * ----------------------------------------------------- *  
   function page_loadSegment(loState)
     
-    local lcItem, lcRet, loLocQry, loPlcQry, loLoc, loPlc
+    local lcItem, lcRet, loLocQry, loPlcQry, loLoc, loPlc, loArts, lnArt, loArt, lcArt
 
     if this.lPage_Cacheable 
       this.page_checkSegmentCache(m.loState)
@@ -347,8 +346,18 @@ define class ais_Tour as aisLocPage
         if found()
           scatter memo name loPlc
           lcItem = AisPanelImage(loPlc.Pnl_Id, "_h50")
+          
+          loArts = this.app_GetPanelArtists(loPlc.Plc_Pnl_FK)
+          lcArt = ""
+          for lnArt = 1 to loArts.count
+            loArt = loArts.item[m.lnArt]
+            lcArt = lcArt + ", " + trim(loArt.name)
+          next
+          lcArt = HtWrap(loPlc.Pnl_Id, "strong") + " by " + substr(m.lcArt, len(", ") + 1)
+          lcItem = HtWrap(m.lcItem, 'div',,'tour-image') + HtWrap(m.lcArt, 'p', , 'tour-info')
         else  
-          lcItem = textmerge([<<trim(loLoc.Loc_Side)>>-<<loLoc.Loc_No>>])
+          lcItem = htWrap(textmerge([<<trim(loLoc.Loc_Side)>>-<<loLoc.Loc_No>>]), 'p')
+          lcArt = ""
         endif 
         lcRet = m.lcRet + htWrap(m.lcItem, 'div', , 'tour-panel') + crlf 
       endscan
@@ -400,7 +409,7 @@ define class ais_Tour as aisLocPage
     addproperty(m.loObj, "side", this.cPage_Side) 
     addproperty(m.loObj, "orient", this.cPage_Orient) 
     addproperty(m.loObj, "dir", this.cPage_Dir) 
-    addproperty(m.loObj, "version", 2) && increment w/ design change to force cache clear
+    addproperty(m.loObj, "version", 5) && increment w/ design change to force cache clear
     addproperty(m.loObj, "response_type", this.cResponseType) 
     
     loState.cache_id = L7JsonSerialize(m.loObj)
