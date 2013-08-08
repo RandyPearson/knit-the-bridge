@@ -562,7 +562,8 @@ define class aisPage as L7Page
     lcMenu = "main\Links"
     this.addMenuItem(m.lcMenu, 'KtB Webpage', "http://knitthebridge.org/")
     this.addMenuItem(m.lcMenu, 'KtB Blog',    "http://knitthebridge.wordpress.com/")
-
+    this.addMenuItem(m.lcMenu, 'Media Room',  "http://knitthebridge.wordpress.com/media-room/")
+    this.addMenuItem(m.lcMenu, 'Contact Us',  "http://knitthebridge.wordpress.com/contact-us/")
     if !m.llPublic
       this.addMenuItem('main\User', 'My Account', StuffUrl(this.cUrlA, 2, 'ArtHome', 'art', CurrentUser.getUserKey()))
       this.addMenuItem('main\User', 'Sign Out', StuffUrl(this.cUrlA, 2, 'Login', 'l', '0'))
@@ -1298,7 +1299,10 @@ define class AisLocateByPanelIDForm as AisLocateByForm
       with .txtPnl_ID
         .cLabel = "Panel ID to Locate"
         .nSize = 20
-        .cInstructions = "Enter a panel ID. Only the numeric portion is needed. "
+        .cInstructions = "Enter a panel ID. Only the numeric portion is needed. " + ;
+          "If you don't know the panel ID, try searching by artist name below, " + ;
+          "or use the " + HtLink(StuffUrl(page.cUrlA, 2, "Tour"), "Walking Tour") + " to look for your panel. " + ;
+          "We can also send you a panel ID if you contact us."
       endwith 
     endwith
     return 
@@ -1316,7 +1320,9 @@ define class AisPublicArtistSearchForm as AisLocateByForm
       with .txtSearch
         .cLabel = "Artist's Name to Locate"
         .nSize = 20
-        .cInstructions = "Enter only one word or portion of word. "
+        .cInstructions = "Enter all or a portion of the artist's last name, " + ;
+          "or for group work, enter a word from the group's name. " + ;
+          "<br>NOTE: Only names released for public listing will be found. "
       endwith 
     endwith
     return 

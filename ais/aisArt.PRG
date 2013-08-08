@@ -959,6 +959,7 @@ define class ais_ArtPublicWork as aisArtPage
       .write(this.page_getBitData(m.loQry))
       .write(this.page_getPanelData(m.loQry))
       .write([</ul>])
+      .write(this.page_getContributingArtists())
       .write(this.page_getPanelDetails(m.loQry))
       if poContext.lDeveloper
         * .Write(HTWrap(loQry.cSqlStatement, 'div,p', 'admin,debug'))
@@ -966,6 +967,37 @@ define class ais_ArtPublicWork as aisArtPage
     endwith
     return 
   endfunc 
+  * ----------------------------------------------------- *  
+  function page_getContributingArtists
+  
+    local lcFlds, lcWhere, lcRet
+    loSelect = createobject("L7PreserveSelect")
+
+    lcFlds = [padr(iif(!Art2.art_release_name, "Anonymous", evl(Art2.art_full_name, trim(Art2.art_first_name) + ' ' + iif(art2.art_last_name = 'NLN', '', trim(art2.art_last_name)))), 60) as Name]
+    lcWhere = [!Art2.art_inactive and Art2.art_group_art_fk = '] + this.cArt + [']
+
+    select &lcFlds ;
+      from artist Art2 ;
+      where &lcWhere ;
+      into cursor RawContrib_
+    
+    if _tally = 0
+      return ""
+    endif 
+    
+    select Name, count(*) as count ;
+      from RawContrib_ ;
+      group by Name ;
+      into cursor GetContrib_
+
+    lcRet = ""
+    scan
+      lcRet = m.lcRet + HtWrap(trim(Name) + iif(count > 1, ' (' + transform(count) + ')', ''), 'li') + crlf 
+    endscan 
+    lcRet = HtWrap('Contributing Artists', 'h3') + crlf + HtWrap(m.lcRet, 'ul')
+    
+    return m.lcRet
+  endfunc && page_getContributingArtists
   * ----------------------------------------------------- *  
   function page_getRailingData(loQry)
     local lcRet, lnTally
