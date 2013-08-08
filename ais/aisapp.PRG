@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     34
+#DEFINE THISAPP_DATABASE_REVISION     35
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -624,6 +624,11 @@ define class AisApp AS KtbApp
       alter table Artist add column Art_Emergency_Contact M
       use in select("Artist")
 
+    case m.lnRev = 35
+      alter table Artist add column Art_Help_Party L
+      use in select("Artist")
+
+
 ** CAUTION: Need to add any above changes to Create*() functions below!!
 
     otherwise 
@@ -832,6 +837,7 @@ function CreateArtistTable
       Art_Help_Stitching L, ;  && Rev 27
       Art_Help_Materials L, ;
       Art_Help_Money L, ;  && Rev 10
+      Art_Help_Party L, ;  && Rev 35
       Art_Organizer L, ; && Rev 4 renamed from Art_Help_Meet_Up
       Art_Help_Outreach L, ;
       Art_Help_Other M, ;

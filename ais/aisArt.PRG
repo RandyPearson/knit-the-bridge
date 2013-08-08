@@ -29,6 +29,7 @@ function AisArtQueryFlags()
     ',{"root": "towers", "prompt": "Machine Knitting"}' + ;
     ',{"root": "money", "field": "Art_Help_Money", "prompt": "Donate Money"}' + ;
     ',{"root": "materials", "field": "Art_Help_Materials", "prompt": "Donate Materials"}' + ;
+    ',{"root": "party", "field": "Art_Help_Party", "prompt": "Help with Party"}' + ;
     ',{"root": "undeliverable"}' + ;
     ',{"root": "inactiveinner", "combine": false, "prompt": "Deleted Artists"}' + ;
     ']' )
@@ -120,6 +121,7 @@ function aisFormatParticipation(toData)
     iif(!loData.ART_HELP_Stitching, "", "* Helping with *Stitching*" + crlf) + ;
     iif(!loData.ART_HELP_MATERIALS, "", "* Donating Materials" + crlf) + ;
     iif(!loData.ART_HELP_Money, "", "* Donating Money" + crlf) + ;
+    iif(!loData.ART_HELP_Party, "", "* Help with Party" + crlf) + ;
     iif(!loData.ART_Organizer, "", "* Community Organizer" + crlf) + ;
     iif(!loData.ART_HELP_OUTREACH, "", "* Helping with Outreach" + crlf) + ;
     iif(empty(loData.ART_HELP_OTHER), "", "* " + loData.ART_HELP_OTHER)
@@ -1741,6 +1743,12 @@ define class aisArtistForms AS AisForm
         .cCaption = "Donating Money to the Project"
       endwith
       
+      .colPart.AddObjectToParent("chkHelp_Party", "L7Checkbox")
+      with .chkHelp_Party
+        .cControlSource = "V_artist.Art_Help_Party"
+        .cCaption = "Help with Party"
+      endwith
+      
       .colPart.AddObjectToParent("chkOrganizer", "L7Checkbox")
       with .chkOrganizer
         .cControlSource = "V_artist.Art_Organizer"
@@ -2549,8 +2557,9 @@ define class AisArtQuery AS L7Query
   lOrganizer = null
   lOutreach = null
   lTowers = null
-  lMoney = null
   lMaterials = null
+  lMoney = null
+  lParty = null
 
   * Name Search
   cName = ""
@@ -2570,7 +2579,7 @@ define class AisArtQuery AS L7Query
   cCaption = ""
   * --------------------------------------------------------- *
   function addParticipationFields
-    this.addFields("Art_Towers, Art_Help_Install, Art_Help_Materials, Art_Help_Money, Art_Organizer, Art_Help_Outreach, Art_Help_Other" + ;
+    this.addFields("Art_Towers, Art_Help_Install, Art_Help_Materials, Art_Help_Money, Art_Help_Party, Art_Organizer, Art_Help_Outreach, Art_Help_Other" + ;
       ", Art_Help_Deinstall, Art_Installation_Trn_FK, Art_Help_Monitoring, Art_Help_Stitching" + ;
       ", Art_Partial_Panel, Art_Panel_Info, Art_Panel_Count, Art_Railing_1_Count, Art_Railing_2_Count, Art_Railing_3_Count")
     return 
