@@ -1231,7 +1231,7 @@ define class ais_LocateByArtistSearch as aisPage
   * ----------------------------------------------------- *  
   function ProcessRequest
     this.cCancelUrl = StuffUrl(this.cUrlA, 2, "Locate")
-    local loForm, loQry, lcUrl
+    local loForm, loQry, lcUrl, lcFromWhom
     if request.cMethod = "POST"
       loForm = this.createForm("AisPublicArtistSearchForm")
       with loForm
@@ -1249,27 +1249,34 @@ define class ais_LocateByArtistSearch as aisPage
       .cSrch1 = this.cPage_Search
       .lRelease = .t. && only those releasing their name 
       .lPublicSearch = .t. && controls which fields searched
-      .lBitsOrPanelsSubmitted = .t. 
+      ** .lBitsOrPanelsSubmitted = .t. 
       .Execute()
-      if .nTally = 0
-        this.Confirm("No matches found. ")
-        return 
-      endif 
     endwith 
+
+    lcFromWhom = [among people that released their names to the public]
+
     with response
-      .WriteTag(;
-          [The following matches were found from people that submitted panels ] ;
-          + [and released their names to the public. ] ; 
-          + [Select a name to see their bridge location(s). ] ;
-        , 'p')
-      select (loQry.cAlias)
-      lcUrl = stuffUrl(this.cUrlA, 2, "ArtPublicWork")
-      .Write('<ol>' + crlf)
-      scan
-        scatter memo name loArt
-        .writeTag(HtLink(StuffUrl(m.lcUrl, "art", Art_PK), aisArtistName(m.loArt)), 'li')
-      endscan
-      .Write('</ol>' + crlf)
+      if loQry.nTally = 0
+        .WriteTag([No match for ] + HtWrap(this.cPage_Search, 'strong') + [ was found ] + m.lcFromWhom + [.], 'p')
+      else
+        .WriteTag(;
+            [The following matches were found ] + ;
+            m.lcFromWhom + ;
+            [. Select a name to see their work and bridge location(s). ] ;
+          , 'p')
+        select (loQry.cAlias)
+        lcUrl = stuffUrl(this.cUrlA, 2, "ArtPublicWork")
+        .Write('<ol>' + crlf)
+        scan
+          scatter memo name loArt
+          if empty(Art_Group_Art_FK)
+            .writeTag(HtLink(StuffUrl(m.lcUrl, "art", Art_PK), aisArtistName(m.loArt)), 'li')
+          else
+            .writeTag(HtLink(StuffUrl(m.lcUrl, "art", Art_Group_Art_FK), aisArtistName(m.loArt) + " (part of group)"), 'li')
+          endif 
+        endscan
+        .Write('</ol>' + crlf)
+      endif 
       .WriteTag(HTLink(this.cCancelUrl, "Try Another Search..."), 'p')
       if poContext.lDeveloper
         Response.Write(HTWrap(loQry.cSqlStatement, 'div,p', 'admin,debug'))

@@ -942,8 +942,7 @@ define class ais_ArtPublicWork as aisArtPage
   function ProcessRequest
     this.assert(this.oArt.Art_Release_Name, "Artist prefers to be anonymous.")
     this.cSubTitle = AisArtistName(this.oArt)
-    local loQry 
-    lcRet = ""
+    local loQry, lcStr 
     loQry = createobject("AisPceQuery")
     with loQry
       .cArt = this.cArt
@@ -954,11 +953,15 @@ define class ais_ArtPublicWork as aisArtPage
     endwith 
     with response
       .writeTag(this.cSubTitle, 'h2')
-      .write([<ul>])
-      .write(this.page_getRailingData(m.loQry))
-      .write(this.page_getBitData(m.loQry))
-      .write(this.page_getPanelData(m.loQry))
-      .write([</ul>])
+      lcStr = ;
+        this.page_getRailingData(m.loQry) + ;
+        this.page_getBitData(m.loQry) + ;
+        this.page_getPanelData(m.loQry)
+      if empty(m.lcStr)
+        .writeTag("No panels or railings from this person.", 'ul')
+      else
+        .writeTag(m.lcStr, 'ul')
+      endif 
       .write(this.page_getContributingArtists())
       .write(this.page_getPanelDetails(m.loQry))
       if poContext.lDeveloper
