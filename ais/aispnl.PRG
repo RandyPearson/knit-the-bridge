@@ -858,11 +858,15 @@ define class ais_PnlHome as aisPnlPage
       use in select("v_Active_Panel_Set")
       
       .addMenuItem("main\This,page", "Find Panel (public)", ;
-        StuffUrl(.cUrlA, 2, "LocateByPanelID", "pnl_id", .oPnl.Pnl_ID))
+        "../ktb-pub/LocateByPanelID.ktb?pnl_id=" + .oPnl.Pnl_ID)
 
-      if poContext.lAdmin
-        .addMenuItem("main\This,page", "PanelInfo.json (public)", ;
+        ** StuffUrl(.cUrlA, 2, "LocateByPanelID", "pnl_id", .oPnl.Pnl_ID))
+
+      if poContext.lDeveloper
+        .addMenuItem("main\This,page", "PanelInfo.json", ;
           StuffUrl(.cUrlB, 1, "json", 2, "PanelInfo"))
+      endif 
+      if poContext.lAdmin
         .addMenuItem("main\This,page", "Upload Panel File...", StuffUrl(.cUrlA, 2, "PnlFilNew", "pnl", .cPnl))
 
         if .oPnl.Pnl_Single_Piece = .f. and !.oPnl.Pnl_Completed 

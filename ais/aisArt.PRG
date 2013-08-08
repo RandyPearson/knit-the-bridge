@@ -19,6 +19,7 @@ function AisArtQueryFlags()
     ',{"root": "install", "field": "Art_Help_Install", "prompt": "Help Install"}' + ;
     ',{"root": "deinstall", "field": "Art_Help_Deinstall", "prompt": "Help Deinstall"}' + ;
     ',{"root": "training", "combine": false, "prompt": "Training Session Assigned"}' + ;
+    ',{"root": "anyshift", "combine": false, "prompt": "Shift Sign-Up"}' + ;
     ',{"root": "signedwaiver", "field": "Art_Waiver_Signed", "prompt": "Signed Waiver"}' + ;
     ',{"root": "signedtraining", "field": "Art_Training_Signed", "prompt": "Signed as Trained"}' + ;
     ',{"root": "stitching", "field": "Art_Help_Stitching", "prompt": "Help Stitching"}' + ;
@@ -1331,6 +1332,7 @@ define class ais_ArtHome as aisArtPage
         loCol = .addCursorColumn("Art_Last_Name", "Name", ;
           [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), aisArtistName(THISRECORD))])
 
+        loCol = .addCursorColumn("Art_Release_Name", "Release <br>Name")
         loCol = .addCursorColumn("Art_Neighborhood", "Neighborhood")
         loCol = .addCursorColumn("Art_Age_Range", "Age Range")
 
@@ -2527,6 +2529,7 @@ define class AisArtQuery AS L7Query
   lInstall = null
   lDeinstall = null
   lTraining = null
+  lAnyShift = null
   lSignedWaiver = null 
   lSignedTraining = null
   lMonitoring = null 
@@ -2717,6 +2720,12 @@ define class AisArtQuery AS L7Query
       if !isnull(.lTraining)
         lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + iif(.lTraining, [!], []) + [empty(Art_Installation_Trn_FK)]
       endif
+
+      if !isnull(.lAnyShift)
+        lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + ;
+          [Art_PK] + iif(.lAnyShift, [ in ], [ not in ]) + ;
+          [(select Ars_Art_FK from ArtistShift where !Ars_Inactive)]
+      endif 
 
       if !isnull(.lPanelSignup)
         lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + [Art_Panel_Count] + iif(.lPanelSignup, [ > 0], [ = 0])

@@ -1,22 +1,32 @@
 
 open database ktbais
 
-select Ars_Art_FK, count(*) ;
-  from ArtistShift join Shift on Ars_Sft_FK = Sft_PK  ;
-  where Ars_Inactive = .f. and Sft_Installation ;  && and Ars_Role = "Captain" 
-  group by 1 ;
-  having count(*) >= 2 ;
-  into cursor _Multi_Captain_
-        
-select Art_ID, padr(trim(Art_First_Name) + " " + trim(Art_Last_Name), 40), Ars_Role, cdow(Sft_Date), Sft_Start_Time ;
+select cdow(Sft_Date) as Day, Sft_Start_Time as Start, Ars_Role, padr(trim(Art_Last_Name) + ", " + trim(Art_First_Name), 40) as name,  ;
+    Art_Email as email, Art_Phone as phone, left(Art_Emergency_Contact, 100) as Emergency, left(Art_Neighborhood, 50) as Neighborhood, ;
+    iif(Art_Waiver_Signed, "Waiver", space(6)) as Waiver, iif(Art_Training_Signed, "Trained", space(7)) as Trained, Art_ID ;
   from Artist A1 ; 
     join ArtistShift on A1.Art_PK = Ars_Art_FK ;
     join Shift on Ars_Sft_FK = Sft_PK ;
   where A1.Art_Inactive = .f. and Ars_Inactive = .f. and Sft_Inactive = .f. ;
     and Sft_Installation ;
-    and Ars_Art_FK in ;
-    ( select Ars_Art_FK from _Multi_Captain_ ) ;
-  order by Art_ID, Sft_Date, Sft_Start_Time
+  order by Sft_Date, Sft_Start_Time, Art_Last_Name
+
+*!*  select Ars_Art_FK, count(*) ;
+*!*    from ArtistShift join Shift on Ars_Sft_FK = Sft_PK  ;
+*!*    where Ars_Inactive = .f. and Sft_Installation ;  && and Ars_Role = "Captain" 
+*!*    group by 1 ;
+*!*    having count(*) >= 2 ;
+*!*    into cursor _Multi_Captain_
+*!*          
+*!*  select Art_ID, padr(trim(Art_First_Name) + " " + trim(Art_Last_Name), 40), Ars_Role, cdow(Sft_Date), Sft_Start_Time ;
+*!*    from Artist A1 ; 
+*!*      join ArtistShift on A1.Art_PK = Ars_Art_FK ;
+*!*      join Shift on Ars_Sft_FK = Sft_PK ;
+*!*    where A1.Art_Inactive = .f. and Ars_Inactive = .f. and Sft_Inactive = .f. ;
+*!*      and Sft_Installation ;
+*!*      and Ars_Art_FK in ;
+*!*      ( select Ars_Art_FK from _Multi_Captain_ ) ;
+*!*    order by Art_ID, Sft_Date, Sft_Start_Time
 
 #if .f.
 open database ktbais
