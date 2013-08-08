@@ -629,11 +629,12 @@ define class AisApp AS KtbApp
       use in select("Artist")
 
     case m.lnRev = 36
-      alter table Artist add column Ars_Team C(20)
-      select Artist
-      replace all Art_Team with Art_Role for inlist(Art_Role, "Towers", "Medical", "Check-In", "Runner")
+      alter table ArtistShift add column Ars_Team C(20)
+      alter table ArtistShift add column Ars_Job C(30)
+      select ArtistShift
+      replace all Ars_Team with Ars_Role for inlist(Ars_Role, "Towers", "Medical", "Check-In", "Runner")
       index on Ars_Team tag Team  && Rev 36
-      use in select("Artist")
+      use in select("ArtistShift")
 
 
 ** CAUTION: Need to add any above changes to Create*() functions below!!
@@ -1258,6 +1259,7 @@ function CreateArtistShiftTable  && TABLE added in Rev 32
       Ars_Sft_FK C(32), ;
       Ars_Role C(12), ;
       Ars_Team C(20), ;  && Rev 36
+      Ars_Job C(30), ;  && Rev 36
       Ars_Notes M, ;
       Ars_Orig_Art_FK C(32), ;
       Ars_Orig_Time T, ;
@@ -1589,7 +1591,7 @@ FUNCTION CreateViews(lcOneTable, lcDataPath, lcDataBase)
     do CreateChildView WITH "V_Artist_File_Set", "Files", "Fil_Art_FK", "Artist", [Fil_Inactive=.F.]
     do CreateChildView WITH "V_Contributing_Artist_Set", "Artist", "Art_Group_Art_FK", "Artist", [Art_Inactive=.F.] 
     do CreateChildView WITH "V_Training_Artist_Set", "Artist", "Art_Installation_Trn_FK", "Training",  [Art_Inactive=.F.] && Rev 30
-    do CreateChildView WITH "V_Shift_Artist_Set", "ArtistShift", "Ars_Sft_FK", "Shift",  [Ars_Inactive=.F.] && Rev 36
+    do CreateChildView WITH "V_Shift_Artist_Set", "ArtistShift", "Ars_Sft_FK", "Shift",  [Ars_Inactive=.F.], [Ars_Role]  && Rev 36
 
     do CreateChildView WITH "V_Facility_Panel_Set", "Panel", "Pnl_Fac_FK", "Facility",  [Pnl_Inactive=.F.]
     do CreateChildView WITH "V_Facility_Piece_Set", "Piece", "Pce_Fac_FK", "Facility",  [Pce_Inactive=.F.]

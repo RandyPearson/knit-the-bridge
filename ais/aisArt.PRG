@@ -1232,6 +1232,9 @@ define class ais_ArtHome as aisArtPage
         loCol = .addCursorColumn("Ars_Role", "Role", ;
           [HTLink(StuffUrl(urls.item("ArsForm"), "ars", Ars_PK), Ars_Role)])
 
+        loCol = .addCursorColumn("Ars_Team", "Team")
+        loCol = .addCursorColumn("Ars_Job", "Job")
+
         loCol = .addCursorColumn("Sft_Installation", "Installation", ;
           [iif(Sft_Installation, "Installation", "") + iif(Sft_DeInstallation, "De-Installation", "")] )
         lcRet = .render()
@@ -2591,7 +2594,7 @@ define class AisArtQuery AS L7Query
   endfunc
   * --------------------------------------------------------- *
   function addShiftFields
-    this.addFields("Ars_PK, Ars_Role")
+    this.addFields("Ars_PK, Ars_Role, Ars_Team, Ars_Job")
     return 
   endfunc
   * --------------------------------------------------------- *

@@ -122,7 +122,14 @@ enddefine && SftList
 define class ais_SftHome as aisSftPage 
   * ----------------------------------------------------- *  
   function AddDefaultMenu
-    this.AddSubMenu("This", "This Shift")
+    local lcMenu
+    with this
+      lcMenu = "main\This"
+      .AddSubMenu("This", "This Shift")
+      if poContext.lAdmin
+        .addMenuItem(m.lcMenu, "Edit Teams and Roles...", StuffUrl(.cUrlB, 2, "ArsBrowse"))
+      endif
+    endwith 
     dodefault()
     return 
   endfunc 
@@ -178,7 +185,8 @@ define class ais_SftHome as aisSftPage
       .addShiftFields()
       .addTrainingFields()
 
-      .AddOrderBy("Ars_Role")
+      .AddOrderBy("Ars_Team")
+      .AddOrderBy("Ars_Role", , .t.)
       .AddOrderBy("Art_ID", , .T.)
       .execute()
       if .nTally = 0
@@ -192,22 +200,26 @@ define class ais_SftHome as aisSftPage
 
     loTbl = createobject("AisTable")
     with loTbl
-      loGrp = .addGroup('ars_role', 'Role', .t.)
+      loGrp = .addGroup('ars_team', 'Team', .t.)
       
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
 
+      loCol = .addCursorColumn("Art_Waiver_Signed", "Acc<br>Waiver")
+
+      loCol.cDisplayExpression = [iif(Art_Waiver_Signed, "Yes", "--")]
       loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), aisArtistName(THISRECORD, .t.))], 'artist')
 
       loCol = .addCursorColumn("Ars_Role", "Role", ;
         [HTLink(StuffUrl(urls.item("ArsForm"), "ars", Ars_PK), Ars_Role)])
 
+      loCol = .addCursorColumn("Ars_Team", "Team")
+      loCol = .addCursorColumn("Ars_Job", "Job")
+
       loCol = .addCursorColumn("Art_Email", "Email")
       loCol = .addCursorColumn("Art_Phone", "Phone")
       loCol = .addCursorColumn("Art_Emergency_Contact", "Emergency")
-      loCol = .addCursorColumn("Art_Neighborhood", "Neighborhood")
-      loCol = .addCursorColumn("Art_Waiver_Signed", "Acc<br>Waiver")
-      loCol.cDisplayExpression = [iif(Art_Waiver_Signed, "Yes", "--")]
+      ** loCol = .addCursorColumn("Art_Neighborhood", "Neighborhood")
       
       loCol = .addCursorColumn("Art_Training_Signed", "Training<br>Waiver")
       loCol.cDisplayExpression = [iif(Art_Training_Signed, "Yes", "--")]
@@ -340,6 +352,7 @@ enddefine && ArsNew
 *** ========================================================= ***
 define class aisArsForm as AisForm
   cTitle = "Assign Shift Form"
+  cAlias = "V_ArtistShift"
   * --------------------------------------------------------- *
   function AddControls
     with this
@@ -371,6 +384,19 @@ define class aisArsForm as AisForm
         endif
       endwith 
 
+      .AddObject("txtTeam", "L7Textbox")
+      with .txtTeam
+        .cControlSource = this.cAlias + ".Ars_Team"
+        .cLabel = "Team Name" 
+        .cInstructions = "case-sensitive, used for sorting"
+      endwith
+
+      .AddObject("txtJob", "L7Textbox")
+      with .txtJob
+        .cControlSource = this.cAlias + ".Ars_Job"
+        .cLabel = "Person's Job" 
+      endwith
+
       if !this.lNewRecord
         .AddObject("chkInactive", "L7Checkbox")
         with .chkInactive
@@ -383,6 +409,111 @@ define class aisArsForm as AisForm
       endif
 
     endwith
+    return 
+  endfunc 
+enddefine 
+
+*** ===================================================== ***
+define class Ais_ArsBrowse as AisSftPage
+  lSftRequired = .t. && all assignments to one shift
+  * --------------------------------------------------------- *
+  function ProcessRequest
+    this.cCancelUrl = StuffUrl(this.cUrlB, 2, "SftHome")
+    local loForm, lcXml, lcAlias, lcFldState, lcStub
+    
+    private vp_cSft_PK
+    vp_cSft_PK = this.cSft
+    
+    lcAlias = "V_Shift_Artist_Set"
+    use (m.lcAlias) in select(m.lcAlias)
+    cursorsetprop("Buffering", 5, m.lcAlias)
+    select (m.lcAlias)
+    loForm = this.CreateForm("AisArsBrowseForm")
+    with loForm
+      .cAlias = m.lcAlias
+      .AddControls()
+      .DoEvents()
+      if .Valid()
+        .UpdateControlSources()
+        select (m.lcAlias)
+        scan   
+          lcFldState = getfldstate(-1)
+          if empty( strtran( m.lcFldState, "1"))  && no change
+            loop 
+          endif 
+          StampRec( CurrentUser, THIS.tNow )
+        endscan 
+        lcXml = ''
+        this.AssertTransaction(m.lcAlias, @lcXml)
+        Response.Redirect(this.cCancelUrl)
+        return 
+      endif 
+      Response.Write(.Render())
+    endwith 
+    return   
+  endfunc 
+  
+enddefine  && Ais_ArsBrowse
+
+*** ========================================================= ***
+define class AisArsBrowseForm as AisForm
+  cTitle = "Shift Roles and Teams Form"
+  cAlias = null && client should set 
+  * --------------------------------------------------------- *
+  function AddControls
+    with this
+
+      .AddObject('grdBrowse', 'L7Grid')
+      with .grdBrowse
+        .cChildAlias = this.cAlias
+        .cChildKeyExpression = this.cAlias + ".Ars_PK"
+        .nExtraRows = 0
+        .cGridTableCssClass = "sortable " + .cGridTableCssClass 
+        .cColumnHeaderCssClass = "nosort" && sortable doesn't work for live controls, so override on specific labels
+
+        .AddObject("lblName_", "L7Label")
+        with .lblName_
+          .cFieldType = "C"
+          .cControlSource = this.cAlias + ".Ars_Art_FK"
+          .cLabel = "Name"
+          .cShowExpression = [aisArtistName(] + this.cAlias + [.Ars_Art_FK)]
+          .cColumnHeaderCssClass = "sort" 
+        endwith 
+
+        .AddObject("cboRole", "L7Popup")
+        with .cboRole
+          .cControlSource = this.cAlias + ".Ars_Role"
+          .lRequired = .t.
+          .cFieldType = "C"
+          .cLabel = "Role"
+          .nStyle = L7_MULTISTYLE_VERTICAL
+          .nRowSourceType = L7_ROWSOURCETYPE_VALUE
+          .cRowSource = THISAPP_ROLE_ENUM
+        endwith 
+
+        .AddObject("txtTeam", "L7Textbox")
+        with .txtTeam
+          .cControlSource = this.cAlias + ".Ars_Team"
+          .cLabel = "Team Name" 
+          ** .cInstructions = "case-sensitive, used for sorting"
+        endwith
+
+        .AddObject("txtJob", "L7Textbox")
+        with .txtJob
+          .cControlSource = this.cAlias + ".Ars_Job"
+          .cLabel = "Person's Job" 
+        endwith
+
+        .AddObject("chkInactive", "L7Checkbox")
+        with .chkInactive
+          .cControlSource = this.cAlias + ".Ars_Inactive"
+          .cLabel = "Delete?"
+          .cCaption = "Remove this artist shift"
+          .lDisabled = !m.poContext.lAdmin
+          .cCssClass = "FormControlPrivate"
+        endwith
+      endwith && grid
+    endwith && form
     return 
   endfunc 
 enddefine 
@@ -560,7 +691,7 @@ enddefine  && AisSftQuery
 define class AisArsQuery as L7Query
   cBaseTable = "ArtistShift"
   
-  cDefaultFieldList = "Ars_PK, Ars_Role"
+  cDefaultFieldList = "Ars_PK, Ars_Role, Ars_Team, Ars_Job"
 
   lJoinArt = .f. 
   lJoinSft = .f. 
