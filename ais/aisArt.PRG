@@ -189,6 +189,7 @@ define class aisArtistLocater as Custom
     with loQ
       .cArtPiece = toArt.Art_PK
       .lHasLocation = .t.
+      .lJoinLocation = .t. 
       .execute()
     endwith 
     return L7CursorToJsonArray(loQ.cAlias)
@@ -199,9 +200,20 @@ enddefine
 define class ais_ArtLocater as aisArtPage
   * --------------------------------------------------------- *
   function ProcessRequest
-    local loPnls, loLocater
+    this.cSubTitle = AisArtistName(this.oArt) + " - Location Info"
+
+    local loPnls, loLocater, lcStr
     loLocater = createobject("AisArtistLocater")
     loPnls = loLocater.getPanelLocations(this.oArt)
+    for lnPnl = 1 to loPnls.count
+      loPnl = loPnls.item(m.lnPnl)
+      response.write(HtWrap("Panel ID: " + m.loPnl.Pnl_ID, 'h3'))
+      lcStr = ""
+      lcStr = m.lcStr + HtWrap("How to find your panel:", 'p') + AisDescribeLocation(m.loPnl)
+      lcStr = m.lcStr + HtWrap("KtB Mobile Website: <br>" + HtLink(textmerge([http://knitthebridge.com/m/#/panels/<<loPnl.Pnl_Id>>])), 'p')
+      lcStr = m.lcStr + HtWrap("KtB Regular Website: <br>" + HtLink(textmerge([http://knitthebridge.com/ktb-pub/LocateByPanelID.ktb?pnl_id=<<loPnl.Pnl_Id>>])), 'p')
+      response.write(HtWrap(m.lcStr, 'ul'))
+    next 
     response.write(HtWrap(L7JsonSerialize(loPnls), 'pre'))
     return 
   endfunc 
