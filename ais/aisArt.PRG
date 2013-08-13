@@ -222,33 +222,11 @@ define class ais_ArtLocater as aisArtPage
   endfunc 
   * --------------------------------------------------------- *
   function page_Start(loPnls)
-    local lcRet, lcTmp
-    lcRet = ""
-
-    text to lcTmp noshow pretext 3
-      Hello *Knit the Bridge participant*!
-      
-      The purpose of this message is to describe how to find your panel(s) on the bridge! Each panel is listed below.
-      
-    endtext 
-    lcRet = m.lcRet + L7ParseOnView(textmerge(m.lcTmp)) + crlf
-    
-    return m.lcRet
+    return L7ParseOnView(textmerge(filetostr("aisArtLocater_Start.txt"))) + crlf
   endfunc 
   * --------------------------------------------------------- *
   function page_End(loPnls)
-    local lcRet, lcTmp
-    lcRet = ""
-
-    text to lcTmp noshow pretext 3
-      <h3>Further Details</h3>
-      * You have elected *<<iif(this.oArt.Art_Release_Name, "", "not ")>>to release your name* publicly. To change this election, please send us an email request.
-      * If you cannot find your panel, please contact Kitty Spangler at... 
-      
-    endtext 
-    lcRet = m.lcRet + L7ParseOnView(textmerge(m.lcTmp)) + crlf
-    
-    return m.lcRet
+    return L7ParseOnView(textmerge(filetostr("aisArtLocater_End.txt"))) + crlf
   endfunc 
 enddefine 
 

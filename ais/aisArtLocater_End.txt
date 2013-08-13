@@ -1,0 +1,4 @@
+<h3>Further Details</h3>
+* You have elected *<<iif(this.oArt.Art_Release_Name, "", "not ")>>to release your name* publicly. To change this election, please send us an email request.
+* If you cannot find your panel, please contact Kitty Spangler at... 
+      
