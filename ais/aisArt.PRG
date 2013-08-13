@@ -224,6 +224,53 @@ define class aisArtPage as aisPage
 enddefine 
 
 *** ========================================================= ***
+define class ais_Emergency as aisArtPage 
+  lArtRequired = .f.
+  cSubTitle = "Volunteer Emergency Contact List"
+  * ----------------------------------------------------- *  
+  function ProcessRequest
+    local loTbl, loCol
+    urls.add(StuffUrl(this.cUrlA, 2, "ArtHome"), "ArtHome")
+    select Art_Pk, Art_Id, Art_Last_Name, Art_First_Name, Art_Waiver_Signed, Art_Training_Signed, ;
+        Art_Email, Art_Undeliverable, Art_Phone, Art_Emergency_Contact, Art_Neighborhood ;
+      from Artist ;
+      where !Art_Inactive and ( ;
+        !empty(Art_Installation_Trn_FK) or ;
+        Art_Waiver_Signed or ;
+        Art_Training_Signed or ;
+        Art_PK in (select Ars_Art_FK from ArtistShift where !Ars_Inactive) ;
+        ) ;
+      order by Art_Last_Name, Art_First_Name ;
+      into cursor Emergency_ 
+    loTbl = createobject("AisTable")
+    with loTbl
+
+      loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
+      ** loCol = .addCursorColumn("Art_ID", "Artist ID", ;
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), Art_ID)], "id-field artist")
+
+      loCol = .addCursorColumn("Art_Waiver_Signed", "Acc<br>Waiver")
+      loCol.cDisplayExpression = [iif(Art_Waiver_Signed, "Yes", "--")]
+
+      loCol = .addCursorColumn("Art_Training_Signed", "Training<br>Waiver")
+      loCol.cDisplayExpression = [iif(Art_Training_Signed, "Yes", "--")]
+
+      loCol = .addCursorColumn("Art_Last_Name", "Name", ;
+        [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK),] + ;
+        [trim(Art_Last_Name) + ", " + trim(Art_First_Name))] )
+
+      loCol = .addCursorColumn("Art_Email", "Email/Phone", [aisFormatContactInfo(THISRECORD)])
+      loCol = .addCursorColumn("Art_Emergency_Contact", "Emergency")
+
+      loCol = .addCursorColumn("Art_Neighborhood", "Neighborhood")
+
+      response.write(loTbl.render())
+    endwith 
+    return 
+  endfunc 
+enddefine 
+
+*** ========================================================= ***
 define class aisMultiArtPage as aisArtPage 
   lArtRequired = .f.
   cPage_Fields = null
@@ -964,6 +1011,9 @@ define class ais_ArtPublicWork as aisArtPage
       endif 
       .write(this.page_getContributingArtists())
       .write(this.page_getPanelDetails(m.loQry))
+
+      .WriteTag(HTLink(StuffUrl(this.cUrlA, 2, "Locate"), "Try Another Search..."), 'p')
+
       if poContext.lDeveloper
         * .Write(HTWrap(loQry.cSqlStatement, 'div,p', 'admin,debug'))
       endif
@@ -1083,6 +1133,10 @@ define class ais_ArtHome as aisArtPage
       this.addMenuItem("main\This,page", "Submit 12x75 Railing Piece...", ;
         StuffUrl(this.cUrlA, 2, "PceNew", "art", this.cArt, "type", "Railings", "dim_1", "12", "dim_2", "75"))
     endif   
+
+    this.addMenuItem("main\This,page", "Public Info (public)", ;
+      "../ktb-pub/ArtPublicWork.ktb?art=" + this.cArt)
+
     if poContext.lAdmin and !empty(this.oArt.Art_ID)
       this.addMenuItem("main\This", "Set Password...", StuffUrl(this.cUrlA, 2, "SetPassword", "art", this.cArt))
     endif 

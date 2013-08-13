@@ -67,7 +67,7 @@ define class aisSftPage as aisPage
     lcMenu = "main\This"
     with this
       .AddSubMenu("This", "SHIFTS")
-      if poContext.lAdmin
+      if poContext.lDeveloper
         .addMenuItem(m.lcMenu, "Edit Shift Metadata...", StuffUrl(.cUrlB, 2, "SftBrowse"))
       endif
     endwith 
@@ -205,8 +205,11 @@ define class ais_SftHome as aisSftPage
       loCol = .AddColumn(L7_ELEMENTTYPE_RELATIVE_RECNO, "Seq")
 
       loCol = .addCursorColumn("Art_Waiver_Signed", "Acc<br>Waiver")
-
       loCol.cDisplayExpression = [iif(Art_Waiver_Signed, "Yes", "--")]
+
+      loCol = .addCursorColumn("Art_Training_Signed", "Training<br>Waiver")
+      loCol.cDisplayExpression = [iif(Art_Training_Signed, "Yes", "--")]
+
       loCol = .addCursorColumn("Art_Last_Name", "Artist Name", ;
         [HTLink(StuffUrl(urls.item("ArtHome"), "art", Art_PK), aisArtistName(THISRECORD, .t.))], 'artist')
 
@@ -221,9 +224,6 @@ define class ais_SftHome as aisSftPage
       loCol = .addCursorColumn("Art_Emergency_Contact", "Emergency")
       ** loCol = .addCursorColumn("Art_Neighborhood", "Neighborhood")
       
-      loCol = .addCursorColumn("Art_Training_Signed", "Training<br>Waiver")
-      loCol.cDisplayExpression = [iif(Art_Training_Signed, "Yes", "--")]
-
       if poContext.lAdmin
         loCol = .addCursorColumn("Art_PK", "Edit Artist", ;
           'HTLink(StuffUrl(urls.item("ArtForm"), "art", Art_PK), Art_ID + "...")', 'no-print')

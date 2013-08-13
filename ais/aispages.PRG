@@ -518,6 +518,7 @@ define class aisPage as L7Page
     if !loPol.lPublicFacing and !m.llPublic
       this.addMenuItem(m.lcMenu, 'People - Query Form', StuffUrl(this.cUrlA, 2, "ArtQuery"))
       this.addMenuItem(m.lcMenu, 'People - Core List', StuffUrl(this.cUrlA, 2, "ArtList", "core", "1", "fields", "contact"))
+      this.addMenuItem(m.lcMenu, 'Emergency Contact List', StuffUrl(this.cUrlA, 2, "Emergency"))
       this.addMenuItem(m.lcMenu, 'Neighborhood Summary Report', StuffUrl(this.cUrlA, 2, "NeighborhoodSumList"))
 
       lcMenu = "main\Search"
