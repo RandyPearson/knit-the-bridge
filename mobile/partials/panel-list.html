@@ -1,0 +1,36 @@
+<div class="container panels-container">
+  <div class="top">
+    <h1 class="main-title"><a href="#/">Knit the Bridge</a></h1>
+    <div class="search">
+      <form ng-submit="submit()">
+        <input type="text" ng-model="search" name="search" placeholder="Enter an artist, location ID, or panel ID">
+        <button type="submit" class="btn btn-main btn-search">Search</button>
+      </form>
+    </div>
+  </div>
+  <ul class="panels-list">
+    <li class="panel" ng-cloak ng-repeat="panel in panels.installed_panel_set | filter:search">
+      <a ng-href="#/panels/{{panel.pnl_id | strip_panel_id}}">
+          <img ng-cloak ng-src="{{panel.image}}" />
+          <div class="panel-info">
+            <div class="panel-info-location" ng-cloak>
+              <strong>Panel {{panel.pnl_id | strip_panel_id}}</strong> at <strong>location {{panel.loc_no}}, </strong> {{panel.loc_side}} and {{panel.orientation}} the walkway
+            </div>
+            <div class="panel-info-byline">
+              by {{panel.artists}}
+            </div>
+          </div>
+      </a>
+    </li>
+  </ul>
+  <div class="main-links">
+    <div class="main-nav">
+      <a class="btn btn-green btn-main" href="#/panels">Explore the Bridge</a>
+      <a class="btn btn-blue btn-main" href="#/about">About</a>
+    </div>
+    <div class="footer">
+      <a href="http://fiberartspgh.org/">Project of the Fiberarts Guild of Pittsburgh</a>
+    </div>
+  </div>
+</div>
+

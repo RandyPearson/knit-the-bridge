@@ -1,0 +1,42 @@
+<div class="container panels-container">
+  <div class="top">
+    <h1 class="main-title"><a href="#/">Knit the Bridge</a></h1>
+  </div>
+  <ul class="panels-list">
+    <li class="panel">
+      <img ng-cloak ng-src="{{panel.image}}" />
+      <div class="panel-info">
+        <ul>
+          <li ng-cloak>Panel Id: <strong>{{panel.pnl_id | strip_panel_id}}</strong></li>
+          <li ng-cloak>Artists:</li>
+            <ul>
+              <li ng-cloak ng-repeat="artist in panel.artist_set">{{artist.name}}</li>
+            </ul>
+          <li ng-cloak>Location: {{panel.loc_id}}</li>
+          <div ng-bind-html-unsafe="panel.loc_info"></div>
+        </ul>
+        <h2>Story</h2>
+        <p ng-bind-html-unsafe="panel.story"></p>
+        <div id="disqus" class="disqus">
+          <h2>Discussion</h2>
+          <div ng-include="'partials/disqus'" id="disqus_thread" onload="loadDisqus(panel.pnl_id)"></div>
+        </div>
+      </div>
+    </li>
+  </ul>
+  <div class="main-links">
+    <div class="search">
+      <form ng-submit="submit()">
+        <input type="text" ng-model="search" name="search" placeholder="Enter an artist, location ID, or panel ID">
+        <button type="submit" class="btn btn-main btn-search">Search</button>
+      </form>
+    </div>
+    <div class="main-nav">
+      <a class="btn btn-green btn-main" href="#/panels">Explore the Bridge</a>
+      <a class="btn btn-blue btn-main" href="#/about">About</a>
+    </div>
+    <div class="footer">
+      <a href="http://fiberartspgh.org/">Project of the Fiberarts Guild of Pittsburgh</a>
+    </div>
+  </div>
+</div>

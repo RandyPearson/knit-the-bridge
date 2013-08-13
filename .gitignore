@@ -21,6 +21,8 @@ _command.prg
 node_modules
 classes
 
+mobile/ktb-pub/
+
 ; L7 removed, and for now ignore: 
 package.json
 json.fll
