@@ -203,8 +203,10 @@ define class ais_ArtLocater as aisArtPage
     this.cSubTitle = AisArtistName(this.oArt) + " - Location Info"
 
     local loPnls, loLocater, lcStr
+
     loLocater = createobject("AisArtistLocater")
     loPnls = loLocater.getPanelLocations(this.oArt)
+    response.write(this.page_start(m.loPnls))
     for lnPnl = 1 to loPnls.count
       loPnl = loPnls.item(m.lnPnl)
       response.write(HtWrap("Panel ID: " + m.loPnl.Pnl_ID, 'h3'))
@@ -214,8 +216,39 @@ define class ais_ArtLocater as aisArtPage
       lcStr = m.lcStr + HtWrap("KtB Regular Website: <br>" + HtLink(textmerge([http://knitthebridge.com/ktb-pub/LocateByPanelID.ktb?pnl_id=<<loPnl.Pnl_Id>>])), 'p')
       response.write(HtWrap(m.lcStr, 'ul'))
     next 
-    response.write(HtWrap(L7JsonSerialize(loPnls), 'pre'))
+    response.write(this.page_end(m.loPnls))
+    ** response.write(HtWrap(L7JsonSerialize(loPnls), 'pre'))
     return 
+  endfunc 
+  * --------------------------------------------------------- *
+  function page_Start(loPnls)
+    local lcRet, lcTmp
+    lcRet = ""
+
+    text to lcTmp noshow pretext 3
+      Hello *Knit the Bridge participant*!
+      
+      The purpose of this message is to describe how to find your panel(s) on the bridge! Each panel is listed below.
+      
+    endtext 
+    lcRet = m.lcRet + L7ParseOnView(textmerge(m.lcTmp)) + crlf
+    
+    return m.lcRet
+  endfunc 
+  * --------------------------------------------------------- *
+  function page_End(loPnls)
+    local lcRet, lcTmp
+    lcRet = ""
+
+    text to lcTmp noshow pretext 3
+      <h3>Further Details</h3>
+      * You have elected *<<iif(this.oArt.Art_Release_Name, "", "not ")>>to release your name* publicly. To change this election, please send us an email request.
+      * If you cannot find your panel, please contact Kitty Spangler at... 
+      
+    endtext 
+    lcRet = m.lcRet + L7ParseOnView(textmerge(m.lcTmp)) + crlf
+    
+    return m.lcRet
   endfunc 
 enddefine 
 
