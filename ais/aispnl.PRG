@@ -1370,7 +1370,7 @@ define class AisPnlQuery as L7Query
         .nJoins = .nJoins + 1
         dimension .aJoins[.nJoins, 3]
         .aJoins[.nJoins, 1] = "Piece"
-        .aJoins[.nJoins, 2] = "Pnl_Pce_FK = Pce_PK"
+        .aJoins[.nJoins, 2] = "Pnl_PK = Pce_Pnl_FK"
         if !isnull(.cArtPiece) 
           .cWhereClause = .cWhereClause + [ and Pce_Art_FK = '] + .cArtPiece + [']
         endif 

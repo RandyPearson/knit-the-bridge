@@ -37,11 +37,11 @@ function AisArtQueryFlags()
 endfunc 
 
 * --------------------------------------------------------- *
-function aisArtistName(tvArt, tlNoAlt)
+function aisGetArtistRecord(tvArt)
   local loData, loPreserve
   if vartype(m.tvArt) = 'L' && nothing passed--assume current record
     if empty(alias()) or !type('Art_Full_Name') = "C"
-      error 'Nothing passed/available to aisArtistName()'
+      error 'Nothing passed/available to aisGetArtistRecord()'
     else
       scatter memo name loData
     endif
@@ -60,9 +60,42 @@ function aisArtistName(tvArt, tlNoAlt)
         error "Artist " + m.tvArt + " was not found!"
       endif
       scatter memo name loData
+      use in select("aisArtistName_")
       loPreserve = null 
     endif 
   endif 
+  return m.loData
+endfunc && aisGetArtistRecord
+
+* --------------------------------------------------------- *
+function aisArtistName(tvArt, tlNoAlt)
+  local loData
+  loData = AisGetArtistRecord(m.tvArt)
+
+  *!*    if vartype(m.tvArt) = 'L' && nothing passed--assume current record
+  *!*      if empty(alias()) or !type('Art_Full_Name') = "C"
+  *!*        error 'Nothing passed/available to aisArtistName()'
+  *!*      else
+  *!*        scatter memo name loData
+  *!*      endif
+  *!*    else
+  *!*      if vartype(m.tvArt) = "O"
+  *!*        loData = m.tvArt
+  *!*      else  && PK
+  *!*        if isnull(m.tvArt) or empty(m.tvArt)
+  *!*          return "--"
+  *!*        endif
+  *!*        loPreserve = createobject("L7PreserveSelect")
+  *!*        select * from KtbAis!Artist ;
+  *!*          where Art_PK = m.tvArt ;
+  *!*          into cursor aisArtistName_
+  *!*        if _tally < 1
+  *!*          error "Artist " + m.tvArt + " was not found!"
+  *!*        endif
+  *!*        scatter memo name loData
+  *!*        loPreserve = null 
+  *!*      endif 
+  *!*    endif 
       
   if !m.tlNoAlt and !empty(loData.Art_Full_Name) && alt. name provided
     return trim(loData.Art_Full_Name)
@@ -146,6 +179,33 @@ function aisFormatCommentsAndNotes(toData)
   
   return m.lcRet
 endfunc && aisFormatCommentsAndNotes
+
+*** ========================================================= ***
+define class aisArtistLocater as Custom
+  * --------------------------------------------------------- *
+  function getPanelLocations(toArt)
+    local loQ
+    loQ = createobject("AisPnlQuery")
+    with loQ
+      .cArtPiece = toArt.Art_PK
+      .lHasLocation = .t.
+      .execute()
+    endwith 
+    return L7CursorToJsonArray(loQ.cAlias)
+  endfunc 
+enddefine 
+
+*** ========================================================= ***
+define class ais_ArtLocater as aisArtPage
+  * --------------------------------------------------------- *
+  function ProcessRequest
+    local loPnls, loLocater
+    loLocater = createobject("AisArtistLocater")
+    loPnls = loLocater.getPanelLocations(this.oArt)
+    response.write(HtWrap(L7JsonSerialize(loPnls), 'pre'))
+    return 
+  endfunc 
+enddefine 
 
 *** ========================================================= ***
 define class aisArtQueryCollection as L7CheckboxCollection
