@@ -50,7 +50,7 @@ function aisGetArtistRecord(tvArt)
       loData = m.tvArt
     else  && PK
       if isnull(m.tvArt) or empty(m.tvArt)
-        return "--"
+        return null
       endif
       loPreserve = createobject("L7PreserveSelect")
       select * from KtbAis!Artist ;
@@ -71,7 +71,10 @@ endfunc && aisGetArtistRecord
 function aisArtistName(tvArt, tlNoAlt)
   local loData
   loData = AisGetArtistRecord(m.tvArt)
-
+  if isnull(m.loData)
+    return "--"
+  endif 
+  
   *!*    if vartype(m.tvArt) = 'L' && nothing passed--assume current record
   *!*      if empty(alias()) or !type('Art_Full_Name') = "C"
   *!*        error 'Nothing passed/available to aisArtistName()'
@@ -202,11 +205,11 @@ define class ais_ArtLocater as aisArtPage
   function ProcessRequest
     this.cSubTitle = AisArtistName(this.oArt) + " - Location Info"
 
-    local loPnls, loLocater, lcStr
-
+    local loPnls, loLocater, lcStr, loArt
+    loArt = this.oArt && loArt is the reference in TXT files, which support other calling points 
     loLocater = createobject("AisArtistLocater")
-    loPnls = loLocater.getPanelLocations(this.oArt)
-    response.write(this.page_start(m.loPnls))
+    loPnls = loLocater.getPanelLocations(m.loArt)
+    response.write(L7ParseOnView(textmerge(filetostr("aisArtLocater_Start.txt"))) + crlf)
     for lnPnl = 1 to loPnls.count
       loPnl = loPnls.item(m.lnPnl)
       response.write(HtWrap("Panel ID: " + m.loPnl.Pnl_ID, 'h3'))
@@ -216,17 +219,8 @@ define class ais_ArtLocater as aisArtPage
       lcStr = m.lcStr + HtWrap("KtB Regular Website: <br>" + HtLink(textmerge([http://knitthebridge.com/ktb-pub/LocateByPanelID.ktb?pnl_id=<<loPnl.Pnl_Id>>])), 'p')
       response.write(HtWrap(m.lcStr, 'ul'))
     next 
-    response.write(this.page_end(m.loPnls))
-    ** response.write(HtWrap(L7JsonSerialize(loPnls), 'pre'))
+    response.write(L7ParseOnView(textmerge(filetostr("aisArtLocater_End.txt"))) + crlf)
     return 
-  endfunc 
-  * --------------------------------------------------------- *
-  function page_Start(loPnls)
-    return L7ParseOnView(textmerge(filetostr("aisArtLocater_Start.txt"))) + crlf
-  endfunc 
-  * --------------------------------------------------------- *
-  function page_End(loPnls)
-    return L7ParseOnView(textmerge(filetostr("aisArtLocater_End.txt"))) + crlf
   endfunc 
 enddefine 
 

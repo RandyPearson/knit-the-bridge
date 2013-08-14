@@ -1,4 +1,4 @@
-Hello *Knit the Bridge participant*!
+Hello <<trim(m.loArt.Art_First_Name)>> <<trim(m.loArt.Art_Last_Name)>>, Knit the Bridge participant!
       
 The purpose of this message is to describe how to find your panel(s) on the bridge! Each panel is listed below.
       
