@@ -1,6 +1,9 @@
 <h3>Further Details</h3>
-* You have elected *<<iif(m.loArt.Art_Release_Name, "", "not ")>>to release your name* publicly. To change this election, please send us an email request to KnitTheBridge@gmail.com
-* If you have a *brief story about the panel* that you're willing to share with the public, please send email to KnitTheBridge@gmail.com
-* If you cannot find a panel, please contact Kitty Spangler at kittyspangler@comcast.net
+<ul>
+<li>You have elected <em><<iif(m.poArt.Art_Release_Name, "", "not ")>>to release your name</em> publicly. To change this election, please send us an email request to <a href="mailto:KnitTheBridge@gmail.com">KnitTheBridge@gmail.com</a></li>
+<li>If you have a <em>brief story about the panel</em> that you're willing to share with the public, please send email to <a href="mailto:KnitTheBridge@gmail.com">KnitTheBridge@gmail.com</a></li>
+<li>If you cannot find a panel, please contact Kitty Spangler at <a href="mailto:kittyspangler@comcast.net">kittyspangler@comcast.net</a></li>
+</ul>
+
 
       

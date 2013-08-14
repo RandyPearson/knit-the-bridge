@@ -61,12 +61,13 @@ the Initial Developer. All Rights Reserved.
   <!-- END: DYNAMIC IMDB CONTENT -->
 #endif
 
-FUNCTION L7ExpandTemplateSnippet(tcStr)
-  LOCAL loET
-  loET = CREATEOBJECT("L7ExpandTemplate")
+* --------------------------------------------------------- *
+function L7ExpandTemplateSnippet(tcStr)
+  local loET
+  loET = createobject("L7ExpandTemplate")
   loET.MergeText(@tcStr)
-  RETURN m.tcStr
-ENDFUNC 
+  return m.tcStr
+endfunc   
 
 *** ========================================================= ***
 DEFINE CLASS L7ExpandTemplate AS CUSTOM

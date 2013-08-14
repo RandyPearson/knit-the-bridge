@@ -1,4 +1,6 @@
-Hello <<trim(m.loArt.Art_First_Name)>> <<trim(m.loArt.Art_Last_Name)>>, Knit the Bridge participant!
-      
-The purpose of this message is to describe how to find your panel(s) on the bridge! Each panel is listed below.
-      
+<p>Hello <<trim(m.poArt.Art_First_Name)>> <<trim(m.poArt.Art_Last_Name)>>, Knit the Bridge participant!</p>
+<p>The purpose of this message is to thank you for participating in this project!
+<l7:if expr="poPnls.count > 0">
+Below you will find descriptions of how to find your panel(s) on the bridge! 
+</l7:if>
+</p>

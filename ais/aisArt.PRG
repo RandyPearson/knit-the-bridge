@@ -205,21 +205,26 @@ define class ais_ArtLocater as aisArtPage
   function ProcessRequest
     this.cSubTitle = AisArtistName(this.oArt) + " - Location Info"
 
-    local loPnls, loLocater, lcStr, loArt
-    loArt = this.oArt && loArt is the reference in TXT files, which support other calling points 
+    local loLocater, lcStr, lnPnl, lcPnlTmp
+    private poArt, poPnls, poPnl, pcLocDesc
+    poArt = this.oArt && loArt is the reference in TXT files, which support other calling points 
     loLocater = createobject("AisArtistLocater")
-    loPnls = loLocater.getPanelLocations(m.loArt)
-    response.write(L7ParseOnView(textmerge(filetostr("aisArtLocater_Start.txt"))) + crlf)
-    for lnPnl = 1 to loPnls.count
-      loPnl = loPnls.item(m.lnPnl)
-      response.write(HtWrap("Panel ID: " + m.loPnl.Pnl_ID, 'h3'))
-      lcStr = ""
-      lcStr = m.lcStr + HtWrap("How to find your panel:", 'p') + AisDescribeLocation(m.loPnl)
-      lcStr = m.lcStr + HtWrap("KtB Mobile Website: <br>" + HtLink(textmerge([http://knitthebridge.com/m/#/panels/<<loPnl.Pnl_Id>>])), 'p')
-      lcStr = m.lcStr + HtWrap("KtB Regular Website: <br>" + HtLink(textmerge([http://knitthebridge.com/ktb-pub/LocateByPanelID.ktb?pnl_id=<<loPnl.Pnl_Id>>])), 'p')
-      response.write(HtWrap(m.lcStr, 'ul'))
+    poPnls = loLocater.getPanelLocations(m.poArt)
+    response.write(L7ExpandTemplateSnippet(filetostr("aisArtLocater_Start.txt")) + crlf)
+    lcPnlTmp = filetostr("aisArtLocater_Panel.txt")
+    for lnPnl = 1 to poPnls.count
+      poPnl = poPnls.item(m.lnPnl)
+      pcLocDesc = AisDescribeLocation(m.poPnl)
+      response.write(L7ExpandTemplateSnippet(m.lcPnlTmp) + crlf)
+
+      *!*        response.write(HtWrap("Panel ID: " + m.poPnl.Pnl_ID, 'h3'))
+      *!*        lcStr = ""
+      *!*        lcStr = m.lcStr + HtWrap("How to find your panel:", 'p') + AisDescribeLocation(m.poPnl)
+      *!*        lcStr = m.lcStr + HtWrap("KtB Mobile Website: <br>" + HtLink(textmerge([http://knitthebridge.com/m/#/panels/<<poPnl.Pnl_Id>>])), 'p')
+      *!*        lcStr = m.lcStr + HtWrap("KtB Regular Website: <br>" + HtLink(textmerge([http://knitthebridge.com/ktb-pub/LocateByPanelID.ktb?pnl_id=<<poPnl.Pnl_Id>>])), 'p')
+      *!*        response.write(HtWrap(m.lcStr, 'ul'))
     next 
-    response.write(L7ParseOnView(textmerge(filetostr("aisArtLocater_End.txt"))) + crlf)
+    response.write(L7ExpandTemplateSnippet(filetostr("aisArtLocater_End.txt")) + crlf)
     return 
   endfunc 
 enddefine 
@@ -421,26 +426,6 @@ define class Ais_Broadcast AS AisArtPage
       if .Valid()
 
         loQry = this.page_RunPostQuery()
-        *!*          loQry = createobject("AisArtQuery")
-        *!*          with loQry
-        *!*            if loForm.chkAdmin.vNewValue
-        *!*              .lAdmin = .t. 
-        *!*            endif
-        *!*            if loForm.chkCore.vNewValue
-        *!*              .lCore = .t.
-        *!*            endif
-        *!*            if loForm.chkArtist.vNewValue
-        *!*              .lArtist = .t.
-        *!*            endif
-        *!*            if loForm.chkNoShow.vNewValue
-        *!*              .lPanelSignup = .t.
-        *!*              .lBitsOrPanelsSubmitted = .f.
-        *!*            endif
-        *!*            if loForm.chkInstall.vNewValue
-        *!*              .lInstall = .t.
-        *!*            endif
-        *!*            .execute()
-        *!*          endwith
         
         lcIndividualMsg = ""
         lcSubject = .txtSubject.vNewValue
@@ -456,7 +441,7 @@ define class Ais_Broadcast AS AisArtPage
           text to m.lcMsg additive pretext 3
             
             Follow this link for KtB information:
-            <<THIS.FullURL("/")>>
+            <<this.FullURL("/")>>
 
           endtext 
         endif 
@@ -476,9 +461,9 @@ define class Ais_Broadcast AS AisArtPage
             lcName = AisArtistName(m.loArt)
             llSend = !empty(m.lcToEmail) and IsValidEmail(m.lcToEmail)
             if !m.llSend
-              lcBadEmailMsg = lcBadEmailMsg + m.lcName + ' [' + trim(Art_Phone) + ']'+ CRLF
+              lcBadEmailMsg = m.lcBadEmailMsg + m.lcName + ' [' + trim(Art_Phone) + ']'+ CRLF
             else 
-              lcSentToMsg = lcSentToMsg + m.lcName + ' <' + m.lcToEmail + '>' + CRLF
+              lcSentToMsg = m.lcSentToMsg + m.lcName + ' <' + m.lcToEmail + '>' + CRLF
             endif 
           endif 
           if !m.llSend
@@ -1219,6 +1204,7 @@ define class ais_ArtHome as aisArtPage
     endif 
 
     if poContext.lDeveloper and !empty(this.oArt.Art_ID)
+      this.addMenuItem("main\This", "Send Location Email", StuffUrl(this.cUrlA, 2, "ArtLocater", "art", this.cArt))
       this.addMenuItem("main\This", "Re-Assign ID...", StuffUrl(this.cUrlA, 2, "ReassignID", "art", this.cArt))
     endif 
 
