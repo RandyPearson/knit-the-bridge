@@ -69,36 +69,6 @@ function aisCreatePanel(toPce)
 endfunc  && aisCreatePanel 
 
 * --------------------------------------------------------- *
-function aisGetPanelLocation(tcPnl)
-  local loRet, loSelect
-  loRet = null
-  loSelect = createobject("L7PreserveSelect")
-  select Plc_PK, Plc_Orientation, Loc_Side, Loc_No, Loc_PK ;
-    from PanelLocation join Location on Plc_Loc_FK = Loc_PK ;
-    where Plc_Pnl_FK = m.tcPnl and !Plc_Inactive ;
-    into cursor GetPanelLocation_ 
-  if _tally > 0
-    scatter memo name loRet 
-  endif 
-  use in select("GetPanelLocation_")
-  return m.loRet
-endfunc && aisGetPanelLocation
-
-* --------------------------------------------------------- *
-function aisFormatPanelLocation(tvPnl) && object or key
-  if isnull(m.tvPnl) or (vartype(m.tvPnl) = 'C' and empty(m.tvPnl))
-    return null
-  endif 
-  local loPlc, lcRet
-  lcRet = null 
-  loPlc = iif(vartype(m.tvPnl) = "O", m.tvPnl, aisGetPanelLocation(m.tvPnl))
-  if !isnull(m.loPlc)
-    lcRet = textmerge([<<trim(loPlc.Loc_Side)>>-<<loPlc.Loc_No>> (<<loPlc.Plc_Orientation>>)])
-  endif 
-  return m.lcRet
-endfunc 
-
-* --------------------------------------------------------- *
 function aisGetPanelArtists(tvPnl) && object or key or currect record
   local lcPnl, loSel, loRet
   lcPnl = iif(vartype(m.tvPnl) = "L", Pnl_PK, ;
