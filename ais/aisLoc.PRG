@@ -28,7 +28,7 @@ function aisFormatPanelLocation(tvPnl) && object or key
   lcRet = null 
   loPlc = iif(vartype(m.tvPnl) = "O", m.tvPnl, aisGetPanelLocation(m.tvPnl))
   if !isnull(m.loPlc)
-    lcRet = textmerge([<<trim(loPlc.Loc_Side)>>-<<loPlc.Loc_No>> (<<loPlc.Plc_Orientation>>)])
+    lcRet = textmerge([<<left(loPlc.Loc_Side, 1)>>-<<loPlc.Loc_No>> (<<loPlc.Plc_Orientation>>)])
   endif 
   return m.lcRet
 endfunc 
