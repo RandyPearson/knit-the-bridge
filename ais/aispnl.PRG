@@ -720,9 +720,13 @@ define class ais_PanelInfo as ais_PnlHome
   nMinLoginLevel = L7_NONE  && PUBLIC 
   * ----------------------------------------------------- *  
   function AddDefaultMenu
-    if poContext.lCore
-      this.addMenuItem("main\This,page", "Panel Page", StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", this.cPnl), , "PnlHome")
-    endif
+    with this
+      if poContext.lCore
+        .addMenuItem("main\This,page", "Panel Page", StuffUrl(.cUrlA, 2, "PnlHome", "pnl", .cPnl), , "PnlHome")
+      endif
+      .addMenuItem("main\This,page", "Mobile App (public)", ;
+        .app_MobilePanelUrl(.oPnl.Pnl_ID))
+    endwith 
     dodefault()
     return 
   endfunc 
@@ -829,6 +833,9 @@ define class ais_PnlHome as aisPnlPage
       
       .addMenuItem("main\This,page", "Find Panel (public)", ;
         "../ktb-pub/LocateByPanelID.ktb?pnl_id=" + .oPnl.Pnl_ID)
+
+      .addMenuItem("main\This,page", "Mobile App (public)", ;
+        .app_MobilePanelUrl(.oPnl.Pnl_ID))
 
         ** StuffUrl(.cUrlA, 2, "LocateByPanelID", "pnl_id", .oPnl.Pnl_ID))
 

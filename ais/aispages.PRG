@@ -638,6 +638,11 @@ define class aisPage as L7Page
     return m.loRet
   endfunc && app_GetPanelArtists     
   * --------------------------------------------------------- *
+  function app_MobilePanelUrl(lcId)
+    return this.fullUrl(textmerge([/m/#/panels/<<m.lcId>>]))
+  endfunc 
+
+  * --------------------------------------------------------- *
 enddefine && AisPage
 
 *** ========================================================= ***
@@ -1124,6 +1129,14 @@ define class ais_LocateByPanelID as aisPage
     return 
   endfunc 
   * ----------------------------------------------------- *  
+  function AddDefaultMenu
+    dodefault()
+    with this
+      .AddSubMenu("This", "This Panel")
+    endwith
+    return
+  endfunc 
+  * ----------------------------------------------------- *  
   function ProcessRequest
     this.cCancelUrl = StuffUrl(this.cUrlA, 2, "Locate")
     local loForm, loQry, loLoc, loPceQry, loPnl, loArt, lcName, loConts, loCont, lnCont
@@ -1149,6 +1162,13 @@ define class ais_LocateByPanelID as aisPage
       if .nTally = 0
         this.notFound("Panel Not Found")
         return 
+      endif 
+      * public menu link: 
+      this.addMenuItem("main\This,page", "Mobile App (public)", ;
+        this.app_MobilePanelUrl(this.cPage_ID))
+      if poContext.lCore
+        this.addMenuItem("main\This,page", "AIS Panel Page", ;
+          StuffUrl(this.cUrlA, 2, "PnlHome", "pnl", this.cPage_ID))
       endif 
       scatter memo name loPnl
       this.app_runPiecePanelArtistQuery(loPnl.Pnl_PK)
