@@ -1,0 +1,10 @@
+<h3>Panel ID: <<m.poPnl.Pnl_ID>></h3>
+<p>How to find your panel:</p>
+<<m.pcLocDesc>>
+<p>KtB Mobile Website: <br>
+<a href="http://knitthebridge.com/m/#/panels/<<poPnl.Pnl_Id>>">
+http://knitthebridge.com/m/#/panels/<<poPnl.Pnl_Id>></a>
+</p>
+<p>KtB Regular Website: <br>
+<a href="http://knitthebridge.com/ktb-pub/LocateByPanelID.ktb?pnl_id=<<poPnl.Pnl_Id>>">
+http://knitthebridge.com/ktb-pub/LocateByPanelID.ktb?pnl_id=<<poPnl.Pnl_Id>></a></p>
