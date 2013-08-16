@@ -335,8 +335,10 @@ define class ais_Tour as aisPage
       endif 
       this.cSubTitle = this.cSubTitle + ": " + this.page_getOptionDescription(m.loState)
       this.page_loadSegment(m.loState)
-      response.write(m.loState.segment_output)
     endif
+
+    response.write(HTWrap(this.cSubTitle, 'h2'))
+    response.write(m.loState.segment_output)
     response.write(this.page_getSegmentOptions(m.loState))
     return 
   endfunc 
@@ -417,7 +419,7 @@ define class ais_Tour as aisPage
     local lcRet, lcTemp, loConfig, loDir, lnDir, loSeg, lnSeg, lcUrl
     loConfig = loState.page_config
     lcRet = ""
-    lcRet = m.lcRet + HTWrap("Choose Your Next Crossing", 'h2')
+    lcRet = m.lcRet + HTWrap("Choose the bridge side and direction of your next crossing:", 'p')
     for lnDir = 1 to loConfig.direction_set.count
       loDir = loConfig.direction_set.item[m.lnDir]
       lcRet = m.lcRet + HTWrap(loDir.desc, 'h3')

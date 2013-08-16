@@ -554,14 +554,16 @@ define class aisPage as L7Page
 
     lcMenu = "main\Search"
     if !loPol.lPublicFacing && add some public links
-      this.addMenuItem(m.lcMenu, 'Walking Tour', "../ktb-pub/tour.ktb")
-      this.addMenuItem(m.lcMenu, 'Find-A-Panel', "../ktb-pub/locate.ktb")
+      this.addMenuItem(m.lcMenu, 'Walking Tour',        "../ktb-pub/tour.ktb")
+      this.addMenuItem(m.lcMenu, 'Find a Panel',        "../ktb-pub/locate.ktb")
+      this.addMenuItem(m.lcMenu, "Find Someone's Work", "../ktb-pub/locate.ktb")
     else
-      this.addMenuItem(m.lcMenu, 'Walking Tour', StuffUrl(this.cUrlA, 2, "Tour"))
-      this.addMenuItem(m.lcMenu, 'Find-A-Panel', StuffUrl(this.cUrlA, 2, "Locate"))
+      this.addMenuItem(m.lcMenu, 'Walking Tour',        StuffUrl(this.cUrlA, 2, "Tour"))
+      this.addMenuItem(m.lcMenu, 'Find a Panel',        StuffUrl(this.cUrlA, 2, "Locate"))
+      this.addMenuItem(m.lcMenu, "Find Someone's Work", StuffUrl(this.cUrlA, 2, "Locate"))
     endif
     lcMenu = "main\Links"
-    this.addMenuItem(m.lcMenu, 'KtB Webpage', "http://knitthebridge.org/")
+    *!* this.addMenuItem(m.lcMenu, 'KtB Webpage', "http://knitthebridge.org/")
     this.addMenuItem(m.lcMenu, 'KtB Blog',    "http://knitthebridge.wordpress.com/")
     this.addMenuItem(m.lcMenu, 'Media Room',  "http://knitthebridge.wordpress.com/media-room/")
     this.addMenuItem(m.lcMenu, 'Contact Us',  "http://knitthebridge.wordpress.com/contact-us/")

@@ -10,6 +10,8 @@ function AisArtQueryFlags()
     ',{"root": "admin", "menu": false}' + ;
     ',{"root": "artist", "prompt": "All Artists"}' + ;
     ',{"root": "releaseinner", "field": "Art_Release_Name", "prompt": "Release Name"}' + ;
+    ',{"root": "hascontrib", "combine": false, "prompt": "Has Contributing Artist"}' + ;
+    ',{"root": "iscontrib", "combine": false, "prompt": "Is Contributing Artist"}' + ;
     ',{"root": "panelsignup", "combine": false, "prompt": "Panel Sign-Up"}' + ;
     ',{"root": "panelssubmitted", "combine": false, "prompt": "Submitted Panels"}' + ;
     ',{"root": "bitsorpanelssubmitted", "combine": false, "prompt": "Submitted Bits/Panels"}' + ;
@@ -602,7 +604,7 @@ define class ais_ArtQuery as aisMultiArtPage
   function ProcessRequest
     local loForm, loFlags, lnFlag, lcName
     
-    loForm = this.createForm("AisForm", StuffUrl(this.cUrlA, 2, "ArtList", "fields", "part,contact"))
+    loForm = this.createForm("AisForm", StuffUrl(this.cUrlA, 2, "ArtList", "fields", "contact"))
     with loForm
       .lResetButton = .t.
       .cSubmitCaption = "Run Query"
@@ -820,6 +822,7 @@ define class ais_ArtList as aisMultiArtPage
       if this.oPage_Fields.getkey("contact") > 0
         loCol = .addCursorColumn("Art_Email", "Email/Phone", [aisFormatContactInfo(THISRECORD)])
         loCol = .addCursorColumn("Art_Emergency_Contact", "Emergency")
+        loCol = .addCursorColumn("Art_Release_Name", "Release")
       endif 
 
       if this.oPage_Fields.getkey("location") > 0 or this.oPage_Fields.getkey("contact") > 0
@@ -2699,6 +2702,8 @@ define class AisArtQuery AS L7Query
   lArtist = null
   lRelease = null 
   lReleaseInner = null 
+  lIsContrib = null
+  lHasContrib = null
   lStarred = null
   lInstall = null
   lDeinstall = null
@@ -2816,8 +2821,16 @@ define class AisArtQuery AS L7Query
         lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + [Art_Inactive = ] + iif(.lInactiveInner, [.t.], [.f.])
       endif 
       
-      if !isnull(.lRelease) 
-        .cWhereClause = [WHERE Art_Release_Name = ] + IIF(.lRelease, [.T.], [.F.])
+      if !isnull(.lRelease) && note: use lReleaseInner for combination queries 
+        .cWhereClause = .cWhereClause + [ and Art_Release_Name = ] + IIF(.lRelease, [.T.], [.F.])
+      endif 
+      
+      if !isnull(.lIsContrib) 
+        lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + iif(.lIsContrib, [!], []) + [empty(Art_Group_Art_FK)]
+      endif 
+      if !isnull(.lHasContrib) 
+        lcInnerWhere = m.lcInnerWhere + m.lcTypeCombine + [Art_PK] + iif(.lHasContrib, [ in ], [ not in ]) + ;
+          [(select Art_Group_Art_FK from artist where !art_inactive and !empty(Art_Group_Art_FK))]
       endif 
 
       if !isnull(.cID)
