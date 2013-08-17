@@ -1041,6 +1041,7 @@ enddefine && ais_AgeSumList
 *** ========================================================= ***
 define class ais_ArtPublicWork as aisArtPage
   nMinLoginLevel = L7_NONE  
+  lPage_ShowPieceInfo = .t.
   * ----------------------------------------------------- *  
   function AddDefaultMenu
     if poContext.lCore
@@ -1129,12 +1130,25 @@ define class ais_ArtPublicWork as aisArtPage
   endfunc && page_getRailingData
   * ----------------------------------------------------- *  
   function page_getBitData(loQry)
-    local lcRet, lnTally
+    local lcRet, lnTally, lcPces, lcPnlUrl, lnUnused
     lcRet = ""
     select (loQry.cAlias)
     count for Pce_Type = "Panels" and !Pce_Whole_Panel to lnTally
     if m.lnTally > 0
-      lcRet = m.lcRet + HTWrap("Created and donated " + transform(m.lnTally) + ' "bit' + iif(m.lnTally = 1, "", "s") + '" (partial panels) for building into panels' , 'li')
+      lcRet = "Created and donated " + transform(m.lnTally) + ' "bit' + iif(m.lnTally = 1, "", "s") + '" (partial panels) for building into panels'
+      if this.lPage_ShowPieceInfo
+        count for Pce_Type = "Panels" and !Pce_Whole_Panel and isnull(Pnl_Id) to lnUnused
+        lcPces = ""
+        lcPnlUrl = StuffUrl(this.cUrlA, 2, 'LocateByPanelID')
+        scan for Pce_Type = "Panels" and !Pce_Whole_Panel and !isnull(Pnl_Id)
+          lcPces = m.lcPces + HTWrap(HTLink(StuffUrl(m.lcPnlUrl, 'pnl_id', Pnl_Id), "Panel " + Pnl_Id), "li")
+        endscan 
+        if m.lnUnused > 0
+          lcPces = m.lcPces + HTWrap(transform(m.lnUnused) + " piece(s) not used in panels.", "li")
+        endif
+        lcRet = m.lcRet + HtWrap(m.lcPces, 'ul')
+      endif 
+      lcRet = HTWrap(m.lcRet, 'li')
     endif 
     return m.lcRet 
   endfunc && page_getBitData
