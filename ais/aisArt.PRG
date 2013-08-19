@@ -1060,6 +1060,7 @@ define class ais_ArtPublicWork as aisArtPage
     with loQry
       .cArt = this.cArt
       .lJoinPanel = .t. 
+      .AddFields('Pnl_Story')
       .lJoinPanelLocation = .f. && this has issues...
       .lExcluded = null
       .Execute()
@@ -1181,6 +1182,12 @@ define class ais_ArtPublicWork as aisArtPage
           lcItem = m.lcItem + HtWrap(AisDescribeLocation(m.loLoc), 'div')
         endif 
       endif 
+
+      if !empty(Pnl_Story)
+        lcItem = m.lcItem + HTWrap("Artist's Story:", 'p')
+        lcItem = m.lcItem + HTWrap(L7ParseOnView(Pnl_Story), 'div',, 'story')
+      endif 
+
       lcItem = m.lcItem + HtWrap("Panel Thumbnail Image:", 'p')
       lcItem = m.lcItem + HtWrap(AisPanelImage(Pnl_Id, "_main"), 'div',, 'img-panel')
 

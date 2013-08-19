@@ -1230,6 +1230,10 @@ define class ais_LocateByPanelID as aisPage
         .WriteTag(textmerge([Panel <<loPnl.Pnl_Id>> bridge location:]), 'p')
         .WriteTag(AisDescribeLocation(m.loLoc), 'div')
       endcase 
+      if !empty(loPnl.Pnl_Story)
+        .WriteTag("Artist's Story:", 'p')
+        .WriteTag(L7ParseOnView(loPnl.Pnl_Story), 'div', 'story')
+      endif 
       .WriteTag("Panel Thumbnail Image:", 'p')
       .writeTag(AisPanelImage(loPnl.Pnl_Id, "_main"), 'div', 'img-panel')
     endwith

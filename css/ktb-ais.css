@@ -94,6 +94,7 @@ ul.contextMenu { margin-left: 0px; padding-left: 0; list-style-type: none; margi
 
 p.break { margin-bottom: 5em }
 
+.story{font-style: italic; margin-left: 3em; margin-right: 3em;}
 .incomplete {background-color: #ccc;}
 .excluded {background-color: #fcc;}
 span.excluded {color: brown; font-weight: bold;}
