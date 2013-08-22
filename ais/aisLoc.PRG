@@ -606,7 +606,7 @@ define class ais_LocDisplay as aisLocPage
           '<br>(<<int(loLoc.Loc_H1)>>x<<int(loLoc.Loc_W1)>><<iif(loLoc.Loc_H2 = 0,"", "x" + transform(loLoc.Loc_H2))>>)' + ;
           '<<iif(empty(loLoc.Loc_Marker), "", "<br>" + trim(m.loLoc.Loc_Marker))>>' + ;
           '<<iif(empty(loLoc.Loc_Comments), "", "<br>" + m.loLoc.Loc_Comments)>>' + ;
-          '<br><a href="<<m.lcUrl>>">Swap Panels</a>' + ;
+          iif(poContext.lDeveloper, '<br><a href="<<m.lcUrl>>">Swap Panels</a>', '') + ;
           '</div></td>') + crlf
           
         for lnOrient = 1 to 2 && iterate between Inner/Outer orientations, creating left 2 and right 2 columns: 
@@ -753,6 +753,7 @@ define class ais_LocList as aisLocPage
     
     urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
     urls.add(StuffUrl(this.cUrlA, 2, "LocAssign", "side", this.cPage_Side), "LocAssign")
+    urls.add(StuffUrl(this.cUrlA, 2, "SwapPanels"), "SwapPanels")
 
     loTbl = createobject("AisTable")
     with loTbl
@@ -777,6 +778,10 @@ define class ais_LocList as aisLocPage
               [""] + ;
             [)))])
 
+        if m.lnOrient = 1 and poContext.lAdmin  && add a swap link between pairs
+          loCol = .addCursorColumn("Loc_PK", "Swap", ;
+            [HTLink(StuffUrl(urls.item("SwapPanels"), "loc", Loc_PK), "swap panels")])
+        endif 
       next 
 
       loCol = .addCursorColumn("Loc_Marker", "Marker")
