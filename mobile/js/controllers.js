@@ -8,6 +8,7 @@ angular.module('ktb.controllers', []).
       $scope.panels.installed_panel_set.map(function(panel) {
         delete panel.pnl_pk;
         panel.image = panelImageUrl(panel.pnl_id);
+        panel.loc = panel.loc_id.substr(0,1) + "-" + panel.loc_id.substr(1);
         panel.loc_side = panel.loc_side == "Down" ? "downriver" : "upriver";
         panel.orientation = panel.orientation == "Outer" ? "outside" : "inside";
         panel.artists = panel.artist_set.map(function(artist) {
@@ -21,6 +22,7 @@ angular.module('ktb.controllers', []).
     Panel.get({panelId:$routeParams.panelId}, function(panel) {
       panel.image = panelImageUrl(panel.pnl_id);
       if (panel.story == null) { panel.story = defaultStory(panel.pnl_id.slice(-3)); }
+      _gaq.push(['_trackEvent', 'Panels', 'View', panel.pnl_id]);
       $scope.panel = panel;
     });
 
@@ -42,12 +44,10 @@ angular.module('ktb.controllers', []).
   }]).
   controller('AppCtrl', ['$scope', '$location', function($scope, $location) {
     $scope.submit = function () {
-      $scope.search = this.search;
+      $scope.search = this.search_input;
+      $scope.search_input = this.search_input;
+      _gaq.push(['_trackEvent', 'Panels', 'Search', this.search_input]);
       $location.url('panels');
-    };
-
-    $scope.updateScope = function () {
-      $scope.search = this.search;
     };
   }]);
 

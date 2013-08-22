@@ -179,6 +179,14 @@ a.btn-main {
   white-space: nowrap;
 }
 
+.panel ~ .panel.no-results {
+  display: none;
+}
+.panel.no-results {
+  padding: 30px;
+}
+
+
 @media (max-width: 940px) {
   .btn-main {
     padding-top: 7%;
