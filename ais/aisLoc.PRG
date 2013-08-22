@@ -207,6 +207,39 @@ define class aisLocPage as aisPage
 enddefine && AisLocPage
 
 *** ========================================================= ***
+define class Ais_SwapPanels as aisLocPage 
+  * --------------------------------------------------------- *
+  function ProcessRequest
+    this.cCancelUrl = stuffUrl(this.cUrlA, 2, "LocDisplay")
+    private vp_cLoc_PK 
+    local lcAlias, lnCount, lcXml
+    lcAlias = "V_Location_PanelLocation_Set"
+    vp_cLoc_PK = this.cLoc
+    use (m.lcAlias) again in select(m.lcAlias)
+    cursorsetprop("Buffering", 5, m.lcAlias)
+    select (m.lcAlias)
+    count to lnCount
+    this.assert(m.lnCount = 2, "Swap can only be used when 2 panels are present.")
+    scan
+      do case
+      case Plc_Orientation = "Inner"
+        replace Plc_Orientation with "Outer"
+      case Plc_Orientation = "Outer"
+        replace Plc_Orientation with "Inner"
+      otherwise
+        this.badRequest("Panel has unknown orientation: " + transform(Plc_Orientation))
+      endcase
+      StampRec( CurrentUser, THIS.tNow )
+    endscan
+    
+    lcXml = ''
+    this.AssertTransaction(m.lcAlias, @lcXml)
+    Response.Redirect(this.cCancelUrl)
+    return 
+  endfunc  && ProcessRequest
+enddefine && SwapPanels 
+
+*** ========================================================= ***
 define class ais_InstalledPanels as aisPage 
   nMinLoginLevel = L7_NONE  
   lPage_Cacheable = .t.
@@ -555,6 +588,7 @@ define class ais_LocDisplay as aisLocPage
     
     urls.add(StuffUrl(this.cUrlA, 2, "LocUnassign"), "LocUnassign") && see aisPnl 
     urls.add(StuffUrl(this.cUrlA, 2, "LocAssign"), "LocAssign")
+    urls.add(StuffUrl(this.cUrlA, 2, "SwapPanels"), "SwapPanels")
     urls.add(StuffUrl(this.cUrlA, 2, "PnlHome"), "PnlHome")
 
     for lnSide = 1 to 2  && separate table for each side of bridge (asymetrical)
@@ -566,11 +600,13 @@ define class ais_LocDisplay as aisLocPage
         loLoc = m.loColl.item(m.lnItem)
 
         * Middle column showing Location info:
+        lcUrl = stuffUrl(urls.item("SwapPanels"), "loc", loLoc.Loc_PK)
         laCells[m.lnItem, 3] = textmerge('<td class="loc-id"><div style="min-height: <<int(loLoc.Loc_W1)>>px;">' + ;
           '<span class="id-field location"><<left(loLoc.Loc_Side, 1)>><<padl(transform(loLoc.Loc_No), 3, "0")>></span>' + ;
           '<br>(<<int(loLoc.Loc_H1)>>x<<int(loLoc.Loc_W1)>><<iif(loLoc.Loc_H2 = 0,"", "x" + transform(loLoc.Loc_H2))>>)' + ;
           '<<iif(empty(loLoc.Loc_Marker), "", "<br>" + trim(m.loLoc.Loc_Marker))>>' + ;
           '<<iif(empty(loLoc.Loc_Comments), "", "<br>" + m.loLoc.Loc_Comments)>>' + ;
+          '<br><a href="<<m.lcUrl>>">Swap Panels</a>' + ;
           '</div></td>') + crlf
           
         for lnOrient = 1 to 2 && iterate between Inner/Outer orientations, creating left 2 and right 2 columns: 

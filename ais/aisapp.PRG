@@ -3,7 +3,7 @@
 #INCLUDE L7.H
 #INCLUDE AIS.H
 
-#DEFINE THISAPP_DATABASE_REVISION     36
+#DEFINE THISAPP_DATABASE_REVISION     37
 #DEFINE THISAPP_CREATE_DBC_IF_MISSING .T. 
 
 *** ======================================================== ***
@@ -635,6 +635,9 @@ define class AisApp AS KtbApp
       replace all Ars_Team with Ars_Role for inlist(Ars_Role, "Towers", "Medical", "Check-In", "Runner")
       index on Ars_Team tag Team  && Rev 36
       use in select("ArtistShift")
+
+    case m.lnRev = 37
+      * no changes--force view creation 
 
 
 ** CAUTION: Need to add any above changes to Create*() functions below!!
@@ -1592,6 +1595,8 @@ FUNCTION CreateViews(lcOneTable, lcDataPath, lcDataBase)
     do CreateChildView WITH "V_Contributing_Artist_Set", "Artist", "Art_Group_Art_FK", "Artist", [Art_Inactive=.F.] 
     do CreateChildView WITH "V_Training_Artist_Set", "Artist", "Art_Installation_Trn_FK", "Training",  [Art_Inactive=.F.] && Rev 30
     do CreateChildView WITH "V_Shift_Artist_Set", "ArtistShift", "Ars_Sft_FK", "Shift",  [Ars_Inactive=.F.], [Ars_Role]  && Rev 36
+
+    do CreateChildView WITH "V_Location_PanelLocation_Set", "PanelLocation", "Plc_Loc_FK", "Location",  [Plc_Inactive=.F.] && Rev 37
 
     do CreateChildView WITH "V_Facility_Panel_Set", "Panel", "Pnl_Fac_FK", "Facility",  [Pnl_Inactive=.F.]
     do CreateChildView WITH "V_Facility_Piece_Set", "Piece", "Pce_Fac_FK", "Facility",  [Pce_Inactive=.F.]
