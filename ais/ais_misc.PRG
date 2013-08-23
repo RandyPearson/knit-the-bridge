@@ -1,6 +1,40 @@
 
 open database ktbais
 
+select a1.Art_PK, a1.Art_Last_Name, a1.Art_First_Name, a1.Art_Release_Name, a1.Art_Full_Name, a1.Art_ID, Pce_Id, Pce_Pnl_FK ;
+  from Artist a1 ;
+  join Piece on a1.Art_PK = Pce_Art_FK ;
+  where !A1.Art_Inactive and !Pce_Inactive ;
+      and !Pce_Excluded and Pce_Type = "Panels" ;
+union ;
+select a1.Art_PK, a1.Art_Last_Name, a1.Art_First_Name, a1.Art_Release_Name, a1.Art_Full_Name, a1.Art_ID, Pce_Id, Pce_Pnl_FK  ;
+  from Artist a1 ;
+    join Artist a2 on a1.Art_Group_Art_FK = a2.Art_PK ;
+    join Piece on a2.Art_PK = Pce_Art_FK ;
+  where !a1.Art_Inactive and !a2.Art_Inactive and !Pce_Inactive ;
+      and !Pce_Excluded and Pce_Type = "Panels" ;
+order by 2, 3 ;
+into cursor Art_Pce_ 
+
+select Art_Pce_.*, Pnl_PK, Pnl_ID, Plc_Orientation, Loc_Side, Loc_No ;
+  from Art_Pce_ ;
+    left join Panel on Pce_Pnl_FK = Pnl_PK ;
+    left join PanelLocation on Pnl_Pk = Plc_Pnl_FK ;
+    left join Location on Plc_Loc_FK = Loc_PK ;
+  into cursor Combo_
+
+* browse fields Art_Last_Name, Art_First_Name, Art_Release_Name, Art_Full_Name, Pce_Id, Pnl_Id, Loc_Side, Loc_No, Plc_Orientation
+
+select ;
+  Art_Id, iif(Art_Release_Name, "Release", space(7)) as Release, Art_Last_Name as Last, Art_First_Name as First, Art_Full_Name as Alt, ;
+  nvl(pnl_Id, "n.i.p.  ") as Panel_Id, ;
+  padr(iif(isnull(Plc_Orientation), iif(isnull(Pnl_Id), "", "n.o.b."), left(Loc_Side, 1) + transform(Loc_No) + "-" + Plc_Orientation), 12) as Location ;
+  from Combo_ ;
+  into cursor Work_On_Bridge_
+copy to .\Files\ArtworkOnBridge.xls type xl5 
+
+#if .f.
+
 select cdow(Sft_Date) as Day, Sft_Start_Time as Start, ;
     iif(Art_Waiver_Signed, "Waiver", space(6)) as Waiver, iif(Art_Training_Signed, "Trained", space(7)) as Trained, ;
     padr(trim(Art_Last_Name) + ", " + trim(Art_First_Name), 40) as name,  ;
@@ -32,7 +66,6 @@ copy to .\Files\ShiftManagement.xls type xl5
 
 return
 
-#if .f.
 
 select iif(Art_Waiver_Signed, "Waiver", space(6)) as Waiver, iif(Art_Training_Signed, "Trained", space(7)) as Trained, padr(trim(Art_Last_Name) + ", " + trim(Art_First_Name), 40) as name, ;
     Art_Email as Email, Art_Phone as Phone, left(Art_Emergency_Contact, 100) as Emergency, left(Art_Neighborhood, 50) as Neighborhood ;
