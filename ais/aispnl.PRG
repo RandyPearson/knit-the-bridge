@@ -457,6 +457,7 @@ define class ais_PnlRemLoc as aisPnlPage
   function ProcessRequest
     this.cCancelUrl = this.page_getCancelUrl()
     this.Assert(poContext.lAdmin)
+    this.Assert(!Config.lLockLocations, "Location data is locked.")
 
     local loForm, vp_cPlc_PK, lcAlias, lcXml
     lcAlias = "V_PanelLocation"

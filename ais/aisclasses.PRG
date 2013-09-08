@@ -149,6 +149,8 @@ define class AisConfig as L7AppConfig
   
   cActionEmail         = "KnitTheBridge@gmail.com" 
   cActionFrom          = "Amanda Gross" 
+  
+  lLockLocations       = .t.
 enddefine 
 
 

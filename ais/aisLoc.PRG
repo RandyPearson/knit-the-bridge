@@ -211,6 +211,7 @@ define class Ais_SwapPanels as aisLocPage
   * --------------------------------------------------------- *
   function ProcessRequest
     this.cCancelUrl = stuffUrl(this.cUrlA, 2, "LocDisplay")
+    this.Assert(!Config.lLockLocations, "Location data is locked.")
     private vp_cLoc_PK 
     local lcAlias, lnCount, lcXml
     lcAlias = "V_Location_PanelLocation_Set"
@@ -920,6 +921,7 @@ define class ais_LocAssign as aisLocPage
   function ProcessRequest
     this.cCancelUrl = iif(empty(this.cPage_Side), StuffUrl(this.cUrlA, 2, "LocDisplay"), ;
       StuffURL(this.cUrlB, 2, "LocList", "side", this.cPage_Side))
+    this.Assert(!Config.lLockLocations, "Location data is locked.")
     this.Assert(poContext.lAdmin)
     this.assert(inlist(this.cPage_Orient, "Outer", "Inner"), "invalid orientation")
 
@@ -1057,6 +1059,7 @@ define class Ais_LocBrowse as AisLocPage
   * --------------------------------------------------------- *
   function ProcessRequest
     this.cCancelUrl = StuffUrl(this.cUrlA, 2, "LocList")
+    this.Assert(!Config.lLockLocations, "Location data is locked.")
     local loForm, lcXml, lcAlias, lcFldState, lcStub
     lcAlias = "V_All_Locations"
     use (m.lcAlias) in select(m.lcAlias)
