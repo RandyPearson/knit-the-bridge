@@ -35,20 +35,20 @@ copy to .\Files\ArtworkOnBridge.xls type xl5
 
 #if .f.
 
-select cdow(Sft_Date) as Day, Sft_Start_Time as Start, ;
-    iif(Art_Waiver_Signed, "Waiver", space(6)) as Waiver, iif(Art_Training_Signed, "Trained", space(7)) as Trained, ;
+select padr(cdow(Sft_Date),8) as Day, Sft_Start_Time as Start, ;
+    iif(Art_Waiver_Signed, "Waiver", space(6)) as Waiver, ;
     padr(trim(Art_Last_Name) + ", " + trim(Art_First_Name), 40) as name,  ;
-    space(5) as In, space(5) as Out, ;  
-    Ars_Team as Team, Ars_Role as Role, ;
+    space(5) as In, ;  
+    Ars_Role as Role, ;
     Art_Email as email, Art_Phone as phone ;
   from Artist A1 ; 
     join ArtistShift on A1.Art_PK = Ars_Art_FK ;
     join Shift on Ars_Sft_FK = Sft_PK ;
   where A1.Art_Inactive = .f. and Ars_Inactive = .f. and Sft_Inactive = .f. ;
-    and Sft_Installation ;
+    and Sft_DeInstallation ;
   order by Sft_Date, Sft_Start_Time, Art_Last_Name ;
-  into cursor Shift_SignIn 
-copy to .\Files\SignIn.xls type xl5 
+  into cursor Shift_SignIn_Deinst
+copy to .\Files\SignIn-Deinst.xls type xl5 
 
 select cdow(Sft_Date) as Day, Sft_Start_Time as Start, ;
     iif(Art_Waiver_Signed, "Waiver", space(6)) as Waiver, iif(Art_Training_Signed, "Trained", space(7)) as Trained, ;
